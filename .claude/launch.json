@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "speechrobot",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "5177", "."],
-      "port": 5177
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev"],
+      "port": 3000,
+      "cwd": "/Users/mac-mini-tim/Documents/projects/speechrobot"
     }
   ]
 }

@@ -5,6 +5,6 @@ export async function GET(request) {
   if (error) return error;
   return Response.json({
     id: user.id, email: user.email, name: user.name,
-    avatarId: user.avatarId, avatarChosen: user.avatarChosen, role: user.role,
+    role: user.role,
   });
 }

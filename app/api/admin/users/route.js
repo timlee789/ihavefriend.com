@@ -13,7 +13,7 @@ export async function GET(request) {
     where: { role: 'user' },
     include: {
       limits: true,
-      memory: { select: { factsJson: true, summary: true, transcriptJson: true } },
+      memories: { select: { characterId: true, factsJson: true, summary: true, transcriptJson: true } },
       usageLogs: {
         where: { sessionDate: { gte: monthStart } },
         select: { sessionDate: true, minutesUsed: true, turnsCount: true },
@@ -25,20 +25,20 @@ export async function GET(request) {
   const result = users.map(u => {
     const todayLog = u.usageLogs.find(l => l.sessionDate === today);
     const monthMinutes = u.usageLogs.reduce((s, l) => s + l.minutesUsed, 0);
-    const memSizeKb = u.memory
-      ? ((u.memory.factsJson.length + u.memory.summary.length + u.memory.transcriptJson.length) / 1024)
-      : 0;
+    const memSizeKb = u.memories.reduce((total, m) => {
+      return total + (m.factsJson.length + m.summary.length + m.transcriptJson.length) / 1024;
+    }, 0);
     return {
       id: u.id,
       email: u.email,
       name: u.name,
-      avatarId: u.avatarId,
       isActive: u.isActive,
       createdAt: u.createdAt,
       limits: u.limits,
       todayMinutes: Math.round((todayLog?.minutesUsed || 0) * 10) / 10,
       monthMinutes: Math.round(monthMinutes * 10) / 10,
       memSizeKb: Math.round(memSizeKb * 100) / 100,
+      friendCount: u.memories.length,
     };
   });
 

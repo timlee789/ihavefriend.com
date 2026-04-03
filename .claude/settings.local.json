@@ -19,7 +19,31 @@
       "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
       "Bash(npm init:*)",
       "Bash(npm install:*)",
-      "Bash(npx create-next-app@latest . --js --app --no-typescript --no-tailwind --eslint --no-src-dir --import-alias \"@/*\" --yes)"
+      "Bash(npx create-next-app@latest . --js --app --no-typescript --no-tailwind --eslint --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"const {PrismaClient} = require\\(''''@prisma/client''''\\); console.log\\(Object.keys\\(new PrismaClient\\(\\)\\)\\)\")",
+      "Bash(node -e \"const {PrismaLibSQL} = require\\(''@prisma/adapter-better-sqlite3''\\); console.log\\(typeof PrismaLibSQL\\)\")",
+      "Bash(node -e \"const mod = require\\(''@prisma/adapter-better-sqlite3''\\); console.log\\(Object.keys\\(mod\\)\\)\")",
+      "Bash(curl -s http://localhost:3000/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@companionai.com\"\",\"\"password\"\":\"\"admin1234\"\"}')",
+      "Bash(pkill -f 'next dev')",
+      "Bash(sleep 1 export PATH=/opt/homebrew/bin:$PATH)",
+      "Bash(/Users/mac-mini-tim/Documents/projects/speechrobot/start.sh:*)",
+      "Bash(chmod +x /Users/mac-mini-tim/Documents/projects/speechrobot/start.sh)",
+      "Bash(node -e \":*)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(curl -s http://localhost:3000/api/auth/me)",
+      "Bash(/opt/homebrew/bin/node -e \"let d='''''''';process.stdin.on\\(''''data'''',x=>d+=x\\);process.stdin.on\\(''''end'''',\\(\\)=>{try{const m=JSON.parse\\(d\\).models||[];m.filter\\(x=>x.name.includes\\(''''flash''''\\)&&\\(x.supportedGenerationMethods||[]\\).includes\\(''''generateContent''''\\)\\).forEach\\(x=>console.log\\(x.name\\)\\)}catch\\(e\\){console.log\\(''''need key''''\\)}}\\)\")",
+      "Bash(/opt/homebrew/bin/node node_modules/.bin/prisma migrate dev --name add_character_memory)",
+      "Bash(/opt/homebrew/bin/node node_modules/.bin/prisma migrate dev --create-only --name add_character_memory)",
+      "Bash(/opt/homebrew/bin/node node_modules/.bin/prisma migrate deploy)",
+      "Bash(/opt/homebrew/bin/node node_modules/.bin/prisma generate)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(node lib/seed.js)"
     ]
   }
 }
