@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String
+  name          String    @default("")
+  role          String    @default("user")
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  limits        UserLimit?
+  memories      UserMemory[]
+  usageLogs     UsageLog[]
+}
+
+model UserLimit {
+  userId          Int     @id
+  dailyMinutes    Int     @default(30)
+  monthlyMinutes  Int     @default(300)
+  memoryKb        Int     @default(512)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserMemory {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  characterId    String   @default("emma")
+  factsJson      String   @default("[]")
+  summary        String   @default("")
+  transcriptJson String   @default("[]")
+  updatedAt      DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, characterId])
+}
+
+model UsageLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  sessionDate  String
+  minutesUsed  Float    @default(0)
+  turnsCount   Int      @default(0)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionDate])
+}
