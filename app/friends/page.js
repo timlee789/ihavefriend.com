@@ -1,20 +1,48 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CHARACTER_LIST } from '@/lib/characters';
+import { CHARACTER_LIST, getCharacterLocale } from '@/lib/characters';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
+
+const UI = {
+  en: {
+    greeting: (name) => `Hello, ${name} 👋`,
+    signOut: 'Sign out',
+    heroTitle: 'Choose your friend',
+    heroSub: 'Each friend has their own personality and expertise.\nYour conversations with each one are remembered separately.',
+    talkTo: (name) => `💬 Talk to ${name}`,
+    footer: 'ihavefriend.com — Your AI companions, always here.',
+  },
+  ko: {
+    greeting: (name) => `안녕하세요, ${name} 👋`,
+    signOut: '로그아웃',
+    heroTitle: '친구를 선택하세요',
+    heroSub: '각 친구마다 고유한 성격과 전문성을 가지고 있어요.\n각각의 대화는 따로 기억됩니다.',
+    talkTo: (name) => `💬 ${name}와 대화하기`,
+    footer: 'ihavefriend.com — 언제나 곁에 있는 AI 친구들.',
+  },
+};
 
 export default function FriendsPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+  const [lang, setLang] = useState('en');
 
   useEffect(() => {
     const t = localStorage.getItem('token');
     const u = JSON.parse(localStorage.getItem('user') || 'null');
     if (!t || !u) { router.push('/login'); return; }
     setUser(u);
+    const savedLang = localStorage.getItem('lang') || 'en';
+    setLang(savedLang);
   }, [router]);
+
+  function toggleLang() {
+    const next = lang === 'en' ? 'ko' : 'en';
+    setLang(next);
+    localStorage.setItem('lang', next);
+  }
 
   function handleSelect(characterId) {
     router.push(`/chat?character=${characterId}`);
@@ -25,6 +53,8 @@ export default function FriendsPage() {
     localStorage.removeItem('user');
     router.push('/login');
   }
+
+  const t = UI[lang] || UI.en;
 
   if (!user) return <div style={{ background: '#080b14', minHeight: '100vh' }} />;
 
@@ -37,23 +67,32 @@ export default function FriendsPage() {
           <span style={S.logoText}>ihavefriend</span>
         </div>
         <div style={S.headerRight}>
-          <span style={S.greeting}>Hello, {user.name || user.email.split('@')[0]} 👋</span>
-          <button style={S.logoutBtn} onClick={handleLogout}>Sign out</button>
+          <span style={S.greeting}>{t.greeting(user.name || user.email.split('@')[0])}</span>
+          <button
+            style={{ ...S.logoutBtn, fontWeight: 700, minWidth: 52 }}
+            onClick={toggleLang}
+            title="Switch language"
+          >
+            {lang === 'en' ? '🇺🇸 EN' : '🇰🇷 한'}
+          </button>
+          <button style={S.logoutBtn} onClick={handleLogout}>{t.signOut}</button>
         </div>
       </div>
 
       {/* Hero text */}
       <div style={S.hero}>
-        <h1 style={S.heroTitle}>Choose your friend</h1>
+        <h1 style={S.heroTitle}>{t.heroTitle}</h1>
         <p style={S.heroSub}>
-          Each friend has their own personality and expertise.<br />
-          Your conversations with each one are remembered separately.
+          {t.heroSub.split('\n').map((line, i) => (
+            <span key={i}>{line}{i === 0 && <br />}</span>
+          ))}
         </p>
       </div>
 
       {/* Friend cards */}
       <div style={S.grid}>
-        {CHARACTER_LIST.map((char) => {
+        {CHARACTER_LIST.map((baseChar) => {
+          const char = getCharacterLocale(baseChar, lang);
           const isHovered = hoveredId === char.id;
           return (
             <div
@@ -123,7 +162,7 @@ export default function FriendsPage() {
                   boxShadow: isHovered ? `0 4px 20px ${char.colors.glow}66` : 'none',
                 }}
               >
-                💬 &nbsp;Talk to {char.name}
+                {t.talkTo(char.name)}
               </button>
             </div>
           );
@@ -132,7 +171,7 @@ export default function FriendsPage() {
 
       {/* Footer */}
       <div style={S.footer}>
-        <p style={S.footerText}>ihavefriend.com — Your AI companions, always here.</p>
+        <p style={S.footerText}>{t.footer}</p>
       </div>
 
       <style>{`

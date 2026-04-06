@@ -1,14 +1,17 @@
 'use client';
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CHARACTERS } from '@/lib/characters';
+import { CHARACTERS, getCharacterLocale } from '@/lib/characters';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
 
 function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get('character') || 'emma';
-  const char = CHARACTERS[characterId] || CHARACTERS.emma;
+  const baseLang = typeof window !== 'undefined'
+    ? (localStorage.getItem('lang') || 'en') : 'en';
+  const [lang, setLang] = useState(baseLang);
+  const char = getCharacterLocale(CHARACTERS[characterId] || CHARACTERS.emma, lang);
 
   const wsRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -40,6 +43,12 @@ function ChatPageInner() {
   const [showMemory, setShowMemory] = useState(false);
   const [memoryDisplay, setMemoryDisplay] = useState('No memories yet.');
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+
+  function toggleLang() {
+    const next = lang === 'en' ? 'ko' : 'en';
+    setLang(next);
+    localStorage.setItem('lang', next);
+  }
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -173,7 +182,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       const setupRes = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: '' }),
+        body: JSON.stringify({ message: '', lang }),
       });
       if (setupRes.ok) {
         const setupData = await setupRes.json();
@@ -235,10 +244,10 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
           if (msg.setupComplete) {
             setIsConnected(true);
             setStatus('');
-            setCurrentText('Listening...');
+            setCurrentText(lang === 'ko' ? '듣고 있어요...' : 'Listening...');
             ws.send(JSON.stringify({
               client_content: {
-                turns: [{ role: 'user', parts: [{ text: 'Hello, please greet me warmly.' }] }],
+                turns: [{ role: 'user', parts: [{ text: char.greeting || 'Hello, please greet me warmly.' }] }],
                 turn_complete: true,
               }
             }));
@@ -450,6 +459,14 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
         </div>
         <div style={S.topRight}>
           <span style={S.usageBadge}>{usage.todayMinutes.toFixed(0)}/{usage.dailyLimit} min</span>
+          <button
+            style={{ ...S.iconBtn, fontWeight: 700, letterSpacing: '0.05em', minWidth: 52 }}
+            onClick={toggleLang}
+            title="Switch language"
+            disabled={isConnected}
+          >
+            {lang === 'en' ? '🇺🇸 EN' : '🇰🇷 한'}
+          </button>
           <button style={S.iconBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
           <button style={S.iconBtn} onClick={() => setShowKeyInput(true)} title="API Key">🔑</button>
         </div>

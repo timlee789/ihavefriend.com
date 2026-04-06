@@ -15,7 +15,7 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { message = '' } = await request.json().catch(() => ({}));
+  const { message = '', lang = 'en' } = await request.json().catch(() => ({}));
 
   const db = createDb();
 
@@ -33,18 +33,18 @@ export async function POST(request) {
     return Response.json({ error: 'DB error creating session' }, { status: 500 });
   }
 
-  // 2. Build memory-enriched system prompt
+  // 2. Build memory-enriched system prompt (language-aware)
   let systemPrompt = '';
   let debugInfo = null;
   try {
-    const { buildEmmaPrompt } = require('@/lib/recallEngine');
-    const result = await buildEmmaPrompt(db, user.id, message);
+    const { buildEmmaPrompt, EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO } = require('@/lib/recallEngine');
+    const result = await buildEmmaPrompt(db, user.id, message, lang);
     systemPrompt = result.prompt;
     debugInfo = result.debugInfo;
   } catch (e) {
     console.error('[chat/setup] buildEmmaPrompt failed:', e.message);
-    // Fall back to base prompt — don't block the session
-    systemPrompt = require('@/lib/recallEngine').EMMA_BASE_PROMPT;
+    const { EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO } = require('@/lib/recallEngine');
+    systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO : EMMA_BASE_PROMPT;
   }
 
   return Response.json({ sessionId, systemPrompt, debugInfo });
