@@ -89,9 +89,9 @@ export default function FriendsPage() {
         </p>
       </div>
 
-      {/* Friend cards */}
+      {/* Friend cards — beta: Emma only. To re-enable others, remove the .filter() */}
       <div style={S.grid}>
-        {CHARACTER_LIST.map((baseChar) => {
+        {CHARACTER_LIST.filter(c => c.id === 'emma').map((baseChar) => {
           const char = getCharacterLocale(baseChar, lang);
           const isHovered = hoveredId === char.id;
           return (
