@@ -27,6 +27,7 @@ function ChatPageInner() {
   const sessionIdRef = useRef(null);
   const currentUserMsgRef = useRef('');
   const currentAiMsgRef = useRef('');
+  const wakeLockRef = useRef(null);
 
   const [user, setUser] = useState(null);
   const [token, setToken] = useState('');
@@ -45,6 +46,41 @@ function ChatPageInner() {
     setLang(next);
     localStorage.setItem('lang', next);
   }
+
+  // ── Screen Wake Lock ─────────────────────────────────────────
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return; // not supported
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen');
+      console.log('[WakeLock] Screen lock prevented ✅');
+      // If the lock is released (e.g. tab hidden then visible), re-acquire
+      wakeLockRef.current.addEventListener('release', () => {
+        console.log('[WakeLock] Released by system');
+      });
+    } catch (e) {
+      console.warn('[WakeLock] Could not acquire:', e.message);
+    }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+      console.log('[WakeLock] Released ✅');
+    }
+  }
+
+  // Re-acquire wake lock when user returns to the tab while connected
+  useEffect(() => {
+    async function onVisibilityChange() {
+      if (document.visibilityState === 'visible' && isConnected) {
+        await acquireWakeLock();
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [isConnected]);
+  // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -190,6 +226,7 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
             setIsConnected(true);
             setStatus('');
             setCurrentText(lang === 'ko' ? '듣고 있어요...' : 'Listening...');
+            acquireWakeLock(); // prevent screen from sleeping during conversation
             ws.send(JSON.stringify({
               client_content: {
                 turns: [{ role: 'user', parts: [{ text: char.greeting || 'Hello, please greet me warmly.' }] }],
@@ -333,6 +370,7 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
     setIsConnected(false);
     setCurrentText('');
     setIsAiSpeaking(false);
+    releaseWakeLock(); // allow screen to sleep again
 
     if (sessionStartRef.current) {
       const mins = (Date.now() - sessionStartRef.current) / 60000;
