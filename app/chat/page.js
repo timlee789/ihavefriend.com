@@ -398,27 +398,25 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
     }
 
     if (sessionIdRef.current && transcript.length >= 2) {
-      setSaving(true);
-      setStatus('Saving our conversation...');
-      try {
-        const res = await fetch('/api/chat/end', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            sessionId: sessionIdRef.current,
-            transcript,
-            apiKey,
-          }),
-        });
-        const data = res.ok ? await res.json() : {};
-        const count = data.memoriesExtracted || 0;
-        setStatus(count > 0 ? `✅ ${count} memories saved! See you next time.` : '✅ Conversation saved!');
-        if (count > 0) fetchMemory(token);
-      } catch {
-        setStatus('Conversation saved.');
-      }
+      // Fire-and-forget: don't block UI on memory extraction
+      const sid = sessionIdRef.current;
       sessionIdRef.current = null;
-      setSaving(false);
+      setStatus('✅ See you next time!');
+
+      fetch('/api/chat/end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ sessionId: sid, transcript, apiKey }),
+      })
+        .then(r => r.ok ? r.json() : {})
+        .then(data => {
+          const count = data.memoriesExtracted || 0;
+          if (count > 0) {
+            fetchMemory(token);
+            console.log(`[Memory] ${count} memories saved in background.`);
+          }
+        })
+        .catch(() => {});
     } else {
       sessionIdRef.current = null;
       setStatus('');
