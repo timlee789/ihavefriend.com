@@ -19,7 +19,18 @@ export async function POST(request) {
   if (error) return error;
 
   const { sessionId, transcript = [], apiKey } = await request.json().catch(() => ({}));
+
+  console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey}`);
+
   if (!sessionId) {
+    return Response.json({ ok: true, memoriesExtracted: 0 });
+  }
+  if (!apiKey) {
+    console.warn('[chat/end] No apiKey provided — cannot extract memories');
+    return Response.json({ ok: true, memoriesExtracted: 0 });
+  }
+  if (transcript.length < 2) {
+    console.warn('[chat/end] Transcript too short — skipping extraction');
     return Response.json({ ok: true, memoriesExtracted: 0 });
   }
 
@@ -35,7 +46,7 @@ export async function POST(request) {
   try {
     const { processSessionEnd } = require('@/lib/recallEngine');
     result = await processSessionEnd(db, user.id, sessionId, history, apiKey);
-    console.log(`[chat/end] user=${user.id} session=${sessionId} memories=${result.memoriesExtracted}`);
+    console.log(`[chat/end] ✅ user=${user.id} session=${sessionId} memories=${result.memoriesExtracted}`);
   } catch (e) {
     console.error('[chat/end] processSessionEnd failed:', e.message);
     // Still mark session ended even if memory extraction failed
