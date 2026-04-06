@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CHARACTERS } from '@/lib/characters';
+import AvatarEmma from '@/components/avatars/AvatarEmma';
 
 function ChatPageInner() {
   const router = useRouter();
@@ -21,6 +22,9 @@ function ChatPageInner() {
   const gradientIdxRef = useRef(0);
   const gradientTimerRef = useRef(null);
   const transcriptRef = useRef([]);
+  const sessionIdRef = useRef(null);
+  const currentUserMsgRef = useRef('');
+  const currentAiMsgRef = useRef('');
 
   const [user, setUser] = useState(null);
   const [token, setToken] = useState('');
@@ -35,6 +39,7 @@ function ChatPageInner() {
   const [transcript, setTranscript] = useState([]);
   const [showMemory, setShowMemory] = useState(false);
   const [memoryDisplay, setMemoryDisplay] = useState('No memories yet.');
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -162,13 +167,35 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
 
-    let memory = { facts: [], summary: '' };
+    // Fetch memory-enriched system prompt from server (Memory Engine)
+    let systemPrompt = '';
     try {
-      const res = await fetch(`/api/memory?character=${characterId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const setupRes = await fetch('/api/chat/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: '' }),
       });
-      if (res.ok) memory = await res.json();
-    } catch {}
+      if (setupRes.ok) {
+        const setupData = await setupRes.json();
+        systemPrompt = setupData.systemPrompt || '';
+        sessionIdRef.current = setupData.sessionId || null;
+        console.log('[Memory] Session started. sessionId:', setupData.sessionId, 'debug:', setupData.debugInfo);
+      }
+    } catch (e) {
+      console.warn('[Memory] setup failed, using fallback:', e.message);
+    }
+
+    // Fallback: use old local memory if server failed
+    if (!systemPrompt) {
+      let memory = { facts: [], summary: '' };
+      try {
+        const res = await fetch(`/api/memory?character=${characterId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) memory = await res.json();
+      } catch {}
+      systemPrompt = buildSystemPrompt(memory);
+    }
 
     try {
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
@@ -194,7 +221,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
               },
               output_audio_transcription: {},
               input_audio_transcription: {},
-              system_instruction: { parts: [{ text: buildSystemPrompt(memory) }] },
+              system_instruction: { parts: [{ text: systemPrompt }] },
             }
           }));
         };
@@ -222,6 +249,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
               if (part.inlineData?.mimeType?.startsWith('audio/')) {
                 const pcm = base64ToPcm(part.inlineData.data);
                 audioQueueRef.current.push(pcm);
+                setIsAiSpeaking(true);
                 playNext();
               }
             }
@@ -230,6 +258,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
           const aiTranscript = msg.serverContent?.outputTranscription?.text
                             ?? msg.outputTranscription?.text;
           if (aiTranscript) {
+            currentAiMsgRef.current += aiTranscript;
             setCurrentText(prev => {
               const base = prev === 'Listening...' ? '' : prev;
               return base ? base + ' ' + aiTranscript : aiTranscript;
@@ -247,6 +276,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
           const userTranscript = msg.serverContent?.inputTranscription?.text
                               ?? msg.inputTranscription?.text;
           if (userTranscript) {
+            currentUserMsgRef.current += userTranscript;
             setTranscript(prev => {
               const last = prev[prev.length - 1];
               const next = last?.role === 'user'
@@ -258,8 +288,28 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
           }
 
           if (msg.serverContent?.turnComplete) {
-            turnsRef.current++;
+            const turnNum = ++turnsRef.current;
+            const userMsg = currentUserMsgRef.current.trim();
+            currentUserMsgRef.current = '';
+            currentAiMsgRef.current = '';
+
             setCurrentText('');
+            setIsAiSpeaking(false);
+
+            // Fire-and-forget: save emotion turn to server
+            if (userMsg && sessionIdRef.current && apiKey) {
+              fetch('/api/chat/turn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                  sessionId: sessionIdRef.current,
+                  turnNumber: turnNum,
+                  userMessage: userMsg,
+                  apiKey,
+                }),
+              }).catch(() => {});
+            }
+
             if (turnsRef.current - lastAutoSaveRef.current >= 10) {
               lastAutoSaveRef.current = turnsRef.current;
               autoSaveMemory(transcriptRef.current);
@@ -333,6 +383,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
     stopMic();
     setIsConnected(false);
     setCurrentText('');
+    setIsAiSpeaking(false);
 
     if (sessionStartRef.current) {
       const mins = (Date.now() - sessionStartRef.current) / 60000;
@@ -346,57 +397,30 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       } catch {}
     }
 
-    if (saveMemory && transcript.length >= 2) {
+    if (sessionIdRef.current && transcript.length >= 2) {
       setSaving(true);
       setStatus('Saving our conversation...');
       try {
-        const allText = transcript.map(t => `${t.role === 'user' ? 'User' : char.name}: ${t.text}`).join('\n');
-        const memRes = await fetch(`/api/memory?character=${characterId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const prevMem = memRes.ok ? await memRes.json() : {};
-
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `Extract key facts about the user and write a summary.
-
-Previous facts: ${JSON.stringify(prevMem.facts || [])}
-Previous summary: ${prevMem.summary || ''}
-
-New conversation:
-${allText}
-
-Return JSON only: {"facts": ["..."], "summary": "..."}` }] }]
-            })
-          }
-        );
-
-        if (geminiRes.ok) {
-          const gData = await geminiRes.json();
-          const raw = gData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-          const extracted = JSON.parse(raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
-          await fetch(`/api/memory?character=${characterId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ facts: extracted.facts || [], summary: extracted.summary || '', transcript }),
-          });
-          setMemoryDisplay((extracted.facts || []).map(f => `• ${f}`).join('\n') || 'Memory saved.');
-        }
-        setStatus('✅ Memory saved! See you next time.');
-      } catch {
-        await fetch(`/api/memory?character=${characterId}`, {
+        const res = await fetch('/api/chat/end', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ facts: [], summary: '', transcript }),
+          body: JSON.stringify({
+            sessionId: sessionIdRef.current,
+            transcript,
+            apiKey,
+          }),
         });
+        const data = res.ok ? await res.json() : {};
+        const count = data.memoriesExtracted || 0;
+        setStatus(count > 0 ? `✅ ${count} memories saved! See you next time.` : '✅ Conversation saved!');
+        if (count > 0) fetchMemory(token);
+      } catch {
         setStatus('Conversation saved.');
       }
+      sessionIdRef.current = null;
       setSaving(false);
     } else {
+      sessionIdRef.current = null;
       setStatus('');
     }
   }
@@ -453,16 +477,34 @@ Return JSON only: {"facts": ["..."], "summary": "..."}` }] }]
 
       {/* Main display */}
       <div style={S.textArea}>
-        {/* Character intro when not connected */}
-        {!isConnected && !status && (
-          <div style={S.introWrap}>
+
+        {/* Avatar — always visible for Emma, emoji circle for others */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', marginBottom: 8,
+          filter: isConnected ? `drop-shadow(0 0 24px ${char.colors.glow}66)` : `drop-shadow(0 0 8px ${char.colors.glow}22)`,
+          transition: 'filter 0.5s ease',
+        }}>
+          {char.id === 'emma' ? (
+            <AvatarEmma size={isConnected ? 160 : 140} isSpeaking={isAiSpeaking} />
+          ) : (
             <div style={{
-              ...S.introEmoji,
+              width: isConnected ? 130 : 110,
+              height: isConnected ? 130 : 110,
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.3)',
               border: `2px solid ${char.colors.accent}44`,
-              boxShadow: `0 0 40px ${char.colors.glow}33`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: isConnected ? 58 : 48,
+              transition: 'all 0.5s ease',
             }}>
               {char.emoji}
             </div>
+          )}
+        </div>
+
+        {/* Name + role — only when not connected */}
+        {!isConnected && !status && (
+          <div style={S.introWrap}>
             <div style={{ ...S.introName, color: char.colors.accent }}>{char.name}</div>
             <div style={S.introRole}>{char.role}</div>
             <div style={S.introTagline}>"{char.tagline}"</div>

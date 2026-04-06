@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CHARACTER_LIST } from '@/lib/characters';
+import AvatarEmma from '@/components/avatars/AvatarEmma';
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -69,15 +70,25 @@ export default function FriendsPage() {
               onMouseLeave={() => setHoveredId(null)}
               onClick={() => handleSelect(char.id)}
             >
-              {/* Emoji avatar */}
+              {/* Avatar */}
               <div style={S.emojiWrap}>
-                <div style={{
-                  ...S.emojiCircle,
-                  border: `2px solid ${char.colors.accent}44`,
-                  boxShadow: isHovered ? `0 0 24px ${char.colors.glow}66` : 'none',
-                }}>
-                  <span style={S.emoji}>{char.emoji}</span>
-                </div>
+                {char.id === 'emma' ? (
+                  <div style={{
+                    display: 'flex', justifyContent: 'center',
+                    filter: isHovered ? `drop-shadow(0 0 16px ${char.colors.glow}66)` : 'none',
+                    transition: 'filter 0.3s ease',
+                  }}>
+                    <AvatarEmma size={110} isSpeaking={false} />
+                  </div>
+                ) : (
+                  <div style={{
+                    ...S.emojiCircle,
+                    border: `2px solid ${char.colors.accent}44`,
+                    boxShadow: isHovered ? `0 0 24px ${char.colors.glow}66` : 'none',
+                  }}>
+                    <span style={S.emoji}>{char.emoji}</span>
+                  </div>
+                )}
               </div>
 
               {/* Name & role */}
