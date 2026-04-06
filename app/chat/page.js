@@ -56,11 +56,27 @@ function ChatPageInner() {
     if (!t || !u) { router.push('/login'); return; }
     setToken(t);
     setUser(u);
-    const saved = localStorage.getItem('gemini_api_key');
-    if (saved) setApiKey(saved);
-    else setShowKeyInput(true);
     fetchUsage(t);
     fetchMemory(t);
+
+    // Load API key: check localStorage first (fast), then server (cross-device sync)
+    const local = localStorage.getItem('gemini_api_key');
+    if (local) {
+      setApiKey(local);
+    } else {
+      // Fetch from server (user saved from another device)
+      fetch('/api/user/apikey', { headers: { Authorization: `Bearer ${t}` } })
+        .then(r => r.ok ? r.json() : {})
+        .then(data => {
+          if (data.apiKey) {
+            setApiKey(data.apiKey);
+            localStorage.setItem('gemini_api_key', data.apiKey); // cache locally
+          } else {
+            setShowKeyInput(true); // first time ever → ask user
+          }
+        })
+        .catch(() => setShowKeyInput(true));
+    }
   }, [router]);
 
   // Slowly cycle background gradient
@@ -443,7 +459,17 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
 
       {showKeyInput && (
         <ApiKeyModal
-          onSave={k => { localStorage.setItem('gemini_api_key', k); setApiKey(k); setShowKeyInput(false); }}
+          onSave={k => {
+            localStorage.setItem('gemini_api_key', k);
+            setApiKey(k);
+            setShowKeyInput(false);
+            // Save to server so other devices don't need to re-enter
+            fetch('/api/user/apikey', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ apiKey: k }),
+            }).catch(() => {});
+          }}
           onClose={() => setShowKeyInput(false)}
         />
       )}
