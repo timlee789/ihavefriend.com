@@ -8,7 +8,7 @@
  *   3. Check alert conditions
  *   4. Mark chat_sessions row as complete
  *
- * Body: { sessionId, transcript: [{role, text}], apiKey }
+ * Body: { sessionId, transcript: [{role, text}] }
  * Returns: { ok: true, memoriesExtracted: number }
  */
 import { requireAuth } from '@/lib/auth';
@@ -18,7 +18,10 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { sessionId, transcript = [], apiKey } = await request.json().catch(() => ({}));
+  // API key comes from server env — never from client
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const { sessionId, transcript = [] } = await request.json().catch(() => ({}));
 
   console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey}`);
 
@@ -26,7 +29,7 @@ export async function POST(request) {
     return Response.json({ ok: true, memoriesExtracted: 0 });
   }
   if (!apiKey) {
-    console.warn('[chat/end] No apiKey provided — cannot extract memories');
+    console.warn('[chat/end] GEMINI_API_KEY not set in server env — cannot extract memories');
     return Response.json({ ok: true, memoriesExtracted: 0 });
   }
   if (transcript.length < 2) {

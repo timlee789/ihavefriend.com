@@ -5,7 +5,7 @@
  * Analyzes emotion in the user's message and saves it.
  * Fire-and-forget from the client — errors are logged but don't block UX.
  *
- * Body: { sessionId, turnNumber, userMessage, aiMessage, apiKey }
+ * Body: { sessionId, turnNumber, userMessage }
  * Returns: { ok: true }
  */
 import { requireAuth } from '@/lib/auth';
@@ -15,7 +15,10 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { sessionId, turnNumber, userMessage, apiKey } = await request.json().catch(() => ({}));
+  // API key comes from server env — never from client
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const { sessionId, turnNumber, userMessage } = await request.json().catch(() => ({}));
   if (!sessionId || !userMessage) {
     return Response.json({ ok: true }); // nothing to do
   }

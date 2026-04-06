@@ -21,7 +21,6 @@ function ChatPageInner() {
   const isPlayingRef = useRef(false);
   const sessionStartRef = useRef(null);
   const turnsRef = useRef(0);
-  const lastAutoSaveRef = useRef(0);
   const gradientIdxRef = useRef(0);
   const gradientTimerRef = useRef(null);
   const transcriptRef = useRef([]);
@@ -36,9 +35,6 @@ function ChatPageInner() {
   const [currentText, setCurrentText] = useState('');
   const [bgGradient, setBgGradient] = useState('');
   const [usage, setUsage] = useState({ todayMinutes: 0, dailyLimit: 30, canChat: true });
-  const [saving, setSaving] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showKeyInput, setShowKeyInput] = useState(false);
   const [transcript, setTranscript] = useState([]);
   const [showMemory, setShowMemory] = useState(false);
   const [memoryDisplay, setMemoryDisplay] = useState('No memories yet.');
@@ -58,25 +54,6 @@ function ChatPageInner() {
     setUser(u);
     fetchUsage(t);
     fetchMemory(t);
-
-    // Load API key: check localStorage first (fast), then server (cross-device sync)
-    const local = localStorage.getItem('gemini_api_key');
-    if (local) {
-      setApiKey(local);
-    } else {
-      // Fetch from server (user saved from another device)
-      fetch('/api/user/apikey', { headers: { Authorization: `Bearer ${t}` } })
-        .then(r => r.ok ? r.json() : {})
-        .then(data => {
-          if (data.apiKey) {
-            setApiKey(data.apiKey);
-            localStorage.setItem('gemini_api_key', data.apiKey); // cache locally
-          } else {
-            setShowKeyInput(true); // first time ever → ask user
-          }
-        })
-        .catch(() => setShowKeyInput(true));
-    }
   }, [router]);
 
   // Slowly cycle background gradient
@@ -128,62 +105,7 @@ ${summary || 'This is your first conversation with this person.'}
 ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim();
   }
 
-  async function autoSaveMemory(currentTranscript) {
-    if (!apiKey || currentTranscript.length < 4) return;
-    try {
-      const memRes = await fetch(`/api/memory?character=${characterId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const prevMem = memRes.ok ? await memRes.json() : {};
-
-      const allText = currentTranscript.map(t => `${t.role === 'user' ? 'User' : char.name}: ${t.text}`).join('\n');
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Extract key facts about the user from this conversation and write a brief summary. Merge with any previous facts.
-
-Previous facts: ${JSON.stringify(prevMem.facts || [])}
-Previous summary: ${prevMem.summary || ''}
-
-New conversation:
-${allText}
-
-Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
-          })
-        }
-      );
-
-      if (geminiRes.ok) {
-        const gData = await geminiRes.json();
-        const raw = gData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        const extracted = JSON.parse(raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
-
-        const transcriptToSave = currentTranscript.length > 60
-          ? currentTranscript.slice(-40)
-          : currentTranscript;
-
-        await fetch(`/api/memory?character=${characterId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            facts: extracted.facts || [],
-            summary: extracted.summary || '',
-            transcript: transcriptToSave,
-          }),
-        });
-        setMemoryDisplay((extracted.facts || []).map(f => `• ${f}`).join('\n') || 'Memory saved.');
-        console.log('[AutoSave] Memory saved at turn', turnsRef.current, 'for', char.name);
-      }
-    } catch (e) {
-      console.log('[AutoSave] Failed silently:', e.message);
-    }
-  }
-
   async function connect() {
-    if (!apiKey) { setShowKeyInput(true); return; }
     if (!usage.canChat) {
       setStatus("You've reached today's limit. Come back tomorrow!");
       return;
@@ -192,8 +114,9 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
 
-    // Fetch memory-enriched system prompt from server (Memory Engine)
+    // Fetch memory-enriched system prompt + server API key (for WebSocket auth)
     let systemPrompt = '';
+    let geminiKey = '';
     try {
       const setupRes = await fetch('/api/chat/setup', {
         method: 'POST',
@@ -203,14 +126,20 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       if (setupRes.ok) {
         const setupData = await setupRes.json();
         systemPrompt = setupData.systemPrompt || '';
+        geminiKey = setupData.geminiKey || '';
         sessionIdRef.current = setupData.sessionId || null;
         console.log('[Memory] Session started. sessionId:', setupData.sessionId, 'debug:', setupData.debugInfo);
       }
     } catch (e) {
-      console.warn('[Memory] setup failed, using fallback:', e.message);
+      console.warn('[Memory] setup failed:', e.message);
     }
 
-    // Fallback: use old local memory if server failed
+    if (!geminiKey) {
+      setStatus('❌ Server API key not configured. Contact admin.');
+      return;
+    }
+
+    // Fallback system prompt if memory engine failed
     if (!systemPrompt) {
       let memory = { facts: [], summary: '' };
       try {
@@ -226,7 +155,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       await navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
         const ws = new WebSocket(
-          `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`
+          `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${geminiKey}`
         );
         wsRef.current = ws;
 
@@ -321,8 +250,8 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
             setCurrentText('');
             setIsAiSpeaking(false);
 
-            // Fire-and-forget: save emotion turn to server
-            if (userMsg && sessionIdRef.current && apiKey) {
+            // Fire-and-forget: save emotion turn to server (key is server-side)
+            if (userMsg && sessionIdRef.current) {
               fetch('/api/chat/turn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -330,15 +259,10 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
                   sessionId: sessionIdRef.current,
                   turnNumber: turnNum,
                   userMessage: userMsg,
-                  apiKey,
                 }),
               }).catch(() => {});
             }
 
-            if (turnsRef.current - lastAutoSaveRef.current >= 10) {
-              lastAutoSaveRef.current = turnsRef.current;
-              autoSaveMemory(transcriptRef.current);
-            }
           }
         };
 
@@ -431,7 +355,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       fetch('/api/chat/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ sessionId: sid, transcript, apiKey }),
+        body: JSON.stringify({ sessionId: sid, transcript }),
       })
         .then(r => r.ok ? r.json() : {})
         .then(data => {
@@ -457,23 +381,6 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
       transition: 'background 3s ease',
     }}>
 
-      {showKeyInput && (
-        <ApiKeyModal
-          onSave={k => {
-            localStorage.setItem('gemini_api_key', k);
-            setApiKey(k);
-            setShowKeyInput(false);
-            // Save to server so other devices don't need to re-enter
-            fetch('/api/user/apikey', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ apiKey: k }),
-            }).catch(() => {});
-          }}
-          onClose={() => setShowKeyInput(false)}
-        />
-      )}
-
       {/* Top bar */}
       <div style={S.topBar}>
         <div style={S.topLeft}>
@@ -494,7 +401,6 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
             {lang === 'en' ? '🇺🇸 EN' : '🇰🇷 한'}
           </button>
           <button style={S.iconBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
-          <button style={S.iconBtn} onClick={() => setShowKeyInput(true)} title="API Key">🔑</button>
         </div>
       </div>
 
@@ -553,7 +459,7 @@ Return JSON only: {"facts": ["..."], "summary": "one paragraph"}` }] }]
         )}
 
         {status && (
-          <p style={S.statusText}>{saving ? '⏳ ' : ''}{status}</p>
+          <p style={S.statusText}>{status}</p>
         )}
 
         {isConnected && currentText && (
@@ -619,33 +525,6 @@ export default function ChatPage() {
     <Suspense fallback={<div style={{ background: '#080b14', minHeight: '100vh' }} />}>
       <ChatPageInner />
     </Suspense>
-  );
-}
-
-function ApiKeyModal({ onSave, onClose }) {
-  const [key, setKey] = useState('');
-  return (
-    <div style={M.overlay}>
-      <div style={M.box}>
-        <h2 style={M.title}>🔑 Gemini API Key</h2>
-        <p style={M.text}>
-          Enter your Google Gemini API key.<br />
-          Get one free at <strong>aistudio.google.com</strong>
-        </p>
-        <input
-          style={M.input}
-          type="password"
-          placeholder="AIza..."
-          value={key}
-          onChange={e => setKey(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && key && onSave(key)}
-        />
-        <div style={M.row}>
-          <button style={M.cancel} onClick={onClose}>Cancel</button>
-          <button style={M.save} onClick={() => key && onSave(key)}>Save</button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -844,58 +723,3 @@ const S = {
   },
 };
 
-const M = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-    padding: 20,
-  },
-  box: {
-    background: '#16213e',
-    borderRadius: 20,
-    padding: '32px 28px',
-    maxWidth: 420,
-    width: '100%',
-    border: '1px solid #2a2a4a',
-  },
-  title: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 },
-  text: { color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 20 },
-  input: {
-    width: '100%',
-    background: '#0f0f1a',
-    border: '1px solid #2a2a4a',
-    borderRadius: 10,
-    padding: '14px 16px',
-    color: '#e2e8f0',
-    fontSize: 15,
-    marginBottom: 16,
-    boxSizing: 'border-box',
-  },
-  row: { display: 'flex', gap: 10 },
-  cancel: {
-    flex: 1,
-    padding: '12px',
-    background: 'rgba(255,255,255,0.05)',
-    color: '#94a3b8',
-    borderRadius: 10,
-    fontSize: 15,
-    border: 'none',
-    cursor: 'pointer',
-  },
-  save: {
-    flex: 2,
-    padding: '12px',
-    background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-    color: '#fff',
-    borderRadius: 10,
-    fontSize: 15,
-    fontWeight: 600,
-    border: 'none',
-    cursor: 'pointer',
-  },
-};

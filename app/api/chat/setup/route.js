@@ -47,5 +47,9 @@ export async function POST(request) {
     systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO : EMMA_BASE_PROMPT;
   }
 
-  return Response.json({ sessionId, systemPrompt, debugInfo });
+  // Return the server's Gemini API key to authenticated clients (WebSocket use only).
+  // The key is never stored in localStorage — only held in React state for the session.
+  const geminiKey = process.env.GEMINI_API_KEY || null;
+
+  return Response.json({ sessionId, systemPrompt, debugInfo, geminiKey });
 }
