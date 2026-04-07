@@ -43,7 +43,29 @@
       "Bash(git restore:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(node lib/seed.js)"
+      "Bash(node lib/seed.js)",
+      "Read(//Users/mac-mini-tim/.claude/projects/**)",
+      "Read(//Users/mac-mini-tim/.claude/**)",
+      "Bash(ls -lh ~/.claude/projects/-Users-mac-mini-tim-Documents-projects-speechrobot/*.jsonl)",
+      "Bash(ls /Users/mac-mini-tim/Documents/projects/speechrobot/.env*)",
+      "Bash(/usr/local/bin/npm install:*)",
+      "Bash(ls ~/.nvm/versions/*/bin/npm)",
+      "Read(//usr/**)",
+      "Bash(/dev/null ls:*)",
+      "Bash(/opt/homebrew/bin/npm install:*)",
+      "Read(//opt/homebrew/opt/**)",
+      "Read(//opt/homebrew/Cellar/**)",
+      "Bash(/opt/homebrew/opt/node@25/bin/npm install:*)",
+      "Bash(/opt/homebrew/opt/node@25/bin/node --version)",
+      "Bash(PATH=\"/opt/homebrew/opt/node@25/bin:$PATH\" npm install @neondatabase/serverless)",
+      "Bash(PATH=\"/opt/homebrew/opt/node@25/bin:$PATH\" npm run build)",
+      "Bash(/opt/homebrew/bin/node /opt/homebrew/lib/node_modules/npm/bin/npm-cli.js run build)",
+      "Bash(ls /opt/homebrew/bin/node*)",
+      "Bash(ls /opt/homebrew/opt/node*/bin/)",
+      "Bash(/usr/local/bin/npx prisma:*)",
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin\")",
+      "Bash(npm list:*)",
+      "Bash(npx web-push:*)"
     ]
   }
 }

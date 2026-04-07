@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CHARACTERS, getCharacterLocale } from '@/lib/characters';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
+import { requestPushPermission, setupInstallPrompt, showInstallPrompt, isAppInstalled } from '@/lib/pwaClient';
 
 // ── Warm color palette ─────────────────────────────────────────
 const C = {
@@ -55,6 +56,8 @@ function ChatPageInner() {
   const [memoryDisplay, setMemoryDisplay] = useState('');
   const [isAiSpeaking, setIsAiSpeaking]   = useState(false);
   const [isListening, setIsListening]     = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showPushPrompt, setShowPushPrompt]       = useState(false);
 
   // ── Language cycle: EN → KO → ES → EN ───────────────────────
   const LANGS = ['en', 'ko', 'es'];
@@ -119,6 +122,29 @@ function ChatPageInner() {
     fetchUsage(t);
     fetchMemory(t);
   }, [router]);
+
+  // ── PWA: Install prompt + push permission ────────────────────
+  useEffect(() => {
+    // Show "Add to Home Screen" banner if not already installed
+    if (!isAppInstalled()) {
+      setupInstallPrompt(() => setShowInstallBanner(true));
+    }
+    // Ask push permission after user has had at least 1 prior conversation
+    const talked = parseInt(localStorage.getItem('conversationCount') || '0');
+    if (talked >= 1 && Notification.permission === 'default') {
+      setShowPushPrompt(true);
+    }
+  }, []);
+
+  async function handleEnablePush() {
+    setShowPushPrompt(false);
+    await requestPushPermission(user?.id, token);
+  }
+
+  async function handleInstall() {
+    const accepted = await showInstallPrompt();
+    if (accepted) setShowInstallBanner(false);
+  }
 
   // Auto-scroll transcript to bottom
   useEffect(() => {
@@ -384,6 +410,10 @@ function ChatPageInner() {
     }
 
     if (sessionIdRef.current && transcript.length >= 2) {
+      // Count completed conversations (for push permission timing)
+      const prev = parseInt(localStorage.getItem('conversationCount') || '0');
+      localStorage.setItem('conversationCount', String(prev + 1));
+
       const sid = sessionIdRef.current;
       sessionIdRef.current = null;
       setStatus(tx('✅ See you next time!', '✅ 다음에 또 이야기해요!', '✅ ¡Hasta la próxima!'));
@@ -436,6 +466,36 @@ function ChatPageInner() {
           <button style={S.smallBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
         </div>
       </div>
+
+      {/* ── Install banner (Add to Home Screen) ─────── */}
+      {showInstallBanner && (
+        <div style={S.pwaBanner}>
+          <span style={S.pwaBannerText}>
+            📱 {tx('Add Emma to your home screen', '홈 화면에 Emma 추가하기', 'Agrega a Emma a tu pantalla de inicio')}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button style={S.pwaAcceptBtn} onClick={handleInstall}>
+              {tx('Add', '추가', 'Agregar')}
+            </button>
+            <button style={S.pwaDismissBtn} onClick={() => setShowInstallBanner(false)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Push notification prompt ──────────────────── */}
+      {showPushPrompt && (
+        <div style={S.pwaBanner}>
+          <span style={S.pwaBannerText}>
+            🔔 {tx("Allow Emma to send you reminders?", "Emma가 알림을 보낼 수 있도록 허용할까요?", "¿Permitir que Emma te envíe recordatorios?")}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button style={S.pwaAcceptBtn} onClick={handleEnablePush}>
+              {tx('Allow', '허용', 'Permitir')}
+            </button>
+            <button style={S.pwaDismissBtn} onClick={() => setShowPushPrompt(false)}>✕</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Memory drawer ────────────────────────────── */}
       {showMemory && (
@@ -734,6 +794,44 @@ const S = {
   emmaText: { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
   userText:  { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
   cursor: { animation: 'blink 1s step-end infinite', marginLeft: 2 },
+
+  // PWA banners
+  pwaBanner: {
+    width: '100%',
+    maxWidth: 560,
+    background: '#FFF7ED',
+    borderBottom: `1px solid #FDBA74`,
+    padding: '10px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  pwaBannerText: {
+    fontSize: 14,
+    color: '#92400E',
+    flex: 1,
+    lineHeight: 1.4,
+  },
+  pwaAcceptBtn: {
+    background: '#F97316',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 8,
+    padding: '6px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  pwaDismissBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#A8A29E',
+    fontSize: 16,
+    cursor: 'pointer',
+    padding: '4px 6px',
+  },
 
   // Controls
   controls: {
