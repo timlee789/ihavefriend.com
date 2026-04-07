@@ -1,0 +1,36 @@
+{
+  "name": "I Have a Friend — Emma",
+  "short_name": "Emma",
+  "description": "Your AI friend who remembers everything about you",
+  "start_url": "/chat",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFCF8",
+  "theme_color": "#D85A30",
+  "dir": "ltr",
+  "lang": "en",
+  "categories": ["health", "lifestyle", "social"],
+  "icons": [
+    {
+      "src": "/icons/emma-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/emma-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/chat.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Talk to Emma"
+    }
+  ]
+}
