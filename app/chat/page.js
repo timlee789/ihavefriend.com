@@ -38,8 +38,7 @@ function ChatPageInner() {
   const audioCtxRef       = useRef(null);
   const processorRef      = useRef(null);
   const sourceRef         = useRef(null);
-  const audioQueueRef     = useRef([]);
-  const isPlayingRef      = useRef(false);
+  const nextPlayTimeRef   = useRef(0); // Web Audio scheduled playback time
   const sessionStartRef   = useRef(null);
   const turnsRef          = useRef(0);
   const transcriptRef     = useRef([]);
@@ -140,6 +139,7 @@ function ChatPageInner() {
     setStatus(lang === 'ko' ? '연결 중...' : 'Connecting...');
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
+    nextPlayTimeRef.current = 0;
     setTranscript([]);
 
     let systemPrompt = '', geminiKey = '';
@@ -218,10 +218,9 @@ function ChatPageInner() {
           if (msg.serverContent?.modelTurn?.parts) {
             for (const part of msg.serverContent.modelTurn.parts) {
               if (part.inlineData?.mimeType?.startsWith('audio/')) {
-                audioQueueRef.current.push(base64ToPcm(part.inlineData.data));
+                scheduleChunk(base64ToPcm(part.inlineData.data));
                 setIsAiSpeaking(true);
                 setIsListening(false);
-                playNext();
               }
             }
           }
@@ -319,19 +318,20 @@ function ChatPageInner() {
     return f32;
   }
 
-  function playNext() {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+  // Gapless audio: schedule each chunk at the precise moment the previous ends
+  function scheduleChunk(f32) {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
-    isPlayingRef.current = true;
-    const f32 = audioQueueRef.current.shift();
     const buf = ctx.createBuffer(1, f32.length, 24000);
     buf.getChannelData(0).set(f32);
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.connect(ctx.destination);
-    src.onended = () => { isPlayingRef.current = false; playNext(); };
-    src.start();
+    // Start immediately if nothing scheduled yet; otherwise queue precisely
+    const now = ctx.currentTime;
+    const startAt = Math.max(nextPlayTimeRef.current, now + 0.04);
+    src.start(startAt);
+    nextPlayTimeRef.current = startAt + buf.duration;
   }
 
   function stopMic() {
@@ -347,6 +347,7 @@ function ChatPageInner() {
     setIsListening(false);
     setLiveText('');
     setIsAiSpeaking(false);
+    nextPlayTimeRef.current = 0;
     releaseWakeLock();
 
     if (sessionStartRef.current) {
@@ -396,8 +397,20 @@ function ChatPageInner() {
           <span style={S.topName}>{char.name}</span>
         </div>
         <div style={S.topActions}>
-          <button style={S.smallBtn} onClick={toggleLang} disabled={isConnected} title="Switch language">
-            {lang === 'en' ? '🇰🇷' : '🇺🇸'}
+          <button
+            style={{
+              ...S.smallBtn,
+              opacity: isConnected ? 0.45 : 1,
+              cursor: isConnected ? 'not-allowed' : 'pointer',
+              fontSize: 13,
+              padding: '6px 12px',
+            }}
+            onClick={isConnected ? undefined : toggleLang}
+            title={isConnected
+              ? (lang === 'ko' ? '대화 중에는 변경 불가' : 'Cannot change during conversation')
+              : (lang === 'en' ? 'Switch to Korean' : '영어로 전환')}
+          >
+            {lang === 'en' ? '🇰🇷 한국어' : '🇺🇸 English'}
           </button>
           <button style={S.smallBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
         </div>
