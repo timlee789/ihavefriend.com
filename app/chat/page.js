@@ -4,6 +4,24 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CHARACTERS, getCharacterLocale } from '@/lib/characters';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
 
+// ── Warm color palette ─────────────────────────────────────────
+const C = {
+  bg:         '#FFFCF8',  // warm white
+  surface:    '#FFFFFF',
+  border:     '#F0EBE3',
+  textPrimary:'#1C1917',
+  textMid:    '#78716C',
+  textMuted:  '#A8A29E',
+  coral:      '#F97316',  // Emma accent
+  coralLight: '#FFF3EC',  // Emma bubble bg
+  coralBorder:'#FDBA74',  // Emma bubble left border
+  green:      '#16A34A',  // User accent
+  greenLight: '#F0FDF4',  // User bubble bg
+  greenBorder:'#86EFAC',  // User bubble left border
+  danger:     '#DC2626',
+  dangerLight:'#FEF2F2',
+};
+
 function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -13,34 +31,34 @@ function ChatPageInner() {
   const [lang, setLang] = useState(baseLang);
   const char = getCharacterLocale(CHARACTERS[characterId] || CHARACTERS.emma, lang);
 
-  const wsRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const processorRef = useRef(null);
-  const sourceRef = useRef(null);
-  const audioQueueRef = useRef([]);
-  const isPlayingRef = useRef(false);
-  const sessionStartRef = useRef(null);
-  const turnsRef = useRef(0);
-  const gradientIdxRef = useRef(0);
-  const gradientTimerRef = useRef(null);
-  const transcriptRef = useRef([]);
-  const sessionIdRef = useRef(null);
+  const wsRef             = useRef(null);
+  const audioCtxRef       = useRef(null);
+  const processorRef      = useRef(null);
+  const sourceRef         = useRef(null);
+  const audioQueueRef     = useRef([]);
+  const isPlayingRef      = useRef(false);
+  const sessionStartRef   = useRef(null);
+  const turnsRef          = useRef(0);
+  const transcriptRef     = useRef([]);
+  const sessionIdRef      = useRef(null);
   const currentUserMsgRef = useRef('');
-  const currentAiMsgRef = useRef('');
-  const wakeLockRef = useRef(null);
+  const currentAiMsgRef  = useRef('');
+  const wakeLockRef       = useRef(null);
+  const transcriptEndRef  = useRef(null); // auto-scroll
 
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState('');
+  const [user, setUser]           = useState(null);
+  const [token, setToken]         = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [status, setStatus] = useState('');
-  const [currentText, setCurrentText] = useState('');
-  const [bgGradient, setBgGradient] = useState('');
-  const [usage, setUsage] = useState({ todayMinutes: 0, dailyLimit: 30, canChat: true });
+  const [status, setStatus]       = useState('');
+  const [liveText, setLiveText]   = useState(''); // currently streaming text
+  const [usage, setUsage]         = useState({ todayMinutes: 0, dailyLimit: 30, canChat: true });
   const [transcript, setTranscript] = useState([]);
   const [showMemory, setShowMemory] = useState(false);
-  const [memoryDisplay, setMemoryDisplay] = useState('No memories yet.');
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [memoryDisplay, setMemoryDisplay] = useState('');
+  const [isAiSpeaking, setIsAiSpeaking]   = useState(false);
+  const [isListening, setIsListening]     = useState(false);
 
+  // ── Language toggle ──────────────────────────────────────────
   function toggleLang() {
     const next = lang === 'en' ? 'ko' : 'en';
     setLang(next);
@@ -49,39 +67,26 @@ function ChatPageInner() {
 
   // ── Screen Wake Lock ─────────────────────────────────────────
   async function acquireWakeLock() {
-    if (!('wakeLock' in navigator)) return; // not supported
+    if (!('wakeLock' in navigator)) return;
     try {
       wakeLockRef.current = await navigator.wakeLock.request('screen');
-      console.log('[WakeLock] Screen lock prevented ✅');
-      // If the lock is released (e.g. tab hidden then visible), re-acquire
-      wakeLockRef.current.addEventListener('release', () => {
-        console.log('[WakeLock] Released by system');
-      });
-    } catch (e) {
-      console.warn('[WakeLock] Could not acquire:', e.message);
-    }
+    } catch {}
   }
-
   function releaseWakeLock() {
     if (wakeLockRef.current) {
       wakeLockRef.current.release().catch(() => {});
       wakeLockRef.current = null;
-      console.log('[WakeLock] Released ✅');
     }
   }
-
-  // Re-acquire wake lock when user returns to the tab while connected
   useEffect(() => {
     async function onVisibilityChange() {
-      if (document.visibilityState === 'visible' && isConnected) {
-        await acquireWakeLock();
-      }
+      if (document.visibilityState === 'visible' && isConnected) await acquireWakeLock();
     }
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [isConnected]);
-  // ─────────────────────────────────────────────────────────────
 
+  // ── Init ─────────────────────────────────────────────────────
   useEffect(() => {
     const t = localStorage.getItem('token');
     const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -92,16 +97,10 @@ function ChatPageInner() {
     fetchMemory(t);
   }, [router]);
 
-  // Slowly cycle background gradient
+  // Auto-scroll transcript to bottom
   useEffect(() => {
-    setBgGradient(`135deg, ${char.colors.gradients[0]}`);
-    function cycle() {
-      gradientIdxRef.current = (gradientIdxRef.current + 1) % char.colors.gradients.length;
-      setBgGradient(`135deg, ${char.colors.gradients[gradientIdxRef.current]}`);
-    }
-    gradientTimerRef.current = setInterval(cycle, 4000);
-    return () => clearInterval(gradientTimerRef.current);
-  }, [char]);
+    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [transcript, liveText]);
 
   async function fetchUsage(t) {
     try {
@@ -118,73 +117,52 @@ function ChatPageInner() {
       if (!res.ok) return;
       const data = await res.json();
       const facts = data.facts || [];
-      setMemoryDisplay(facts.length > 0 ? facts.map(f => `• ${f}`).join('\n') : 'No memories yet.');
+      setMemoryDisplay(facts.length > 0 ? facts.map(f => `• ${f}`).join('\n') : '');
     } catch {}
   }
 
   function buildSystemPrompt(memory) {
-    const { facts = [], summary = '', transcript: prevTranscript = [] } = memory;
+    const { facts = [], summary = '', transcript: prev = [] } = memory;
     const factsText = facts.length > 0 ? facts.map(f => `• ${f}`).join('\n') : 'Nothing yet.';
-
-    const recentLines = prevTranscript.slice(-20)
-      .map(t => `${t.role === 'user' ? 'User' : char.name}: ${t.text}`)
-      .join('\n');
-
-    return `${char.personality}
-
-[What you remember about this person]
-${factsText}
-
-[Summary of your previous conversations]
-${summary || 'This is your first conversation with this person.'}
-
-${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim();
+    const recentLines = prev.slice(-20).map(t => `${t.role === 'user' ? 'User' : char.name}: ${t.text}`).join('\n');
+    return `${char.personality}\n\n[What you remember about this person]\n${factsText}\n\n[Summary of your previous conversations]\n${summary || 'This is your first conversation.'}\n\n${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim();
   }
 
+  // ── Connect ──────────────────────────────────────────────────
   async function connect() {
     if (!usage.canChat) {
-      setStatus("You've reached today's limit. Come back tomorrow!");
+      setStatus(lang === 'ko' ? '오늘 대화 시간이 끝났어요. 내일 다시 만나요! 😊' : "You've reached today's limit. Come back tomorrow!");
       return;
     }
-    setStatus('Connecting...');
+    setStatus(lang === 'ko' ? '연결 중...' : 'Connecting...');
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
+    setTranscript([]);
 
-    // Fetch memory-enriched system prompt + server API key (for WebSocket auth)
-    let systemPrompt = '';
-    let geminiKey = '';
+    let systemPrompt = '', geminiKey = '';
     try {
-      const setupRes = await fetch('/api/chat/setup', {
+      const res = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: '', lang }),
       });
-      if (setupRes.ok) {
-        const setupData = await setupRes.json();
-        systemPrompt = setupData.systemPrompt || '';
-        geminiKey = setupData.geminiKey || '';
-        sessionIdRef.current = setupData.sessionId || null;
-        console.log('[Memory] Session started. sessionId:', setupData.sessionId, 'debug:', setupData.debugInfo);
+      if (res.ok) {
+        const d = await res.json();
+        systemPrompt = d.systemPrompt || '';
+        geminiKey = d.geminiKey || '';
+        sessionIdRef.current = d.sessionId || null;
       }
-    } catch (e) {
-      console.warn('[Memory] setup failed:', e.message);
-    }
+    } catch (e) { console.warn('[Setup]', e.message); }
 
     if (!geminiKey) {
       setStatus('❌ Server API key not configured. Contact admin.');
       return;
     }
-
-    // Fallback system prompt if memory engine failed
     if (!systemPrompt) {
-      let memory = { facts: [], summary: '' };
       try {
-        const res = await fetch(`/api/memory?character=${characterId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) memory = await res.json();
-      } catch {}
-      systemPrompt = buildSystemPrompt(memory);
+        const r = await fetch(`/api/memory?character=${characterId}`, { headers: { Authorization: `Bearer ${token}` } });
+        systemPrompt = buildSystemPrompt(r.ok ? await r.json() : {});
+      } catch { systemPrompt = char.personality || ''; }
     }
 
     try {
@@ -196,18 +174,13 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
         wsRef.current = ws;
 
         ws.onopen = () => {
-          setStatus('🔌 Connected, setting up...');
           ws.send(JSON.stringify({
             setup: {
               model: 'models/gemini-2.5-flash-native-audio-latest',
               generation_config: {
                 response_modalities: ['AUDIO'],
                 thinking_config: { thinking_budget: 0 },
-                speech_config: {
-                  voice_config: {
-                    prebuilt_voice_config: { voice_name: char.voice },
-                  },
-                },
+                speech_config: { voice_config: { prebuilt_voice_config: { voice_name: char.voice } } },
               },
               output_audio_transcription: {},
               input_audio_transcription: {},
@@ -219,14 +192,12 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
         ws.onmessage = async (evt) => {
           const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
           const msg = JSON.parse(raw);
-          const preview = raw.replace(/"data":"[^"]{0,20}[^"]*"/g, '"data":"..."');
-          if (!raw.includes('"inlineData"')) console.log('[MSG]', preview.slice(0, 300));
 
           if (msg.setupComplete) {
             setIsConnected(true);
             setStatus('');
-            setCurrentText(lang === 'ko' ? '듣고 있어요...' : 'Listening...');
-            acquireWakeLock(); // prevent screen from sleeping during conversation
+            setIsListening(true);
+            acquireWakeLock();
             ws.send(JSON.stringify({
               client_content: {
                 turns: [{ role: 'user', parts: [{ text: char.greeting || 'Hello, please greet me warmly.' }] }],
@@ -238,22 +209,18 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
           if (msg.serverContent?.modelTurn?.parts) {
             for (const part of msg.serverContent.modelTurn.parts) {
               if (part.inlineData?.mimeType?.startsWith('audio/')) {
-                const pcm = base64ToPcm(part.inlineData.data);
-                audioQueueRef.current.push(pcm);
+                audioQueueRef.current.push(base64ToPcm(part.inlineData.data));
                 setIsAiSpeaking(true);
+                setIsListening(false);
                 playNext();
               }
             }
           }
 
-          const aiTranscript = msg.serverContent?.outputTranscription?.text
-                            ?? msg.outputTranscription?.text;
+          const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
           if (aiTranscript) {
             currentAiMsgRef.current += aiTranscript;
-            setCurrentText(prev => {
-              const base = prev === 'Listening...' ? '' : prev;
-              return base ? base + ' ' + aiTranscript : aiTranscript;
-            });
+            setLiveText(currentAiMsgRef.current);
             setTranscript(prev => {
               const last = prev[prev.length - 1];
               const next = last?.role === 'assistant'
@@ -264,8 +231,7 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
             });
           }
 
-          const userTranscript = msg.serverContent?.inputTranscription?.text
-                              ?? msg.inputTranscription?.text;
+          const userTranscript = msg.serverContent?.inputTranscription?.text ?? msg.inputTranscription?.text;
           if (userTranscript) {
             currentUserMsgRef.current += userTranscript;
             setTranscript(prev => {
@@ -283,34 +249,27 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
             const userMsg = currentUserMsgRef.current.trim();
             currentUserMsgRef.current = '';
             currentAiMsgRef.current = '';
-
-            setCurrentText('');
+            setLiveText('');
             setIsAiSpeaking(false);
+            setIsListening(true);
 
-            // Fire-and-forget: save emotion turn to server (key is server-side)
             if (userMsg && sessionIdRef.current) {
               fetch('/api/chat/turn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                  sessionId: sessionIdRef.current,
-                  turnNumber: turnNum,
-                  userMessage: userMsg,
-                }),
+                body: JSON.stringify({ sessionId: sessionIdRef.current, turnNumber: turnNum, userMessage: userMsg }),
               }).catch(() => {});
             }
-
           }
         };
 
         ws.onclose = (evt) => {
           setIsConnected(false);
+          setIsListening(false);
           stopMic();
-          if (wsRef.current !== null) {
-            setStatus(`❌ ${evt.reason || `code ${evt.code}`}`);
-          }
+          if (wsRef.current !== null) setStatus(`❌ ${evt.reason || `Disconnected (${evt.code})`}`);
         };
-        ws.onerror = () => setStatus('❌ Connection error. Check console.');
+        ws.onerror = () => setStatus('❌ Connection error.');
 
         // Mic setup
         const micSource = audioCtxRef.current.createMediaStreamSource(stream);
@@ -329,7 +288,7 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
         sourceRef.current = micSource;
       });
     } catch (e) {
-      setStatus(`Error: ${e.message}`);
+      setStatus(`❌ ${e.message}`);
     }
   }
 
@@ -363,14 +322,15 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
     sourceRef.current?.disconnect();
   }
 
-  async function disconnect(saveMemory = false) {
+  async function disconnect() {
     wsRef.current?.close();
     wsRef.current = null;
     stopMic();
     setIsConnected(false);
-    setCurrentText('');
+    setIsListening(false);
+    setLiveText('');
     setIsAiSpeaking(false);
-    releaseWakeLock(); // allow screen to sleep again
+    releaseWakeLock();
 
     if (sessionStartRef.current) {
       const mins = (Date.now() - sessionStartRef.current) / 60000;
@@ -385,24 +345,16 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
     }
 
     if (sessionIdRef.current && transcript.length >= 2) {
-      // Fire-and-forget: don't block UI on memory extraction
       const sid = sessionIdRef.current;
       sessionIdRef.current = null;
-      setStatus('✅ See you next time!');
-
+      setStatus(lang === 'ko' ? '✅ 다음에 또 이야기해요!' : '✅ See you next time!');
       fetch('/api/chat/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sessionId: sid, transcript }),
       })
         .then(r => r.ok ? r.json() : {})
-        .then(data => {
-          const count = data.memoriesExtracted || 0;
-          if (count > 0) {
-            fetchMemory(token);
-            console.log(`[Memory] ${count} memories saved in background.`);
-          }
-        })
+        .then(data => { if ((data.memoriesExtracted || 0) > 0) fetchMemory(token); })
         .catch(() => {});
     } else {
       sessionIdRef.current = null;
@@ -410,354 +362,351 @@ ${recentLines ? `[How your last conversation ended]\n${recentLines}` : ''}`.trim
     }
   }
 
-  if (!user) return <div style={{ background: '#080b14', minHeight: '100vh' }} />;
+  if (!user) return <div style={{ background: C.bg, minHeight: '100vh' }} />;
+
+  const userName = user.name || user.email?.split('@')[0] || '';
 
   return (
-    <div style={{
-      ...S.page,
-      background: bgGradient ? `linear-gradient(${bgGradient})` : '#080b14',
-      transition: 'background 3s ease',
-    }}>
+    <div style={S.page}>
 
-      {/* Top bar */}
+      {/* ── Top bar ──────────────────────────────────── */}
       <div style={S.topBar}>
-        <div style={S.topLeft}>
-          <button style={S.backBtn} onClick={() => { disconnect(false); router.push('/friends'); }}>
-            ← Friends
-          </button>
-          <div style={{ ...S.dot, background: isConnected ? '#10b981' : '#475569' }} />
-          <span style={{ ...S.charLabel, color: char.colors.accent }}>{char.emoji} {char.name}</span>
+        <button style={S.backBtn} onClick={() => { disconnect(); router.push('/friends'); }}>
+          {lang === 'ko' ? '← 홈' : '← Home'}
+        </button>
+        <div style={S.topCenter}>
+          <div style={{ ...S.statusDot, background: isConnected ? '#16A34A' : C.textMuted }} />
+          <span style={S.topName}>{char.name}</span>
         </div>
-        <div style={S.topRight}>
-          <span style={S.usageBadge}>{usage.todayMinutes.toFixed(0)}/{usage.dailyLimit} min</span>
-          <button
-            style={{ ...S.iconBtn, fontWeight: 700, letterSpacing: '0.05em', minWidth: 52 }}
-            onClick={toggleLang}
-            title="Switch language"
-            disabled={isConnected}
-          >
-            {lang === 'en' ? '🇺🇸 EN' : '🇰🇷 한'}
+        <div style={S.topActions}>
+          <button style={S.smallBtn} onClick={toggleLang} disabled={isConnected} title="Switch language">
+            {lang === 'en' ? '🇰🇷' : '🇺🇸'}
           </button>
-          <button style={S.iconBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
+          <button style={S.smallBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
         </div>
       </div>
 
-      {/* Memory panel */}
+      {/* ── Memory drawer ────────────────────────────── */}
       {showMemory && (
-        <div style={S.memPanel}>
-          <div style={S.memHeader}>
-            <span>🧠 {char.name} remembers</span>
+        <div style={S.memDrawer}>
+          <div style={S.memDrawerHeader}>
+            <span style={S.memDrawerTitle}>
+              {lang === 'ko' ? `${char.name}이 기억하는 것` : `${char.name} remembers`}
+            </span>
             <button style={S.memClose} onClick={() => setShowMemory(false)}>✕</button>
           </div>
-          <pre style={S.memText}>{memoryDisplay}</pre>
-          <button style={S.clearBtn} onClick={async () => {
-            await fetch(`/api/memory?character=${characterId}`, {
-              method: 'DELETE',
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setMemoryDisplay('No memories yet.');
-          }}>Clear {char.name}'s memory</button>
+          {memoryDisplay
+            ? <pre style={S.memText}>{memoryDisplay}</pre>
+            : <p style={S.memEmpty}>{lang === 'ko' ? '아직 기억이 없어요. 대화를 시작해 보세요!' : 'No memories yet. Start a conversation!'}</p>
+          }
+          <span style={S.usageLine}>
+            {lang === 'ko'
+              ? `오늘 ${usage.todayMinutes.toFixed(0)}분 / 한도 ${usage.dailyLimit}분`
+              : `Today: ${usage.todayMinutes.toFixed(0)} / ${usage.dailyLimit} min`}
+          </span>
         </div>
       )}
 
-      {/* Main display */}
-      <div style={S.textArea}>
-
-        {/* Avatar — always visible for Emma, emoji circle for others */}
+      {/* ── Avatar area ──────────────────────────────── */}
+      <div style={S.avatarArea}>
         <div style={{
-          display: 'flex', justifyContent: 'center', marginBottom: 8,
-          filter: isConnected ? `drop-shadow(0 0 24px ${char.colors.glow}66)` : `drop-shadow(0 0 8px ${char.colors.glow}22)`,
-          transition: 'filter 0.5s ease',
+          ...S.avatarWrap,
+          boxShadow: isAiSpeaking ? `0 0 0 6px ${C.coralBorder}, 0 0 0 12px ${C.coralLight}` : `0 0 0 3px ${C.border}`,
+          transition: 'box-shadow 0.4s ease',
         }}>
-          {char.id === 'emma' ? (
-            <AvatarEmma size={isConnected ? 160 : 140} isSpeaking={isAiSpeaking} />
-          ) : (
-            <div style={{
-              width: isConnected ? 130 : 110,
-              height: isConnected ? 130 : 110,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.3)',
-              border: `2px solid ${char.colors.accent}44`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: isConnected ? 58 : 48,
-              transition: 'all 0.5s ease',
-            }}>
-              {char.emoji}
-            </div>
-          )}
+          {char.id === 'emma'
+            ? <AvatarEmma size={100} isSpeaking={isAiSpeaking} />
+            : <span style={{ fontSize: 52 }}>{char.emoji}</span>
+          }
         </div>
 
-        {/* Name + role — only when not connected */}
-        {!isConnected && !status && (
-          <div style={S.introWrap}>
-            <div style={{ ...S.introName, color: char.colors.accent }}>{char.name}</div>
-            <div style={S.introRole}>{char.role}</div>
-            <div style={S.introTagline}>"{char.tagline}"</div>
+        {/* Listening / speaking indicator */}
+        {isConnected && (
+          <div style={S.stateTag}>
+            {isAiSpeaking
+              ? <><span style={{ ...S.stateDot, background: C.coral }} />{lang === 'ko' ? '말하는 중...' : 'Speaking...'}</>
+              : isListening
+                ? <><MicDots />{lang === 'ko' ? '듣고 있어요' : 'Listening'}</>
+                : null
+            }
           </div>
-        )}
-
-        {status && (
-          <p style={S.statusText}>{status}</p>
-        )}
-
-        {isConnected && currentText && (
-          <p style={{
-            ...S.mainText,
-            textShadow: `0 0 40px ${char.colors.accent}60`,
-          }}>
-            {currentText}
-          </p>
         )}
       </div>
 
-      {/* Pulse ring when connected */}
-      {isConnected && (
-        <div style={S.pulseWrap}>
-          <div style={{ ...S.pulseRing, borderColor: char.colors.accent }} />
-          <div style={{ ...S.pulseDot, background: char.colors.accent }} />
+      {/* ── Welcome card (not connected) ─────────────── */}
+      {!isConnected && !status && (
+        <div style={S.welcomeCard}>
+          <p style={S.welcomeGreeting}>
+            {lang === 'ko'
+              ? `안녕하세요, ${userName}! 😊`
+              : `Hi${userName ? `, ${userName}` : ''}! 😊`}
+          </p>
+          <p style={S.welcomeText}>
+            {lang === 'ko'
+              ? `저는 ${char.name}이에요. 오늘 무슨 이야기 나눌까요?`
+              : `I'm ${char.name}. What would you like to talk about today?`}
+          </p>
         </div>
       )}
 
-      {/* Controls */}
+      {/* ── Status message ───────────────────────────── */}
+      {status && (
+        <div style={{
+          ...S.statusCard,
+          background: status.startsWith('❌') ? C.dangerLight : C.coralLight,
+          borderColor: status.startsWith('❌') ? '#FECACA' : C.coralBorder,
+        }}>
+          <p style={{ ...S.statusText, color: status.startsWith('❌') ? C.danger : C.coral }}>{status}</p>
+        </div>
+      )}
+
+      {/* ── Chat transcript ──────────────────────────── */}
+      {(transcript.length > 0 || liveText) && (
+        <div style={S.bubbleArea}>
+          {transcript.map((t, i) => (
+            <div key={i} style={t.role === 'assistant' ? S.emmaBubble : S.userBubble}>
+              <p style={t.role === 'assistant' ? S.emmaText : S.userText}>{t.text}</p>
+            </div>
+          ))}
+          {/* live streaming text from Emma */}
+          {liveText && (
+            <div style={{ ...S.emmaBubble, opacity: 0.75 }}>
+              <p style={S.emmaText}>{liveText}<span style={S.cursor}>▌</span></p>
+            </div>
+          )}
+          <div ref={transcriptEndRef} />
+        </div>
+      )}
+
+      {/* ── Controls ─────────────────────────────────── */}
       <div style={S.controls}>
         {!isConnected ? (
-          <button
-            style={{
-              ...S.bigBtn,
-              background: `linear-gradient(135deg, ${char.colors.accent}cc, ${char.colors.accent})`,
-              boxShadow: `0 4px 24px ${char.colors.glow}44`,
-            }}
-            onClick={connect}
-          >
-            💬 &nbsp;Talk to {char.name}
+          <button style={S.talkBtn} onClick={connect}>
+            🎙️ &nbsp;{lang === 'ko' ? `${char.name}와 대화하기` : `Talk to ${char.name}`}
           </button>
         ) : (
-          <div style={S.btnRow}>
-            <button style={S.endBtn} onClick={() => disconnect(false)}>✕ End</button>
-            <button
-              style={{
-                ...S.saveBtn,
-                background: `linear-gradient(135deg, ${char.colors.accent}cc, ${char.colors.accent})`,
-                boxShadow: `0 4px 16px ${char.colors.glow}44`,
-              }}
-              onClick={() => disconnect(true)}
-            >
-              💾 Save &amp; End
-            </button>
-          </div>
+          <button style={S.endBtn} onClick={disconnect}>
+            {lang === 'ko' ? '대화 끝내기' : 'End conversation'}
+          </button>
         )}
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 0.5; }
-          50% { transform: scale(1.2); opacity: 1; }
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: ${C.bg}; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
       `}</style>
     </div>
   );
 }
 
+// Animated mic dots
+function MicDots() {
+  return (
+    <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center', marginRight: 6 }}>
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{
+          width: 5, height: 5, borderRadius: '50%',
+          background: C.coral,
+          display: 'inline-block',
+          animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+        }} />
+      ))}
+    </span>
+  );
+}
+
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div style={{ background: '#080b14', minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ background: C.bg, minHeight: '100vh' }} />}>
       <ChatPageInner />
     </Suspense>
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────
 const S = {
   page: {
     minHeight: '100vh',
+    background: C.bg,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    position: 'relative',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    color: C.textPrimary,
+    fontSize: 16,
+    paddingBottom: 32,
   },
+
+  // Top bar
   topBar: {
     width: '100%',
-    maxWidth: 600,
+    maxWidth: 560,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '14px 20px',
+    borderBottom: `1px solid ${C.border}`,
   },
-  topLeft: { display: 'flex', alignItems: 'center', gap: 10 },
   backBtn: {
-    background: 'rgba(255,255,255,0.08)',
-    color: '#94a3b8',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    padding: '6px 12px',
-    fontSize: 13,
+    background: 'none',
+    border: 'none',
+    color: C.textMid,
+    fontSize: 15,
     cursor: 'pointer',
+    padding: '6px 4px',
+    fontWeight: 500,
   },
-  dot: { width: 8, height: 8, borderRadius: '50%' },
-  charLabel: { fontWeight: 700, fontSize: 16 },
-  topRight: { display: 'flex', alignItems: 'center', gap: 8 },
-  usageBadge: {
-    background: 'rgba(255,255,255,0.08)',
-    color: '#94a3b8',
-    borderRadius: 20,
-    padding: '4px 10px',
-    fontSize: 12,
-  },
-  iconBtn: {
-    background: 'rgba(255,255,255,0.08)',
-    color: '#e2e8f0',
-    borderRadius: 8,
+  topCenter: { display: 'flex', alignItems: 'center', gap: 8 },
+  statusDot: { width: 9, height: 9, borderRadius: '50%', transition: 'background 0.3s' },
+  topName: { fontSize: 17, fontWeight: 700, color: C.textPrimary },
+  topActions: { display: 'flex', gap: 6 },
+  smallBtn: {
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 10,
     padding: '6px 10px',
-    fontSize: 14,
-    border: '1px solid rgba(255,255,255,0.1)',
-    cursor: 'pointer',
-  },
-
-  memPanel: {
-    position: 'absolute',
-    top: 60,
-    right: 16,
-    width: 280,
-    background: '#16213e',
-    border: '1px solid #2a2a4a',
-    borderRadius: 16,
-    padding: 16,
-    zIndex: 20,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-  },
-  memHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    color: '#e2e8f0',
-    fontSize: 14,
-    fontWeight: 600,
-  },
-  memClose: { background: 'none', color: '#94a3b8', fontSize: 16, cursor: 'pointer', border: 'none' },
-  memText: { color: '#94a3b8', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginBottom: 10 },
-  clearBtn: {
-    background: 'rgba(239,68,68,0.15)',
-    color: '#fca5a5',
-    borderRadius: 8,
-    padding: '6px 12px',
-    fontSize: 12,
-    border: '1px solid rgba(239,68,68,0.2)',
-    width: '100%',
-    cursor: 'pointer',
-  },
-
-  textArea: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px 32px',
-    width: '100%',
-    maxWidth: 680,
-    textAlign: 'center',
-    minHeight: '50vh',
-  },
-
-  introWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 12,
-  },
-  introEmoji: {
-    width: 100,
-    height: 100,
-    borderRadius: '50%',
-    background: 'rgba(0,0,0,0.3)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  introName: {
-    fontSize: 28,
-    fontWeight: 700,
-    letterSpacing: '-0.02em',
-  },
-  introRole: {
-    fontSize: 14,
-    color: '#94a3b8',
-    fontWeight: 500,
-  },
-  introTagline: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.4)',
-    fontStyle: 'italic',
-    marginTop: 4,
+    cursor: 'pointer',
+    color: C.textPrimary,
   },
 
-  statusText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 22,
-    fontWeight: 300,
+  // Memory drawer
+  memDrawer: {
+    width: '100%',
+    maxWidth: 560,
+    background: C.surface,
+    borderBottom: `1px solid ${C.border}`,
+    padding: '16px 24px',
   },
-  mainText: {
-    fontSize: 'clamp(26px, 5vw, 44px)',
-    fontWeight: 500,
-    lineHeight: 1.4,
-    color: '#ffffff',
-    letterSpacing: '-0.01em',
-    transition: 'color 0.4s ease',
-  },
+  memDrawerHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  memDrawerTitle: { fontWeight: 700, fontSize: 15, color: C.textPrimary },
+  memClose: { background: 'none', border: 'none', color: C.textMuted, fontSize: 18, cursor: 'pointer' },
+  memText: { color: C.textMid, fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: '0 0 10px' },
+  memEmpty: { color: C.textMuted, fontSize: 14, fontStyle: 'italic', margin: '0 0 10px' },
+  usageLine: { fontSize: 12, color: C.textMuted },
 
-  pulseWrap: {
-    position: 'relative',
-    width: 72,
-    height: 72,
+  // Avatar
+  avatarArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingTop: 28,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  avatarWrap: {
+    width: 116,
+    height: 116,
+    borderRadius: '50%',
+    background: C.surface,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    overflow: 'hidden',
   },
-  pulseRing: {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: '50%',
-    border: '2px solid',
-    animation: 'pulse 2s ease-in-out infinite',
+  stateTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 20,
+    padding: '5px 14px',
+    fontSize: 14,
+    color: C.textMid,
+    fontWeight: 500,
+    height: 32,
   },
-  pulseDot: { width: 20, height: 20, borderRadius: '50%', opacity: 0.9 },
+  stateDot: { width: 8, height: 8, borderRadius: '50%', marginRight: 8 },
 
-  controls: { padding: '0 20px 40px', width: '100%', maxWidth: 500 },
-  bigBtn: {
+  // Welcome card
+  welcomeCard: {
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 20,
+    padding: '20px 24px',
+    margin: '8px 20px 16px',
+    maxWidth: 520,
+    width: 'calc(100% - 40px)',
+    borderLeft: `4px solid ${C.coralBorder}`,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+  },
+  welcomeGreeting: { fontSize: 18, fontWeight: 700, color: C.textPrimary, margin: '0 0 6px' },
+  welcomeText: { fontSize: 16, color: C.textMid, margin: 0, lineHeight: 1.6 },
+
+  // Status card
+  statusCard: {
+    border: '1px solid',
+    borderRadius: 14,
+    padding: '12px 20px',
+    margin: '8px 20px',
+    maxWidth: 520,
+    width: 'calc(100% - 40px)',
+  },
+  statusText: { margin: 0, fontSize: 15, fontWeight: 500, textAlign: 'center' },
+
+  // Chat bubbles
+  bubbleArea: {
+    width: '100%',
+    maxWidth: 560,
+    padding: '4px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    flex: 1,
+    overflowY: 'auto',
+    maxHeight: '40vh',
+  },
+  emmaBubble: {
+    background: C.coralLight,
+    borderLeft: `4px solid ${C.coralBorder}`,
+    borderRadius: '4px 16px 16px 4px',
+    padding: '12px 16px',
+    maxWidth: '85%',
+    alignSelf: 'flex-start',
+  },
+  userBubble: {
+    background: C.greenLight,
+    borderRight: `4px solid ${C.greenBorder}`,
+    borderRadius: '16px 4px 4px 16px',
+    padding: '12px 16px',
+    maxWidth: '85%',
+    alignSelf: 'flex-end',
+  },
+  emmaText: { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
+  userText:  { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
+  cursor: { animation: 'blink 1s step-end infinite', marginLeft: 2 },
+
+  // Controls
+  controls: {
+    padding: '20px 20px 0',
+    width: '100%',
+    maxWidth: 560,
+    marginTop: 'auto',
+  },
+  talkBtn: {
     width: '100%',
     padding: '20px',
+    background: C.coral,
     color: '#fff',
     borderRadius: 18,
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: 700,
     border: 'none',
     cursor: 'pointer',
+    boxShadow: `0 4px 20px ${C.coral}44`,
+    letterSpacing: '0.01em',
   },
-  btnRow: { display: 'flex', gap: 12 },
   endBtn: {
-    flex: 1,
+    width: '100%',
     padding: '18px',
-    background: 'rgba(239,68,68,0.15)',
-    color: '#fca5a5',
-    borderRadius: 14,
-    fontSize: 16,
+    background: C.surface,
+    color: C.textMid,
+    borderRadius: 18,
+    fontSize: 17,
     fontWeight: 600,
-    border: '1px solid rgba(239,68,68,0.25)',
-    cursor: 'pointer',
-  },
-  saveBtn: {
-    flex: 2,
-    padding: '18px',
-    color: '#fff',
-    borderRadius: 14,
-    fontSize: 16,
-    fontWeight: 600,
-    border: 'none',
+    border: `1px solid ${C.border}`,
     cursor: 'pointer',
   },
 };
-
