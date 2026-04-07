@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
 
 // Placeholder — replace with /avatars/emma.glb once custom Emma model is ready
-const AVATAR_URL = '/avatars/brunette.glb';
+const AVATAR_URL = '/avatars/avaturn.glb';
 const TALKINGHEAD_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs';
 
 // Valence/arousal → TalkingHead mood
@@ -34,9 +34,45 @@ export default function EmmaAvatar3D({
     let cancelled = false;
 
     async function init() {
+      // ── Blob fetch patch ──────────────────────────────────────
+      // Three.js's ImageBitmapLoader calls fetch(blobUrl) to load embedded
+      // textures. In some environments this fails (SW interference, Puppeteer).
+      // Patch: cache blob→url mapping via URL.createObjectURL override, then
+      // serve blobs directly from cache when fetch(blobUrl) is called.
+      const blobCache = new Map();
+      const origCOBU  = URL.createObjectURL.bind(URL);
+      const origROBU  = URL.revokeObjectURL.bind(URL);
+      const origFetch = window.fetch.bind(window);
+
+      URL.createObjectURL = (obj) => {
+        const url = origCOBU(obj);
+        if (obj instanceof Blob) blobCache.set(url, obj);
+        return url;
+      };
+      URL.revokeObjectURL = (url) => {
+        blobCache.delete(url);
+        origROBU(url);
+      };
+      window.fetch = (input, opts) => {
+        const url = typeof input === 'string' ? input : input?.url;
+        if (typeof url === 'string' && url.startsWith('blob:') && blobCache.has(url)) {
+          const blob = blobCache.get(url);
+          return Promise.resolve(new Response(blob, { status: 200, headers: { 'Content-Type': blob.type } }));
+        }
+        return origFetch(input, opts);
+      };
+
+      const restorePatches = () => {
+        URL.createObjectURL = origCOBU;
+        URL.revokeObjectURL = origROBU;
+        window.fetch = origFetch;
+        blobCache.clear();
+      };
+      // ─────────────────────────────────────────────────────────
+
       try {
         const { TalkingHead } = await import(/* webpackIgnore: true */ TALKINGHEAD_URL);
-        if (cancelled) return;
+        if (cancelled) { restorePatches(); return; }
 
         head = new TalkingHead(containerRef.current, {
           ttsEndpoint:          null,   // audio handled by Gemini
@@ -57,6 +93,7 @@ export default function EmmaAvatar3D({
           idleMotion:   'listening',
         });
 
+        restorePatches();
         if (cancelled) { head.dispose(); return; }
 
         headRef.current = head;
@@ -65,6 +102,7 @@ export default function EmmaAvatar3D({
         if (onReady) onReady(head);
       } catch (e) {
         console.warn('[EmmaAvatar3D] TalkingHead failed, using 2D fallback:', e.message);
+        restorePatches();
         if (!cancelled) setMode('fallback');
       }
     }

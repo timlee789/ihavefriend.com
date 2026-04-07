@@ -16,6 +16,7 @@ const APP_SHELL = [
   '/offline',
   '/icons/emma-192.png',
   '/icons/emma-512.png',
+  '/avatars/avaturn.glb',
 ];
 
 // ============================================================
