@@ -60,9 +60,10 @@ function ChatPageInner() {
   const [isAiSpeaking, setIsAiSpeaking]   = useState(false);
   const [isListening, setIsListening]     = useState(false);
 
-  // ── Language toggle ──────────────────────────────────────────
-  function toggleLang() {
-    const next = lang === 'en' ? 'ko' : 'en';
+  // ── Language cycle: EN → KO → ES → EN ───────────────────────
+  const LANGS = ['en', 'ko', 'es'];
+  function cycleLang() {
+    const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     setLang(next);
     localStorage.setItem('lang', next);
   }
@@ -400,17 +401,17 @@ function ChatPageInner() {
           <button
             style={{
               ...S.smallBtn,
-              opacity: isConnected ? 0.45 : 1,
+              opacity: isConnected ? 0.4 : 1,
               cursor: isConnected ? 'not-allowed' : 'pointer',
               fontSize: 13,
-              padding: '6px 12px',
+              fontWeight: 700,
+              padding: '6px 14px',
+              letterSpacing: '0.04em',
             }}
-            onClick={isConnected ? undefined : toggleLang}
-            title={isConnected
-              ? (lang === 'ko' ? '대화 중에는 변경 불가' : 'Cannot change during conversation')
-              : (lang === 'en' ? 'Switch to Korean' : '영어로 전환')}
+            onClick={isConnected ? undefined : cycleLang}
+            title={isConnected ? 'End conversation to change language' : 'Change language'}
           >
-            {lang === 'en' ? '🇰🇷 한국어' : '🇺🇸 English'}
+            {lang === 'en' ? 'EN' : lang === 'ko' ? 'KO' : 'ES'}
           </button>
           <button style={S.smallBtn} onClick={() => setShowMemory(m => !m)} title="Memory">🧠</button>
         </div>

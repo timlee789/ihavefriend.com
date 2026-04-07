@@ -34,6 +34,14 @@ const UI = {
     talkTo:    (name) => `🎙️  ${name}와 대화하기`,
     footer:    'ihavefriend.com — 언제나 곁에 있어요.',
   },
+  es: {
+    greeting:  (name) => `¡Hola, ${name}! 👋`,
+    signOut:   'Cerrar sesión',
+    heroTitle: 'Tu amiga de IA',
+    heroSub:   'Emma recuerda todo sobre ti.\nCada conversación te acerca más a ella.',
+    talkTo:    (name) => `🎙️  Hablar con ${name}`,
+    footer:    'ihavefriend.com — Siempre aquí para ti.',
+  },
 };
 
 export default function FriendsPage() {
@@ -49,8 +57,9 @@ export default function FriendsPage() {
     setLang(localStorage.getItem('lang') || 'en');
   }, [router]);
 
-  function toggleLang() {
-    const next = lang === 'en' ? 'ko' : 'en';
+  const LANGS = ['en', 'ko', 'es'];
+  function cycleLang() {
+    const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     setLang(next);
     localStorage.setItem('lang', next);
   }
@@ -80,8 +89,8 @@ export default function FriendsPage() {
         </div>
         <div style={S.headerRight}>
           <span style={S.greeting}>{tx.greeting(userName)}</span>
-          <button style={S.langBtn} onClick={toggleLang}>
-            {lang === 'en' ? '🇰🇷 한국어' : '🇺🇸 English'}
+          <button style={S.langBtn} onClick={cycleLang} title="Change language">
+            {lang === 'en' ? 'EN' : lang === 'ko' ? 'KO' : 'ES'}
           </button>
           <button style={S.logoutBtn} onClick={handleLogout}>{tx.signOut}</button>
         </div>
