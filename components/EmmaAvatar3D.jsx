@@ -34,45 +34,9 @@ export default function EmmaAvatar3D({
     let cancelled = false;
 
     async function init() {
-      // ── Blob fetch patch ──────────────────────────────────────
-      // Three.js's ImageBitmapLoader calls fetch(blobUrl) to load embedded
-      // textures. In some environments this fails (SW interference, Puppeteer).
-      // Patch: cache blob→url mapping via URL.createObjectURL override, then
-      // serve blobs directly from cache when fetch(blobUrl) is called.
-      const blobCache = new Map();
-      const origCOBU  = URL.createObjectURL.bind(URL);
-      const origROBU  = URL.revokeObjectURL.bind(URL);
-      const origFetch = window.fetch.bind(window);
-
-      URL.createObjectURL = (obj) => {
-        const url = origCOBU(obj);
-        if (obj instanceof Blob) blobCache.set(url, obj);
-        return url;
-      };
-      URL.revokeObjectURL = (url) => {
-        blobCache.delete(url);
-        origROBU(url);
-      };
-      window.fetch = (input, opts) => {
-        const url = typeof input === 'string' ? input : input?.url;
-        if (typeof url === 'string' && url.startsWith('blob:') && blobCache.has(url)) {
-          const blob = blobCache.get(url);
-          return Promise.resolve(new Response(blob, { status: 200, headers: { 'Content-Type': blob.type } }));
-        }
-        return origFetch(input, opts);
-      };
-
-      const restorePatches = () => {
-        URL.createObjectURL = origCOBU;
-        URL.revokeObjectURL = origROBU;
-        window.fetch = origFetch;
-        blobCache.clear();
-      };
-      // ─────────────────────────────────────────────────────────
-
       try {
         const { TalkingHead } = await import(/* webpackIgnore: true */ TALKINGHEAD_URL);
-        if (cancelled) { restorePatches(); return; }
+        if (cancelled) return;
 
         head = new TalkingHead(containerRef.current, {
           ttsEndpoint:          null,   // audio handled by Gemini
@@ -86,14 +50,23 @@ export default function EmmaAvatar3D({
           modelFPS:             30,
         });
 
-        await head.showAvatar({
-          url:          AVATAR_URL,
-          body:         'F',
-          avatarMood:   'neutral',
-          idleMotion:   'listening',
-        });
+        // Force Three.js GLTFLoader to use TextureLoader (<img>) instead of
+        // ImageBitmapLoader (fetch). TextureLoader loads blob: URLs natively
+        // via image element which doesn't go through service workers or Puppeteer
+        // security restrictions. Restored after avatar textures finish loading.
+        const origCIB = window.createImageBitmap;
+        window.createImageBitmap = undefined;
+        try {
+          await head.showAvatar({
+            url:          AVATAR_URL,
+            body:         'F',
+            avatarMood:   'neutral',
+            idleMotion:   'listening',
+          });
+        } finally {
+          window.createImageBitmap = origCIB;
+        }
 
-        restorePatches();
         if (cancelled) { head.dispose(); return; }
 
         headRef.current = head;
@@ -102,7 +75,6 @@ export default function EmmaAvatar3D({
         if (onReady) onReady(head);
       } catch (e) {
         console.warn('[EmmaAvatar3D] TalkingHead failed, using 2D fallback:', e.message);
-        restorePatches();
         if (!cancelled) setMode('fallback');
       }
     }
