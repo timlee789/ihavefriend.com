@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import AvatarEmma from '@/components/avatars/AvatarEmma';
 
-// Placeholder avatar from TalkingHead's CDN — replace with /avatars/emma.glb once custom model is ready
-const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
+// Placeholder — replace with /avatars/emma.glb once custom Emma model is ready
+const AVATAR_URL = '/avatars/brunette.glb';
 const TALKINGHEAD_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs';
 
 // Valence/arousal → TalkingHead mood
@@ -50,7 +50,8 @@ export default function EmmaAvatar3D({
           modelFPS:             30,
         });
 
-        await head.showAvatar(AVATAR_URL, {
+        await head.showAvatar({
+          url:          AVATAR_URL,
           body:         'F',
           avatarMood:   'neutral',
           idleMotion:   'listening',
