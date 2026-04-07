@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CHARACTERS, getCharacterLocale } from '@/lib/characters';
-import AvatarEmma from '@/components/avatars/AvatarEmma';
+import EmmaAvatar3D from '@/components/EmmaAvatar3D';
 import { requestPushPermission, setupInstallPrompt, showInstallPrompt, isAppInstalled } from '@/lib/pwaClient';
 
 // ── Warm color palette ─────────────────────────────────────────
@@ -58,6 +58,11 @@ function ChatPageInner() {
   const [isListening, setIsListening]     = useState(false);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [showPushPrompt, setShowPushPrompt]       = useState(false);
+  const [subtitle, setSubtitle]           = useState('');
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [subtitlesOn, setSubtitlesOn]     = useState(true);
+  const [emotionData, setEmotionData]     = useState(null);
+  const subtitleTimerRef                  = useRef(null);
 
   // ── Language cycle: EN → KO → ES → EN ───────────────────────
   const LANGS = ['en', 'ko', 'es'];
@@ -276,7 +281,8 @@ function ChatPageInner() {
           const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
           if (aiTranscript) {
             currentAiMsgRef.current += aiTranscript;
-            setLiveText(currentAiMsgRef.current); // shown as streaming bubble only
+            setLiveText(currentAiMsgRef.current);
+            setSubtitle(currentAiMsgRef.current); // live subtitle under avatar
           }
 
           // User transcript: accumulate (shown in transcript on turnComplete)
@@ -304,6 +310,12 @@ function ChatPageInner() {
             setLiveText('');
             setIsAiSpeaking(false);
             setIsListening(true);
+            // Keep last AI message as subtitle for 8 seconds, then fade
+            if (aiMsg) {
+              setSubtitle(aiMsg);
+              if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
+              subtitleTimerRef.current = setTimeout(() => setSubtitle(''), 8000);
+            }
 
             if (userMsg && sessionIdRef.current) {
               fetch('/api/chat/turn', {
@@ -394,6 +406,8 @@ function ChatPageInner() {
     setIsListening(false);
     setLiveText('');
     setIsAiSpeaking(false);
+    setSubtitle('');
+    if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
     nextPlayTimeRef.current = 0;
     releaseWakeLock();
 
@@ -520,22 +534,17 @@ function ChatPageInner() {
         </div>
       )}
 
-      {/* ── Avatar area ──────────────────────────────── */}
-      <div style={S.avatarArea}>
-        <div style={{
-          ...S.avatarWrap,
-          boxShadow: isAiSpeaking ? `0 0 0 6px ${C.coralBorder}, 0 0 0 12px ${C.coralLight}` : `0 0 0 3px ${C.border}`,
-          transition: 'box-shadow 0.4s ease',
-        }}>
-          {char.id === 'emma'
-            ? <AvatarEmma size={100} isSpeaking={isAiSpeaking} />
-            : <span style={{ fontSize: 52 }}>{char.emoji}</span>
-          }
-        </div>
+      {/* ── 3D Avatar hero (60% of remaining screen) ─── */}
+      <div style={S.avatarHero}>
+        <EmmaAvatar3D
+          isSpeaking={isAiSpeaking}
+          isListening={isListening && isConnected}
+          emotionData={emotionData}
+        />
 
-        {/* Listening / speaking indicator */}
+        {/* State overlay — listening / speaking tag */}
         {isConnected && (
-          <div style={S.stateTag}>
+          <div style={S.stateOverlay}>
             {isAiSpeaking
               ? <><span style={{ ...S.stateDot, background: C.coral }} />{tx('Speaking...', '말하는 중...', 'Hablando...')}</>
               : isListening
@@ -544,10 +553,41 @@ function ChatPageInner() {
             }
           </div>
         )}
+
+        {/* CC toggle */}
+        <button
+          style={S.ccBtn}
+          onClick={() => setSubtitlesOn(v => !v)}
+          title="Toggle subtitles"
+        >
+          CC {subtitlesOn ? 'ON' : 'OFF'}
+        </button>
+
+        {/* Transcript toggle */}
+        {transcript.length > 0 && (
+          <button
+            style={S.transcriptToggleBtn}
+            onClick={() => setShowTranscript(v => !v)}
+          >
+            {showTranscript
+              ? tx('Hide', '숨기기', 'Ocultar')
+              : tx('Transcript', '대화 보기', 'Transcripción')}
+          </button>
+        )}
       </div>
 
-      {/* ── Welcome card (not connected) ─────────────── */}
-      {!isConnected && !status && (
+      {/* ── Subtitle bar ─────────────────────────────── */}
+      {subtitlesOn && (subtitle || liveText) && (
+        <div style={S.subtitleBar}>
+          <p style={S.subtitleText}>
+            {liveText || subtitle}
+            {liveText && <span style={S.cursor}>▌</span>}
+          </p>
+        </div>
+      )}
+
+      {/* ── Welcome card (not connected, no status) ─── */}
+      {!isConnected && !status && !subtitle && (
         <div style={S.welcomeCard}>
           <p style={S.welcomeGreeting}>
             {tx(
@@ -577,20 +617,17 @@ function ChatPageInner() {
         </div>
       )}
 
-      {/* ── Chat transcript ──────────────────────────── */}
-      {(transcript.length > 0 || liveText) && (
-        <div style={S.bubbleArea}>
+      {/* ── Transcript panel (hidden by default) ──────── */}
+      {showTranscript && transcript.length > 0 && (
+        <div style={S.transcriptPanel}>
           {transcript.map((t, i) => (
-            <div key={i} style={t.role === 'assistant' ? S.emmaBubble : S.userBubble}>
-              <p style={t.role === 'assistant' ? S.emmaText : S.userText}>{t.text}</p>
+            <div key={i} style={{ padding: '4px 0', fontSize: 13, color: t.role === 'assistant' ? C.coral : C.textMid }}>
+              <strong style={{ color: t.role === 'assistant' ? C.coral : C.green }}>
+                {t.role === 'assistant' ? char.name : tx('You', '나', 'Tú')}:
+              </strong>{' '}
+              {t.text}
             </div>
           ))}
-          {/* live streaming text from Emma */}
-          {liveText && (
-            <div style={{ ...S.emmaBubble, opacity: 0.75 }}>
-              <p style={S.emmaText}>{liveText}<span style={S.cursor}>▌</span></p>
-            </div>
-          )}
           <div ref={transcriptEndRef} />
         </div>
       )}
@@ -611,8 +648,9 @@ function ChatPageInner() {
       <style>{`
         * { box-sizing: border-box; }
         body { margin: 0; background: ${C.bg}; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+        @keyframes subtitleFadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
     </div>
   );
@@ -645,7 +683,7 @@ export default function ChatPage() {
 // ── Styles ────────────────────────────────────────────────────
 const S = {
   page: {
-    minHeight: '100vh',
+    height: '100dvh',
     background: C.bg,
     display: 'flex',
     flexDirection: 'column',
@@ -653,7 +691,7 @@ const S = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     color: C.textPrimary,
     fontSize: 16,
-    paddingBottom: 32,
+    overflow: 'hidden',
   },
 
   // Top bar
@@ -665,6 +703,7 @@ const S = {
     alignItems: 'center',
     padding: '14px 20px',
     borderBottom: `1px solid ${C.border}`,
+    flexShrink: 0,
   },
   backBtn: {
     background: 'none',
@@ -696,6 +735,7 @@ const S = {
     background: C.surface,
     borderBottom: `1px solid ${C.border}`,
     padding: '16px 24px',
+    flexShrink: 0,
   },
   memDrawerHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   memDrawerTitle: { fontWeight: 700, fontSize: 15, color: C.textPrimary },
@@ -704,95 +744,129 @@ const S = {
   memEmpty: { color: C.textMuted, fontSize: 14, fontStyle: 'italic', margin: '0 0 10px' },
   usageLine: { fontSize: 12, color: C.textMuted },
 
-  // Avatar
-  avatarArea: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    paddingTop: 28,
-    paddingBottom: 12,
-    gap: 10,
-  },
-  avatarWrap: {
-    width: 116,
-    height: 116,
-    borderRadius: '50%',
-    background: C.surface,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  // ── Avatar hero ──────────────────────────────────────────────
+  avatarHero: {
+    position: 'relative',
+    width: '100%',
+    maxWidth: 560,
+    flex: '1 1 0',       // takes all available space between topbar and controls
+    minHeight: 0,
     overflow: 'hidden',
   },
-  stateTag: {
+
+  // State overlay (listening/speaking) — bottom-center of avatar area
+  stateOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    left: '50%',
+    transform: 'translateX(-50%)',
     display: 'inline-flex',
     alignItems: 'center',
-    background: C.surface,
+    background: 'rgba(255,255,255,0.90)',
     border: `1px solid ${C.border}`,
     borderRadius: 20,
     padding: '5px 14px',
     fontSize: 14,
     color: C.textMid,
     fontWeight: 500,
-    height: 32,
+    backdropFilter: 'blur(6px)',
+    zIndex: 10,
+    pointerEvents: 'none',
   },
   stateDot: { width: 8, height: 8, borderRadius: '50%', marginRight: 8 },
+
+  // CC button — top-right of avatar
+  ccBtn: {
+    position: 'absolute',
+    top: 12, right: 12,
+    background: 'rgba(0,0,0,0.35)',
+    border: 'none',
+    color: '#fff',
+    borderRadius: 16,
+    padding: '5px 11px',
+    fontSize: 11,
+    fontWeight: 700,
+    cursor: 'pointer',
+    letterSpacing: '0.05em',
+    zIndex: 10,
+  },
+
+  // Transcript toggle — top-left of avatar
+  transcriptToggleBtn: {
+    position: 'absolute',
+    top: 12, left: 12,
+    background: 'rgba(0,0,0,0.35)',
+    border: 'none',
+    color: '#fff',
+    borderRadius: 16,
+    padding: '5px 11px',
+    fontSize: 11,
+    fontWeight: 700,
+    cursor: 'pointer',
+    zIndex: 10,
+  },
+
+  // ── Subtitle bar ─────────────────────────────────────────────
+  subtitleBar: {
+    width: '100%',
+    maxWidth: 560,
+    padding: '10px 24px',
+    background: 'rgba(0,0,0,0.72)',
+    flexShrink: 0,
+    animation: 'subtitleFadeIn 0.3s ease',
+  },
+  subtitleText: {
+    margin: 0,
+    fontSize: 16,
+    color: '#fff',
+    lineHeight: 1.55,
+    textAlign: 'center',
+    fontWeight: 400,
+  },
+
+  // ── Transcript panel ─────────────────────────────────────────
+  transcriptPanel: {
+    width: '100%',
+    maxWidth: 560,
+    maxHeight: '22vh',
+    overflowY: 'auto',
+    padding: '10px 20px',
+    background: C.surface,
+    borderTop: `1px solid ${C.border}`,
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
 
   // Welcome card
   welcomeCard: {
     background: C.surface,
     border: `1px solid ${C.border}`,
     borderRadius: 20,
-    padding: '20px 24px',
-    margin: '8px 20px 16px',
+    padding: '16px 20px',
+    margin: '0 20px',
     maxWidth: 520,
     width: 'calc(100% - 40px)',
     borderLeft: `4px solid ${C.coralBorder}`,
     boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+    flexShrink: 0,
   },
-  welcomeGreeting: { fontSize: 18, fontWeight: 700, color: C.textPrimary, margin: '0 0 6px' },
-  welcomeText: { fontSize: 16, color: C.textMid, margin: 0, lineHeight: 1.6 },
+  welcomeGreeting: { fontSize: 17, fontWeight: 700, color: C.textPrimary, margin: '0 0 4px' },
+  welcomeText: { fontSize: 15, color: C.textMid, margin: 0, lineHeight: 1.6 },
 
   // Status card
   statusCard: {
     border: '1px solid',
     borderRadius: 14,
-    padding: '12px 20px',
-    margin: '8px 20px',
+    padding: '10px 20px',
+    margin: '0 20px',
     maxWidth: 520,
     width: 'calc(100% - 40px)',
+    flexShrink: 0,
   },
   statusText: { margin: 0, fontSize: 15, fontWeight: 500, textAlign: 'center' },
 
-  // Chat bubbles
-  bubbleArea: {
-    width: '100%',
-    maxWidth: 560,
-    padding: '4px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-    flex: 1,
-    overflowY: 'auto',
-    maxHeight: '40vh',
-  },
-  emmaBubble: {
-    background: C.coralLight,
-    borderLeft: `4px solid ${C.coralBorder}`,
-    borderRadius: '4px 16px 16px 4px',
-    padding: '12px 16px',
-    maxWidth: '85%',
-    alignSelf: 'flex-start',
-  },
-  userBubble: {
-    background: C.greenLight,
-    borderRight: `4px solid ${C.greenBorder}`,
-    borderRadius: '16px 4px 4px 16px',
-    padding: '12px 16px',
-    maxWidth: '85%',
-    alignSelf: 'flex-end',
-  },
-  emmaText: { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
-  userText:  { margin: 0, fontSize: 16, color: C.textPrimary, lineHeight: 1.65 },
   cursor: { animation: 'blink 1s step-end infinite', marginLeft: 2 },
 
   // PWA banners
