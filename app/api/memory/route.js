@@ -1,74 +1,67 @@
-import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { createDb } from '@/lib/db';
 
-// GET /api/memory?character=emma
+// GET /api/memory — returns memories from memory_nodes (new engine)
 export async function GET(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { searchParams } = new URL(request.url);
-  const characterId = searchParams.get('character') || 'emma';
+  const db = createDb();
 
-  const memory = await prisma.userMemory.findUnique({
-    where: { userId_characterId: { userId: user.id, characterId } },
-  });
-  if (!memory) return Response.json({ facts: [], summary: '', transcript: [], characterId });
+  try {
+    // Fetch active memory nodes for this user, most recently updated first
+    const result = await db.query(`
+      SELECT node_type, label, content, emotional_weight, last_updated
+      FROM memory_nodes
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY last_updated DESC
+      LIMIT 50
+    `, [user.id]);
 
-  const limits = await prisma.userLimit.findUnique({ where: { userId: user.id } });
-  const sizeKb = (memory.factsJson.length + memory.summary.length + memory.transcriptJson.length) / 1024;
+    const nodes = result.rows;
 
-  return Response.json({
-    facts: JSON.parse(memory.factsJson || '[]'),
-    summary: memory.summary || '',
-    transcript: JSON.parse(memory.transcriptJson || '[]'),
-    characterId,
-    sizeKb: Math.round(sizeKb * 100) / 100,
-    limitKb: limits?.memoryKb || 512,
-  });
-}
+    // Format as simple fact strings for the memory drawer
+    const facts = nodes.map(n => {
+      const label = n.label || '';
+      const content = n.content || '';
+      return label && content ? `${label}: ${content}` : (label || content);
+    }).filter(Boolean);
 
-// POST /api/memory?character=emma
-export async function POST(request) {
-  const { user, error } = await requireAuth(request);
-  if (error) return error;
+    // Count by category for summary
+    const categoryCounts = {};
+    for (const n of nodes) {
+      categoryCounts[n.node_type] = (categoryCounts[n.node_type] || 0) + 1;
+    }
 
-  const { searchParams } = new URL(request.url);
-  const characterId = searchParams.get('character') || 'emma';
-
-  const { facts, summary, transcript } = await request.json();
-
-  const limits = await prisma.userLimit.findUnique({ where: { userId: user.id } });
-  const maxKb = limits?.memoryKb || 512;
-
-  const factsJson = JSON.stringify(facts || []);
-  const transcriptJson = JSON.stringify(transcript || []);
-  const sizeKb = (factsJson.length + (summary || '').length + transcriptJson.length) / 1024;
-
-  if (sizeKb > maxKb) {
-    return Response.json({ error: `Memory limit exceeded (${maxKb}KB)` }, { status: 413 });
+    return Response.json({
+      facts,
+      summary: '',
+      transcript: [],
+      characterId: 'emma',
+      memoryCount: nodes.length,
+      categories: categoryCounts,
+    });
+  } catch (e) {
+    console.error('[memory/GET] Error:', e.message);
+    // Fall back to empty
+    return Response.json({ facts: [], summary: '', transcript: [], characterId: 'emma', memoryCount: 0 });
   }
-
-  await prisma.userMemory.upsert({
-    where: { userId_characterId: { userId: user.id, characterId } },
-    update: { factsJson, summary: summary || '', transcriptJson },
-    create: { userId: user.id, characterId, factsJson, summary: summary || '', transcriptJson },
-  });
-
-  return Response.json({ success: true, sizeKb: Math.round(sizeKb * 100) / 100 });
 }
 
-// DELETE /api/memory?character=emma
+// DELETE /api/memory — soft-delete all memory nodes
 export async function DELETE(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { searchParams } = new URL(request.url);
-  const characterId = searchParams.get('character') || 'emma';
-
-  await prisma.userMemory.updateMany({
-    where: { userId: user.id, characterId },
-    data: { factsJson: '[]', summary: '', transcriptJson: '[]' },
-  });
-
-  return Response.json({ success: true });
+  const db = createDb();
+  try {
+    await db.query(
+      `UPDATE memory_nodes SET is_active = false WHERE user_id = $1`,
+      [user.id]
+    );
+    return Response.json({ success: true });
+  } catch (e) {
+    console.error('[memory/DELETE] Error:', e.message);
+    return Response.json({ error: e.message }, { status: 500 });
+  }
 }
