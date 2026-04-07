@@ -26,9 +26,12 @@ function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get('character') || 'emma';
-  const baseLang = typeof window !== 'undefined'
-    ? (localStorage.getItem('lang') || 'en') : 'en';
-  const [lang, setLang] = useState(baseLang);
+  // Fix: initialize 'en' for SSR, then read localStorage after mount
+  const [lang, setLang] = useState('en');
+  useEffect(() => {
+    const saved = localStorage.getItem('lang') || 'en';
+    setLang(saved);
+  }, []);
   const char = getCharacterLocale(CHARACTERS[characterId] || CHARACTERS.emma, lang);
 
   const wsRef             = useRef(null);
@@ -166,7 +169,13 @@ function ChatPageInner() {
     }
 
     try {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      // No sampleRate override — let browser use its native rate (44100/48000)
+      // iOS Safari and Android reject forced 16000 Hz, causing silent audio
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      // Resume in case browser suspended the context (required on iOS)
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
       await navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
         const ws = new WebSocket(
           `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${geminiKey}`
@@ -217,38 +226,35 @@ function ChatPageInner() {
             }
           }
 
+          // AI transcript: only update liveText during streaming (NOT transcript yet)
           const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
           if (aiTranscript) {
             currentAiMsgRef.current += aiTranscript;
-            setLiveText(currentAiMsgRef.current);
-            setTranscript(prev => {
-              const last = prev[prev.length - 1];
-              const next = last?.role === 'assistant'
-                ? [...prev.slice(0, -1), { role: 'assistant', text: last.text + aiTranscript }]
-                : [...prev, { role: 'assistant', text: aiTranscript }];
-              transcriptRef.current = next;
-              return next;
-            });
+            setLiveText(currentAiMsgRef.current); // shown as streaming bubble only
           }
 
+          // User transcript: accumulate (shown in transcript on turnComplete)
           const userTranscript = msg.serverContent?.inputTranscription?.text ?? msg.inputTranscription?.text;
           if (userTranscript) {
             currentUserMsgRef.current += userTranscript;
-            setTranscript(prev => {
-              const last = prev[prev.length - 1];
-              const next = last?.role === 'user'
-                ? [...prev.slice(0, -1), { role: 'user', text: last.text + userTranscript }]
-                : [...prev, { role: 'user', text: userTranscript }];
-              transcriptRef.current = next;
-              return next;
-            });
           }
 
           if (msg.serverContent?.turnComplete) {
             const turnNum = ++turnsRef.current;
+            const aiMsg   = currentAiMsgRef.current.trim();
             const userMsg = currentUserMsgRef.current.trim();
+
+            // Now commit both messages to transcript (one bubble each)
+            setTranscript(prev => {
+              const next = [...prev];
+              if (userMsg) next.push({ role: 'user', text: userMsg });
+              if (aiMsg)   next.push({ role: 'assistant', text: aiMsg });
+              transcriptRef.current = next;
+              return next;
+            });
+
+            currentAiMsgRef.current  = '';
             currentUserMsgRef.current = '';
-            currentAiMsgRef.current = '';
             setLiveText('');
             setIsAiSpeaking(false);
             setIsListening(true);
@@ -271,14 +277,25 @@ function ChatPageInner() {
         };
         ws.onerror = () => setStatus('❌ Connection error.');
 
-        // Mic setup
+        // Mic setup — capture at browser native rate, downsample to 16000 Hz for Gemini
+        const nativeRate = audioCtxRef.current.sampleRate; // e.g. 44100 or 48000
+        const targetRate = 16000;
         const micSource = audioCtxRef.current.createMediaStreamSource(stream);
         const processor = audioCtxRef.current.createScriptProcessor(4096, 1, 1);
         processor.onaudioprocess = (e) => {
           if (!wsRef.current || wsRef.current.readyState !== 1) return;
-          const f32 = e.inputBuffer.getChannelData(0);
-          const i16 = new Int16Array(f32.length);
-          for (let i = 0; i < f32.length; i++) i16[i] = Math.max(-32768, Math.min(32767, f32[i] * 32768));
+          const input = e.inputBuffer.getChannelData(0);
+          // Downsample: pick every N-th sample to reach 16000 Hz
+          const ratio = nativeRate / targetRate;
+          const outLen = Math.floor(input.length / ratio);
+          const downsampled = new Float32Array(outLen);
+          for (let i = 0; i < outLen; i++) {
+            downsampled[i] = input[Math.floor(i * ratio)];
+          }
+          const i16 = new Int16Array(outLen);
+          for (let i = 0; i < outLen; i++) {
+            i16[i] = Math.max(-32768, Math.min(32767, downsampled[i] * 32768));
+          }
           const b64 = btoa(String.fromCharCode(...new Uint8Array(i16.buffer)));
           ws.send(JSON.stringify({ realtime_input: { media_chunks: [{ mime_type: 'audio/pcm;rate=16000', data: b64 }] } }));
         };
