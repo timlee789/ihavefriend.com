@@ -79,5 +79,5 @@ User message: "${userMessage.substring(0, 300)}"` }]
     }
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, emotion });
 }

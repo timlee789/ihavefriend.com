@@ -322,7 +322,10 @@ function ChatPageInner() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ sessionId: sessionIdRef.current, turnNumber: turnNum, userMessage: userMsg }),
-              }).catch(() => {});
+              })
+                .then(r => r.ok ? r.json() : null)
+                .then(data => { if (data?.emotion) setEmotionData(data.emotion); })
+                .catch(() => {});
             }
           }
         };

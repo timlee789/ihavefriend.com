@@ -65,7 +65,17 @@
       "Bash(/usr/local/bin/npx prisma:*)",
       "Bash(export PATH=\"$PATH:/opt/homebrew/bin\")",
       "Bash(npm list:*)",
-      "Bash(npx web-push:*)"
+      "Bash(npx web-push:*)",
+      "Bash(node -e ':*)",
+      "Bash(ls /Users/mac-mini-tim/Documents/projects/speechrobot/next.config.*)",
+      "Bash(kill 60756)",
+      "Bash(curl -L \"https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb\" -o /Users/mac-mini-tim/Documents/projects/speechrobot/public/avatars/brunette.glb)",
+      "Bash(curl -sL \"https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs\")",
+      "Bash(curl -sL \"https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/README.md\")",
+      "Bash(curl -sL \"https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/examples/minimal.html\")",
+      "Bash(curl -Lo /Users/mac-mini-tim/Documents/projects/speechrobot/public/avatars/brunette.glb \"https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png\")",
+      "Bash(xxd /Users/mac-mini-tim/Documents/projects/speechrobot/public/avatars/brunette.glb)",
+      "Bash(python3)"
     ]
   }
 }
