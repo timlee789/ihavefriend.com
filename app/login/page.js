@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (data.user.role === 'admin') {
         router.push('/admin');
       } else {
-        router.push('/friends');
+        router.push('/chat?character=emma');
       }
     } catch {
       setError('Network error. Please try again.');

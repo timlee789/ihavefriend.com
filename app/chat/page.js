@@ -26,12 +26,8 @@ function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get('character') || 'emma';
-  // Fix: initialize 'en' for SSR, then read localStorage after mount
+  // Fix: initialize 'en' for SSR, then read from user object (server-saved) after mount
   const [lang, setLang] = useState('en');
-  useEffect(() => {
-    const saved = localStorage.getItem('lang') || 'en';
-    setLang(saved);
-  }, []);
   const char = getCharacterLocale(CHARACTERS[characterId] || CHARACTERS.emma, lang);
 
   const wsRef             = useRef(null);
@@ -66,6 +62,26 @@ function ChatPageInner() {
     const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     setLang(next);
     localStorage.setItem('lang', next);
+    // Update user object in localStorage so lang survives page refresh
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    u.lang = next;
+    localStorage.setItem('user', JSON.stringify(u));
+    // Save to server — persists across devices
+    const t = localStorage.getItem('token');
+    if (t) {
+      fetch('/api/user/lang', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ lang: next }),
+      }).catch(() => {});
+    }
+  }
+
+  // ── 3-language translation helper ────────────────────────────
+  function tx(en, ko, es) {
+    if (lang === 'ko') return ko;
+    if (lang === 'es') return es;
+    return en;
   }
 
   // ── Screen Wake Lock ─────────────────────────────────────────
@@ -96,6 +112,10 @@ function ChatPageInner() {
     if (!t || !u) { router.push('/login'); return; }
     setToken(t);
     setUser(u);
+    // Use server-saved lang preference from user object (falls back to localStorage, then 'en')
+    const userLang = u.lang || localStorage.getItem('lang') || 'en';
+    setLang(userLang);
+    localStorage.setItem('lang', userLang); // keep localStorage in sync
     fetchUsage(t);
     fetchMemory(t);
   }, [router]);
@@ -134,10 +154,10 @@ function ChatPageInner() {
   // ── Connect ──────────────────────────────────────────────────
   async function connect() {
     if (!usage.canChat) {
-      setStatus(lang === 'ko' ? '오늘 대화 시간이 끝났어요. 내일 다시 만나요! 😊' : "You've reached today's limit. Come back tomorrow!");
+      setStatus(tx("You've reached today's limit. Come back tomorrow!", '오늘 대화 시간이 끝났어요. 내일 다시 만나요! 😊', '¡Has alcanzado el límite de hoy. Vuelve mañana! 😊'));
       return;
     }
-    setStatus(lang === 'ko' ? '연결 중...' : 'Connecting...');
+    setStatus(tx('Connecting...', '연결 중...', 'Conectando...'));
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
     nextPlayTimeRef.current = 0;
@@ -366,7 +386,7 @@ function ChatPageInner() {
     if (sessionIdRef.current && transcript.length >= 2) {
       const sid = sessionIdRef.current;
       sessionIdRef.current = null;
-      setStatus(lang === 'ko' ? '✅ 다음에 또 이야기해요!' : '✅ See you next time!');
+      setStatus(tx('✅ See you next time!', '✅ 다음에 또 이야기해요!', '✅ ¡Hasta la próxima!'));
       fetch('/api/chat/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -390,8 +410,8 @@ function ChatPageInner() {
 
       {/* ── Top bar ──────────────────────────────────── */}
       <div style={S.topBar}>
-        <button style={S.backBtn} onClick={() => { disconnect(); router.push('/friends'); }}>
-          {lang === 'ko' ? '← 홈' : '← Home'}
+        <button style={S.backBtn} onClick={() => { disconnect(); router.push('/chat?character=emma'); }}>
+          {tx('← Home', '← 홈', '← Inicio')}
         </button>
         <div style={S.topCenter}>
           <div style={{ ...S.statusDot, background: isConnected ? '#16A34A' : C.textMuted }} />
@@ -422,18 +442,20 @@ function ChatPageInner() {
         <div style={S.memDrawer}>
           <div style={S.memDrawerHeader}>
             <span style={S.memDrawerTitle}>
-              {lang === 'ko' ? `${char.name}이 기억하는 것` : `${char.name} remembers`}
+              {tx(`${char.name} remembers`, `${char.name}이 기억하는 것`, `Lo que recuerda ${char.name}`)}
             </span>
             <button style={S.memClose} onClick={() => setShowMemory(false)}>✕</button>
           </div>
           {memoryDisplay
             ? <pre style={S.memText}>{memoryDisplay}</pre>
-            : <p style={S.memEmpty}>{lang === 'ko' ? '아직 기억이 없어요. 대화를 시작해 보세요!' : 'No memories yet. Start a conversation!'}</p>
+            : <p style={S.memEmpty}>{tx('No memories yet. Start a conversation!', '아직 기억이 없어요. 대화를 시작해 보세요!', '¡Aún no hay recuerdos. ¡Empieza a conversar!')}</p>
           }
           <span style={S.usageLine}>
-            {lang === 'ko'
-              ? `오늘 ${usage.todayMinutes.toFixed(0)}분 / 한도 ${usage.dailyLimit}분`
-              : `Today: ${usage.todayMinutes.toFixed(0)} / ${usage.dailyLimit} min`}
+            {tx(
+              `Today: ${usage.todayMinutes.toFixed(0)} / ${usage.dailyLimit} min`,
+              `오늘 ${usage.todayMinutes.toFixed(0)}분 / 한도 ${usage.dailyLimit}분`,
+              `Hoy: ${usage.todayMinutes.toFixed(0)} / ${usage.dailyLimit} min`
+            )}
           </span>
         </div>
       )}
@@ -455,9 +477,9 @@ function ChatPageInner() {
         {isConnected && (
           <div style={S.stateTag}>
             {isAiSpeaking
-              ? <><span style={{ ...S.stateDot, background: C.coral }} />{lang === 'ko' ? '말하는 중...' : 'Speaking...'}</>
+              ? <><span style={{ ...S.stateDot, background: C.coral }} />{tx('Speaking...', '말하는 중...', 'Hablando...')}</>
               : isListening
-                ? <><MicDots />{lang === 'ko' ? '듣고 있어요' : 'Listening'}</>
+                ? <><MicDots />{tx('Listening', '듣고 있어요', 'Escuchando')}</>
                 : null
             }
           </div>
@@ -468,14 +490,18 @@ function ChatPageInner() {
       {!isConnected && !status && (
         <div style={S.welcomeCard}>
           <p style={S.welcomeGreeting}>
-            {lang === 'ko'
-              ? `안녕하세요, ${userName}! 😊`
-              : `Hi${userName ? `, ${userName}` : ''}! 😊`}
+            {tx(
+              `Hi${userName ? `, ${userName}` : ''}! 😊`,
+              `안녕하세요, ${userName}! 😊`,
+              `¡Hola${userName ? `, ${userName}` : ''}! 😊`
+            )}
           </p>
           <p style={S.welcomeText}>
-            {lang === 'ko'
-              ? `저는 ${char.name}이에요. 오늘 무슨 이야기 나눌까요?`
-              : `I'm ${char.name}. What would you like to talk about today?`}
+            {tx(
+              `I'm ${char.name}. What would you like to talk about today?`,
+              `저는 ${char.name}이에요. 오늘 무슨 이야기 나눌까요?`,
+              `Soy ${char.name}. ¿De qué te gustaría hablar hoy?`
+            )}
           </p>
         </div>
       )}
@@ -513,11 +539,11 @@ function ChatPageInner() {
       <div style={S.controls}>
         {!isConnected ? (
           <button style={S.talkBtn} onClick={connect}>
-            🎙️ &nbsp;{lang === 'ko' ? `${char.name}와 대화하기` : `Talk to ${char.name}`}
+            🎙️ &nbsp;{tx(`Talk to ${char.name}`, `${char.name}와 대화하기`, `Hablar con ${char.name}`)}
           </button>
         ) : (
           <button style={S.endBtn} onClick={disconnect}>
-            {lang === 'ko' ? '대화 끝내기' : 'End conversation'}
+            {tx('End conversation', '대화 끝내기', 'Terminar conversación')}
           </button>
         )}
       </div>

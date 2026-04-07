@@ -27,6 +27,6 @@ export async function POST(request) {
   const token = signToken(user.id);
   return Response.json({
     token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, lang: user.lang || 'en' },
   });
 }
