@@ -11,7 +11,20 @@ export async function GET(request) {
   try {
     // Fetch active memory nodes for this user, most recently updated first
     const result = await db.query(`
-      SELECT node_type, label, content, emotional_weight, last_updated
+      SELECT node_type, label,
+        COALESCE(
+          data->>'summary',
+          data->>'description',
+          data->>'relationship',
+          data->>'condition',
+          data->>'activity',
+          data->>'job',
+          data->>'details',
+          data->>'status',
+          data->>'notes',
+          data->>'text'
+        ) AS content,
+        emotional_weight, last_updated
       FROM memory_nodes
       WHERE user_id = $1 AND is_active = true
       ORDER BY last_updated DESC

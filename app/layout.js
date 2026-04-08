@@ -30,13 +30,6 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Emma" />
-        {/* Import map — lets TalkingHead.js resolve "three" bare specifier in browser */}
-        <script type="importmap" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          imports: {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-          }
-        })}} />
       </head>
       <body>
         <PWAInit />

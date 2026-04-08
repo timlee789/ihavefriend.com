@@ -43,8 +43,10 @@ export async function POST(request) {
     debugInfo = result.debugInfo;
   } catch (e) {
     console.error('[chat/setup] buildEmmaPrompt failed:', e.message);
-    const { EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO } = require('@/lib/recallEngine');
-    systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO : EMMA_BASE_PROMPT;
+    const { EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO, EMMA_BASE_PROMPT_ES } = require('@/lib/recallEngine');
+    systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO
+                 : lang === 'es' ? EMMA_BASE_PROMPT_ES
+                 : EMMA_BASE_PROMPT;
   }
 
   // Return the server's Gemini API key to authenticated clients (WebSocket use only).

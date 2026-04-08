@@ -7,7 +7,7 @@
  * 3. Push notifications (reminders from Emma)
  */
 
-const CACHE_NAME = 'emma-v2';
+const CACHE_NAME = 'emma-v3';
 
 // Core app shell files to cache
 const APP_SHELL = [
@@ -58,6 +58,15 @@ self.addEventListener('fetch', (event) => {
 
   // Skip blob: and data: URLs (created in main thread, not fetchable by SW)
   if (request.url.startsWith('blob:') || request.url.startsWith('data:')) return;
+
+  // Skip non-http(s) schemes (chrome-extension://, data:, blob:, etc.)
+  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) return;
+
+  // Skip cross-origin requests (e.g. CDN, unpkg.com) — let browser handle them directly
+  try {
+    const reqUrl = new URL(request.url);
+    if (reqUrl.origin !== self.location.origin) return;
+  } catch { return; }
 
   // Skip API calls and WebSocket (Gemini Live)
   if (request.url.includes('/api/') ||

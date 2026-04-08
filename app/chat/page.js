@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CHARACTERS, getCharacterLocale } from '@/lib/characters';
-import EmmaAvatar3D from '@/components/EmmaAvatar3D';
+import EmmaAvatar from '@/components/EmmaAvatar';
 import { requestPushPermission, setupInstallPrompt, showInstallPrompt, isAppInstalled } from '@/lib/pwaClient';
 
 // ── Warm color palette ─────────────────────────────────────────
@@ -35,7 +35,7 @@ function ChatPageInner() {
   const audioCtxRef       = useRef(null);
   const processorRef      = useRef(null);
   const sourceRef         = useRef(null);
-  const nextPlayTimeRef   = useRef(0); // Web Audio scheduled playback time
+  const nextPlayTimeRef   = useRef(0);
   const sessionStartRef   = useRef(null);
   const turnsRef          = useRef(0);
   const transcriptRef     = useRef([]);
@@ -43,7 +43,13 @@ function ChatPageInner() {
   const currentUserMsgRef = useRef('');
   const currentAiMsgRef  = useRef('');
   const wakeLockRef       = useRef(null);
-  const transcriptEndRef  = useRef(null); // auto-scroll
+  const transcriptEndRef  = useRef(null);
+  // Auto-reconnect refs
+  const geminiKeyRef        = useRef('');
+  const systemPromptBaseRef = useRef('');
+  const micStreamRef        = useRef(null);
+  const reconnectTimerRef   = useRef(null);
+  const isReconnectingRef   = useRef(false);
 
   const [user, setUser]           = useState(null);
   const [token, setToken]         = useState('');
@@ -58,6 +64,12 @@ function ChatPageInner() {
   const [isListening, setIsListening]     = useState(false);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [showPushPrompt, setShowPushPrompt]       = useState(false);
+  // Persistent small-button state (shown after banner dismissed)
+  const [installBannerSeen, setInstallBannerSeen] = useState(false);
+  const [pushBannerSeen,    setPushBannerSeen]    = useState(false);
+  const [isInstalled,       setIsInstalled]       = useState(false);
+  const [installPromptReady,setInstallPromptReady]= useState(false);
+  const [notifPermission,   setNotifPermission]   = useState('default');
   const [subtitle, setSubtitle]           = useState('');
   const [showTranscript, setShowTranscript] = useState(false);
   const [subtitlesOn, setSubtitlesOn]     = useState(true);
@@ -130,25 +142,62 @@ function ChatPageInner() {
 
   // ── PWA: Install prompt + push permission ────────────────────
   useEffect(() => {
+    // Restore dismissed state from localStorage
+    const instSeen = localStorage.getItem('installBannerSeen') === 'true';
+    const pushSeen = localStorage.getItem('pushBannerSeen') === 'true';
+    setInstallBannerSeen(instSeen);
+    setPushBannerSeen(pushSeen);
+
+    // Current notification permission
+    if (typeof Notification !== 'undefined') {
+      setNotifPermission(Notification.permission);
+    }
+
+    // Track if app gets installed during this session
+    const onInstalled = () => { setIsInstalled(true); setShowInstallBanner(false); };
+    window.addEventListener('appinstalled', onInstalled);
+
     // Show "Add to Home Screen" banner if not already installed
     if (!isAppInstalled()) {
-      setupInstallPrompt(() => setShowInstallBanner(true));
+      setupInstallPrompt(() => {
+        setInstallPromptReady(true);
+        // Only show big banner if not yet seen
+        if (!instSeen) setShowInstallBanner(true);
+      });
+    } else {
+      setIsInstalled(true);
     }
+
     // Ask push permission after user has had at least 1 prior conversation
     const talked = parseInt(localStorage.getItem('conversationCount') || '0');
-    if (talked >= 1 && Notification.permission === 'default') {
-      setShowPushPrompt(true);
+    if (talked >= 1 && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      if (!pushSeen) setShowPushPrompt(true);
     }
+
+    return () => window.removeEventListener('appinstalled', onInstalled);
   }, []);
 
   async function handleEnablePush() {
     setShowPushPrompt(false);
     await requestPushPermission(user?.id, token);
+    if (typeof Notification !== 'undefined') setNotifPermission(Notification.permission);
+  }
+
+  function dismissInstallBanner() {
+    setShowInstallBanner(false);
+    setInstallBannerSeen(true);
+    localStorage.setItem('installBannerSeen', 'true');
+  }
+
+  function dismissPushBanner() {
+    setShowPushPrompt(false);
+    setPushBannerSeen(true);
+    localStorage.setItem('pushBannerSeen', 'true');
   }
 
   async function handleInstall() {
     const accepted = await showInstallPrompt();
-    if (accepted) setShowInstallBanner(false);
+    if (accepted) { setShowInstallBanner(false); setIsInstalled(true); }
   }
 
   // Auto-scroll transcript to bottom
@@ -206,6 +255,8 @@ function ChatPageInner() {
         systemPrompt = d.systemPrompt || '';
         geminiKey = d.geminiKey || '';
         sessionIdRef.current = d.sessionId || null;
+        // Cache for auto-reconnect
+        geminiKeyRef.current = geminiKey;
       }
     } catch (e) { console.warn('[Setup]', e.message); }
 
@@ -219,154 +270,230 @@ function ChatPageInner() {
         systemPrompt = buildSystemPrompt(r.ok ? await r.json() : {});
       } catch { systemPrompt = char.personality || ''; }
     }
+    // Cache base prompt for auto-reconnect (without continuation context)
+    systemPromptBaseRef.current = systemPrompt;
 
     try {
-      // No sampleRate override — let browser use its native rate (44100/48000)
-      // iOS Safari and Android reject forced 16000 Hz, causing silent audio
+      try { audioCtxRef.current?.close(); } catch {}
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      // Resume in case browser suspended the context (required on iOS)
-      if (audioCtxRef.current.state === 'suspended') {
-        await audioCtxRef.current.resume();
-      }
-      await navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        const ws = new WebSocket(
-          `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${geminiKey}`
-        );
-        wsRef.current = ws;
+      if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
 
-        ws.onopen = () => {
-          ws.send(JSON.stringify({
-            setup: {
-              model: 'models/gemini-2.5-flash-native-audio-latest',
-              generation_config: {
-                response_modalities: ['AUDIO'],
-                thinking_config: { thinking_budget: 0 },
-                speech_config: { voice_config: { prebuilt_voice_config: { voice_name: char.voice } } },
-              },
-              output_audio_transcription: {},
-              input_audio_transcription: {},
-              system_instruction: { parts: [{ text: systemPrompt }] },
-            }
-          }));
-        };
-
-        ws.onmessage = async (evt) => {
-          const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
-          const msg = JSON.parse(raw);
-
-          if (msg.setupComplete) {
-            setIsConnected(true);
-            setStatus('');
-            setIsListening(true);
-            acquireWakeLock();
-            ws.send(JSON.stringify({
-              client_content: {
-                turns: [{ role: 'user', parts: [{ text: char.greeting || 'Hello, please greet me warmly.' }] }],
-                turn_complete: true,
-              }
-            }));
-          }
-
-          if (msg.serverContent?.modelTurn?.parts) {
-            for (const part of msg.serverContent.modelTurn.parts) {
-              if (part.inlineData?.mimeType?.startsWith('audio/')) {
-                scheduleChunk(base64ToPcm(part.inlineData.data));
-                setIsAiSpeaking(true);
-                setIsListening(false);
-              }
-            }
-          }
-
-          // AI transcript: only update liveText during streaming (NOT transcript yet)
-          const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
-          if (aiTranscript) {
-            currentAiMsgRef.current += aiTranscript;
-            setLiveText(currentAiMsgRef.current);
-            setSubtitle(currentAiMsgRef.current); // live subtitle under avatar
-          }
-
-          // User transcript: accumulate (shown in transcript on turnComplete)
-          const userTranscript = msg.serverContent?.inputTranscription?.text ?? msg.inputTranscription?.text;
-          if (userTranscript) {
-            currentUserMsgRef.current += userTranscript;
-          }
-
-          if (msg.serverContent?.turnComplete) {
-            const turnNum = ++turnsRef.current;
-            const aiMsg   = currentAiMsgRef.current.trim();
-            const userMsg = currentUserMsgRef.current.trim();
-
-            // Now commit both messages to transcript (one bubble each)
-            setTranscript(prev => {
-              const next = [...prev];
-              if (userMsg) next.push({ role: 'user', text: userMsg });
-              if (aiMsg)   next.push({ role: 'assistant', text: aiMsg });
-              transcriptRef.current = next;
-              return next;
-            });
-
-            currentAiMsgRef.current  = '';
-            currentUserMsgRef.current = '';
-            setLiveText('');
-            setIsAiSpeaking(false);
-            setIsListening(true);
-            // Keep last AI message as subtitle for 8 seconds, then fade
-            if (aiMsg) {
-              setSubtitle(aiMsg);
-              if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
-              subtitleTimerRef.current = setTimeout(() => setSubtitle(''), 8000);
-            }
-
-            if (userMsg && sessionIdRef.current) {
-              fetch('/api/chat/turn', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ sessionId: sessionIdRef.current, turnNumber: turnNum, userMessage: userMsg }),
-              })
-                .then(r => r.ok ? r.json() : null)
-                .then(data => { if (data?.emotion) setEmotionData(data.emotion); })
-                .catch(() => {});
-            }
-          }
-        };
-
-        ws.onclose = (evt) => {
-          setIsConnected(false);
-          setIsListening(false);
-          stopMic();
-          if (wsRef.current !== null) setStatus(`❌ ${evt.reason || `Disconnected (${evt.code})`}`);
-        };
-        ws.onerror = () => setStatus('❌ Connection error.');
-
-        // Mic setup — capture at browser native rate, downsample to 16000 Hz for Gemini
-        const nativeRate = audioCtxRef.current.sampleRate; // e.g. 44100 or 48000
-        const targetRate = 16000;
-        const micSource = audioCtxRef.current.createMediaStreamSource(stream);
-        const processor = audioCtxRef.current.createScriptProcessor(4096, 1, 1);
-        processor.onaudioprocess = (e) => {
-          if (!wsRef.current || wsRef.current.readyState !== 1) return;
-          const input = e.inputBuffer.getChannelData(0);
-          // Downsample: pick every N-th sample to reach 16000 Hz
-          const ratio = nativeRate / targetRate;
-          const outLen = Math.floor(input.length / ratio);
-          const downsampled = new Float32Array(outLen);
-          for (let i = 0; i < outLen; i++) {
-            downsampled[i] = input[Math.floor(i * ratio)];
-          }
-          const i16 = new Int16Array(outLen);
-          for (let i = 0; i < outLen; i++) {
-            i16[i] = Math.max(-32768, Math.min(32767, downsampled[i] * 32768));
-          }
-          const b64 = btoa(String.fromCharCode(...new Uint8Array(i16.buffer)));
-          ws.send(JSON.stringify({ realtime_input: { media_chunks: [{ mime_type: 'audio/pcm;rate=16000', data: b64 }] } }));
-        };
-        micSource.connect(processor);
-        processor.connect(audioCtxRef.current.destination);
-        processorRef.current = processor;
-        sourceRef.current = micSource;
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      openWS(stream, false);
     } catch (e) {
       setStatus(`❌ ${e.message}`);
+    }
+  }
+
+  // ── Open (or re-open) the Gemini WebSocket ───────────────────
+  // isReconnect=true  → skip greeting, inject recent transcript as context
+  // isReconnect=false → normal first connect with greeting
+  function openWS(stream, isReconnect) {
+    const ws = new WebSocket(
+      `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${geminiKeyRef.current}`
+    );
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      // On reconnect, append recent conversation so Emma remembers the context
+      let prompt = systemPromptBaseRef.current;
+      if (isReconnect) {
+        const recent = transcriptRef.current.slice(-10);
+        if (recent.length > 0) {
+          prompt += '\n\n[CONTINUING SESSION: You were just speaking with this user. '
+            + 'The most recent exchanges were:\n'
+            + recent.map(m => `${m.role === 'user' ? 'User' : 'You'}: ${m.text}`).join('\n')
+            + '\nContinue the conversation naturally. Do NOT mention any reconnection or technical issues.]';
+        }
+      }
+      ws.send(JSON.stringify({
+        setup: {
+          model: 'models/gemini-2.5-flash-native-audio-latest',
+          generation_config: {
+            response_modalities: ['AUDIO'],
+            thinking_config: { thinking_budget: 0 },
+            speech_config: { voice_config: { prebuilt_voice_config: { voice_name: char.voice } } },
+          },
+          output_audio_transcription: {},
+          input_audio_transcription: {},
+          system_instruction: { parts: [{ text: prompt }] },
+        }
+      }));
+    };
+
+    ws.onmessage = async (evt) => {
+      const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
+      const msg = JSON.parse(raw);
+
+      if (msg.setupComplete) {
+        setIsConnected(true);
+        setStatus('');
+        setIsListening(true);
+        acquireWakeLock();
+        isReconnectingRef.current = false;
+
+        if (!isReconnect) {
+          // First connect: send greeting trigger
+          ws.send(JSON.stringify({
+            client_content: {
+              turns: [{ role: 'user', parts: [{ text: char.greeting || 'Hello, please greet me warmly.' }] }],
+              turn_complete: true,
+            }
+          }));
+        }
+        // On reconnect: just wait for user to speak (no greeting)
+
+        // ── Pre-emptive reconnect at 14 min (before Gemini's ~15 min limit) ──
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = setTimeout(() => {
+          if (wsRef.current) silentReconnect(stream);
+        }, 14 * 60 * 1000);
+      }
+
+      if (msg.serverContent?.modelTurn?.parts) {
+        for (const part of msg.serverContent.modelTurn.parts) {
+          if (part.inlineData?.mimeType?.startsWith('audio/')) {
+            scheduleChunk(base64ToPcm(part.inlineData.data));
+            setIsAiSpeaking(true);
+            setIsListening(false);
+          }
+        }
+      }
+
+      const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
+      if (aiTranscript) {
+        currentAiMsgRef.current += aiTranscript;
+        setLiveText(currentAiMsgRef.current);
+        setSubtitle(currentAiMsgRef.current);
+      }
+
+      const userTranscript = msg.serverContent?.inputTranscription?.text ?? msg.inputTranscription?.text;
+      if (userTranscript) currentUserMsgRef.current += userTranscript;
+
+      if (msg.serverContent?.turnComplete) {
+        const turnNum = ++turnsRef.current;
+        const aiMsg   = currentAiMsgRef.current.trim();
+        const userMsg = currentUserMsgRef.current.trim();
+
+        setTranscript(prev => {
+          const next = [...prev];
+          if (userMsg) next.push({ role: 'user', text: userMsg });
+          if (aiMsg)   next.push({ role: 'assistant', text: aiMsg });
+          transcriptRef.current = next;
+          return next;
+        });
+
+        currentAiMsgRef.current  = '';
+        currentUserMsgRef.current = '';
+        setLiveText('');
+        setIsAiSpeaking(false);
+        setIsListening(true);
+
+        if (aiMsg) {
+          setSubtitle(aiMsg);
+          if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
+          subtitleTimerRef.current = setTimeout(() => setSubtitle(''), 8000);
+        }
+
+        if (userMsg && sessionIdRef.current) {
+          fetch('/api/chat/turn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ sessionId: sessionIdRef.current, turnNumber: turnNum, userMessage: userMsg }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data?.emotion) setEmotionData(data.emotion); })
+            .catch(() => {});
+        }
+      }
+    };
+
+    ws.onclose = (evt) => {
+      clearTimeout(reconnectTimerRef.current);
+      setIsAiSpeaking(false);
+      setLiveText('');
+      stopMic();
+      nextPlayTimeRef.current = 0;
+      try { audioCtxRef.current?.close(); } catch {}
+      audioCtxRef.current = null;
+
+      const isUserInitiated = wsRef.current === null; // disconnect() already nulled it
+      if (isUserInitiated) return; // clean exit, nothing to do
+
+      const reason = (evt.reason || '').toUpperCase();
+      const isSessionLimit = reason.includes('CANCEL') || evt.code === 1011 || evt.code === 1013;
+
+      if (isSessionLimit && !isReconnectingRef.current) {
+        // Gemini session limit hit → auto-reconnect seamlessly
+        silentReconnect(stream);
+      } else {
+        setIsConnected(false);
+        setIsListening(false);
+        if (evt.code !== 1000 && evt.code !== 1001) {
+          setStatus(`❌ ${tx('Connection lost', '연결이 끊겼어요', 'Conexión perdida')} (${evt.code})`);
+        }
+      }
+    };
+
+    ws.onerror = () => {
+      setIsAiSpeaking(false);
+      setLiveText('');
+      setStatus(`❌ ${tx('Connection error', '연결 오류', 'Error de conexión')}`);
+    };
+
+    // Mic: capture at native rate, downsample to 16000 Hz for Gemini
+    const nativeRate = audioCtxRef.current.sampleRate;
+    const ratio = nativeRate / 16000;
+    const micSource = audioCtxRef.current.createMediaStreamSource(stream);
+    const processor = audioCtxRef.current.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = (e) => {
+      if (!wsRef.current || wsRef.current.readyState !== 1) return;
+      const input = e.inputBuffer.getChannelData(0);
+      const outLen = Math.floor(input.length / ratio);
+      const i16 = new Int16Array(outLen);
+      for (let i = 0; i < outLen; i++) {
+        i16[i] = Math.max(-32768, Math.min(32767, input[Math.floor(i * ratio)] * 32768));
+      }
+      ws.send(JSON.stringify({
+        realtime_input: { media_chunks: [{ mime_type: 'audio/pcm;rate=16000', data: btoa(String.fromCharCode(...new Uint8Array(i16.buffer))) }] }
+      }));
+    };
+    micSource.connect(processor);
+    processor.connect(audioCtxRef.current.destination);
+    processorRef.current = processor;
+    sourceRef.current = micSource;
+  }
+
+  // ── Silent reconnect — keeps transcript, reuses mic stream ───
+  async function silentReconnect(stream) {
+    if (isReconnectingRef.current) return;
+    isReconnectingRef.current = true;
+
+    // Null the ref first so onclose knows it's intentional
+    const oldWs = wsRef.current;
+    wsRef.current = null;
+    try { oldWs?.close(); } catch {}
+    stopMic();
+    nextPlayTimeRef.current = 0;
+    try { audioCtxRef.current?.close(); } catch {}
+    audioCtxRef.current = null;
+
+    setIsConnected(false);
+    setIsListening(false);
+    setIsAiSpeaking(false);
+    setLiveText('');
+    setStatus(tx('Reconnecting...', '재연결 중...', 'Reconectando...'));
+
+    await new Promise(r => setTimeout(r, 1200));
+
+    try {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+      openWS(stream, true); // isReconnect = true
+    } catch (e) {
+      isReconnectingRef.current = false;
+      setStatus(`❌ ${tx('Reconnection failed. Please tap Talk again.', '재연결 실패. 다시 대화 버튼을 눌러주세요.', 'Reconexión fallida.')}`);
     }
   }
 
@@ -381,6 +508,7 @@ function ChatPageInner() {
   }
 
   // Gapless audio: schedule each chunk at the precise moment the previous ends
+  // (used only when TalkingHead is not available — 2D fallback mode)
   function scheduleChunk(f32) {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
@@ -402,16 +530,21 @@ function ChatPageInner() {
   }
 
   async function disconnect() {
+    clearTimeout(reconnectTimerRef.current);
+    isReconnectingRef.current = false;
     wsRef.current?.close();
     wsRef.current = null;
     stopMic();
+    // Stop queued audio immediately
+    try { audioCtxRef.current?.close(); } catch {}
+    audioCtxRef.current = null;
+    nextPlayTimeRef.current = 0;
     setIsConnected(false);
     setIsListening(false);
     setLiveText('');
     setIsAiSpeaking(false);
     setSubtitle('');
     if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
-    nextPlayTimeRef.current = 0;
     releaseWakeLock();
 
     if (sessionStartRef.current) {
@@ -494,7 +627,7 @@ function ChatPageInner() {
             <button style={S.pwaAcceptBtn} onClick={handleInstall}>
               {tx('Add', '추가', 'Agregar')}
             </button>
-            <button style={S.pwaDismissBtn} onClick={() => setShowInstallBanner(false)}>✕</button>
+            <button style={S.pwaDismissBtn} onClick={dismissInstallBanner}>✕</button>
           </div>
         </div>
       )}
@@ -509,7 +642,7 @@ function ChatPageInner() {
             <button style={S.pwaAcceptBtn} onClick={handleEnablePush}>
               {tx('Allow', '허용', 'Permitir')}
             </button>
-            <button style={S.pwaDismissBtn} onClick={() => setShowPushPrompt(false)}>✕</button>
+            <button style={S.pwaDismissBtn} onClick={dismissPushBanner}>✕</button>
           </div>
         </div>
       )}
@@ -537,12 +670,11 @@ function ChatPageInner() {
         </div>
       )}
 
-      {/* ── 3D Avatar hero (60% of remaining screen) ─── */}
+      {/* ── Avatar hero ──────────────────────────────── */}
       <div style={S.avatarHero}>
-        <EmmaAvatar3D
+        <EmmaAvatar
           isSpeaking={isAiSpeaking}
           isListening={isListening && isConnected}
-          emotionData={emotionData}
         />
 
         {/* State overlay — listening / speaking tag */}
@@ -557,83 +689,75 @@ function ChatPageInner() {
           </div>
         )}
 
-        {/* CC toggle */}
-        <button
-          style={S.ccBtn}
-          onClick={() => setSubtitlesOn(v => !v)}
-          title="Toggle subtitles"
-        >
-          CC {subtitlesOn ? 'ON' : 'OFF'}
-        </button>
-
-        {/* Transcript toggle */}
-        {transcript.length > 0 && (
-          <button
-            style={S.transcriptToggleBtn}
-            onClick={() => setShowTranscript(v => !v)}
-          >
-            {showTranscript
-              ? tx('Hide', '숨기기', 'Ocultar')
-              : tx('Transcript', '대화 보기', 'Transcripción')}
-          </button>
-        )}
       </div>
 
-      {/* ── Subtitle bar ─────────────────────────────── */}
-      {subtitlesOn && (subtitle || liveText) && (
-        <div style={S.subtitleBar}>
-          <p style={S.subtitleText}>
+      {/* ── Chat text area — Emma's current speech only ─ */}
+      <div style={S.chatArea}>
+
+        {/* Welcome (not connected, nothing said yet) */}
+        {!isConnected && !status && !subtitle && !liveText && (
+          <div style={S.chatWelcome}>
+            <p style={S.chatGreet}>
+              {tx(
+                `Hi${userName ? `, ${userName}` : ''}! 😊`,
+                `안녕하세요, ${userName}! 😊`,
+                `¡Hola${userName ? `, ${userName}` : ''}! 😊`
+              )}
+            </p>
+            <p style={S.chatHint}>
+              {tx(
+                `I'm ${char.name}. Tap the button below to start talking!`,
+                `저는 ${char.name}이에요. 아래 버튼을 눌러 대화를 시작해 보세요!`,
+                `Soy ${char.name}. ¡Toca el botón para empezar a hablar!`
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Status (connecting / error) */}
+        {status && (
+          <div style={{
+            ...S.statusBubble,
+            color:      status.startsWith('❌') ? C.danger : C.coral,
+            background: status.startsWith('❌') ? C.dangerLight : C.coralLight,
+            border:     `1px solid ${status.startsWith('❌') ? '#FECACA' : C.coralBorder}`,
+          }}>
+            {status}
+          </div>
+        )}
+
+        {/* Emma's current / last message — large text */}
+        {(liveText || subtitle) && !status && (
+          <p style={S.emmaText}>
             {liveText || subtitle}
             {liveText && <span style={S.cursor}>▌</span>}
           </p>
-        </div>
-      )}
+        )}
 
-      {/* ── Welcome card (not connected, no status) ─── */}
-      {!isConnected && !status && !subtitle && (
-        <div style={S.welcomeCard}>
-          <p style={S.welcomeGreeting}>
-            {tx(
-              `Hi${userName ? `, ${userName}` : ''}! 😊`,
-              `안녕하세요, ${userName}! 😊`,
-              `¡Hola${userName ? `, ${userName}` : ''}! 😊`
+      </div>
+
+      {/* ── Persistent setup chips (after banner dismissed, before setup done) ── */}
+      {(() => {
+        const showInst = installBannerSeen && !isInstalled && installPromptReady;
+        const showPush = pushBannerSeen
+          && typeof Notification !== 'undefined'
+          && notifPermission === 'default';
+        if (!showInst && !showPush) return null;
+        return (
+          <div style={S.setupRow}>
+            {showInst && (
+              <button style={S.setupChip} onClick={handleInstall}>
+                📱 {tx('Add to Home', '홈 화면 추가', 'Añadir al inicio')}
+              </button>
             )}
-          </p>
-          <p style={S.welcomeText}>
-            {tx(
-              `I'm ${char.name}. What would you like to talk about today?`,
-              `저는 ${char.name}이에요. 오늘 무슨 이야기 나눌까요?`,
-              `Soy ${char.name}. ¿De qué te gustaría hablar hoy?`
+            {showPush && (
+              <button style={S.setupChip} onClick={handleEnablePush}>
+                🔔 {tx('Enable Reminders', '알림 설정', 'Activar alertas')}
+              </button>
             )}
-          </p>
-        </div>
-      )}
-
-      {/* ── Status message ───────────────────────────── */}
-      {status && (
-        <div style={{
-          ...S.statusCard,
-          background: status.startsWith('❌') ? C.dangerLight : C.coralLight,
-          borderColor: status.startsWith('❌') ? '#FECACA' : C.coralBorder,
-        }}>
-          <p style={{ ...S.statusText, color: status.startsWith('❌') ? C.danger : C.coral }}>{status}</p>
-        </div>
-      )}
-
-      {/* ── Transcript panel (hidden by default) ──────── */}
-      {showTranscript && transcript.length > 0 && (
-        <div style={S.transcriptPanel}>
-          {transcript.map((t, i) => (
-            <div key={i} style={{ padding: '4px 0', fontSize: 13, color: t.role === 'assistant' ? C.coral : C.textMid }}>
-              <strong style={{ color: t.role === 'assistant' ? C.coral : C.green }}>
-                {t.role === 'assistant' ? char.name : tx('You', '나', 'Tú')}:
-              </strong>{' '}
-              {t.text}
-            </div>
-          ))}
-          <div ref={transcriptEndRef} />
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* ── Controls ─────────────────────────────────── */}
       <div style={S.controls}>
@@ -747,13 +871,14 @@ const S = {
   memEmpty: { color: C.textMuted, fontSize: 14, fontStyle: 'italic', margin: '0 0 10px' },
   usageLine: { fontSize: 12, color: C.textMuted },
 
-  // ── Avatar hero ──────────────────────────────────────────────
+  // ── Avatar hero — fixed smaller height ───────────────────────
   avatarHero: {
     position: 'relative',
     width: '100%',
     maxWidth: 560,
-    flex: '1 1 0',       // takes all available space between topbar and controls
-    minHeight: 0,
+    flex: '0 0 auto',
+    height: 'min(34dvh, 240px)',
+    minHeight: 160,
     overflow: 'hidden',
   },
 
@@ -809,66 +934,52 @@ const S = {
     zIndex: 10,
   },
 
-  // ── Subtitle bar ─────────────────────────────────────────────
-  subtitleBar: {
+  // ── Chat text area ────────────────────────────────────────────
+  chatArea: {
+    flex: '1 1 0',
+    minHeight: 0,
     width: '100%',
     maxWidth: 560,
-    padding: '10px 24px',
-    background: 'rgba(0,0,0,0.72)',
-    flexShrink: 0,
-    animation: 'subtitleFadeIn 0.3s ease',
-  },
-  subtitleText: {
-    margin: 0,
-    fontSize: 16,
-    color: '#fff',
-    lineHeight: 1.55,
-    textAlign: 'center',
-    fontWeight: 400,
-  },
-
-  // ── Transcript panel ─────────────────────────────────────────
-  transcriptPanel: {
-    width: '100%',
-    maxWidth: 560,
-    maxHeight: '22vh',
-    overflowY: 'auto',
-    padding: '10px 20px',
-    background: C.surface,
-    borderTop: `1px solid ${C.border}`,
-    flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '16px 24px',
+    background: C.bg,
+    borderTop: `1px solid ${C.border}`,
+    overflow: 'hidden',
   },
 
-  // Welcome card
-  welcomeCard: {
-    background: C.surface,
-    border: `1px solid ${C.border}`,
-    borderRadius: 20,
-    padding: '16px 20px',
-    margin: '0 20px',
-    maxWidth: 520,
-    width: 'calc(100% - 40px)',
-    borderLeft: `4px solid ${C.coralBorder}`,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-    flexShrink: 0,
+  // Welcome / empty state
+  chatWelcome: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    gap: 8,
   },
-  welcomeGreeting: { fontSize: 17, fontWeight: 700, color: C.textPrimary, margin: '0 0 4px' },
-  welcomeText: { fontSize: 15, color: C.textMid, margin: 0, lineHeight: 1.6 },
+  chatGreet: { fontSize: 20, fontWeight: 700, color: C.textPrimary, margin: 0 },
+  chatHint:  { fontSize: 15, color: C.textMuted, margin: 0, lineHeight: 1.65 },
 
-  // Status card
-  statusCard: {
-    border: '1px solid',
-    borderRadius: 14,
-    padding: '10px 20px',
-    margin: '0 20px',
-    maxWidth: 520,
-    width: 'calc(100% - 40px)',
-    flexShrink: 0,
+  // Status
+  statusBubble: {
+    borderRadius: 12,
+    padding: '10px 18px',
+    fontSize: 15,
+    fontWeight: 500,
+    textAlign: 'center',
   },
-  statusText: { margin: 0, fontSize: 15, fontWeight: 500, textAlign: 'center' },
+
+  // Emma's current speech — large, centred
+  emmaText: {
+    margin: 0,
+    fontSize: 20,
+    fontWeight: 400,
+    color: C.textPrimary,
+    lineHeight: 1.7,
+    textAlign: 'center',
+    animation: 'subtitleFadeIn 0.25s ease',
+  },
 
   cursor: { animation: 'blink 1s step-end infinite', marginLeft: 2 },
 
@@ -908,6 +1019,32 @@ const S = {
     fontSize: 16,
     cursor: 'pointer',
     padding: '4px 6px',
+  },
+
+  // ── Persistent setup chips ────────────────────────────────────
+  setupRow: {
+    width: '100%',
+    maxWidth: 560,
+    display: 'flex',
+    gap: 8,
+    justifyContent: 'center',
+    padding: '6px 20px 2px',
+    flexShrink: 0,
+  },
+  setupChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 20,
+    padding: '5px 14px',
+    fontSize: 12,
+    fontWeight: 500,
+    color: C.textMid,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
   },
 
   // Controls

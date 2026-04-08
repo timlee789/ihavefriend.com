@@ -7,13 +7,14 @@ const AVATAR_URL = '/avatars/avaturn.glb';
 const TALKINGHEAD_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs';
 
 // Valence/arousal → TalkingHead mood
+// Valid TalkingHead moods: neutral, happy, angry, sad, fear, disgust, love, sleep
 function emotionToMood(emotionData) {
   if (!emotionData) return 'neutral';
   const { valence = 0, arousal = 0.5 } = emotionData;
   if (valence > 0.5)              return 'happy';
-  if (valence > 0.2)              return 'friendly';
+  if (valence > 0.2)              return 'love';
   if (valence < -0.3)             return 'sad';
-  if (valence < -0.1)             return 'concerned';
+  if (valence < -0.1)             return 'neutral';
   if (arousal > 0.7)              return 'happy';
   return 'neutral';
 }
@@ -71,6 +72,18 @@ export default function EmmaAvatar3D({
 
         headRef.current = head;
         setMode('3d');
+
+        // Diagnostic: log all morph targets TalkingHead found on this avatar
+        const allMT = Object.keys(head.mtAvatar || {});
+        const visemeMT = allMT.filter(k => k.startsWith('viseme_'));
+        const jawMT    = allMT.filter(k => k.toLowerCase().includes('jaw') || k.toLowerCase().includes('mouth'));
+        console.log('[EmmaAvatar3D] 3D avatar ready. Total morph targets:', allMT.length);
+        console.log('[EmmaAvatar3D] viseme_* targets:', visemeMT);
+        console.log('[EmmaAvatar3D] jaw/mouth targets:', jawMT);
+        if (visemeMT.length === 0) {
+          console.warn('[EmmaAvatar3D] ⚠️ No viseme_* morph targets — lipsync will not animate');
+        }
+
         head.playGesture('wave');
         if (onReady) onReady(head);
       } catch (e) {
@@ -89,7 +102,7 @@ export default function EmmaAvatar3D({
   // ── Update mood when speaking / listening ───────────────────
   useEffect(() => {
     if (!headRef.current || mode !== '3d') return;
-    if (isSpeaking)       headRef.current.setMood('friendly');
+    if (isSpeaking)       headRef.current.setMood('happy');
     else if (isListening) headRef.current.setMood('neutral');
   }, [isSpeaking, isListening, mode]);
 
