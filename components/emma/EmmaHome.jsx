@@ -5,22 +5,57 @@ import { useRouter } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaHome.module.css';
 
-// ── topic chips per time-of-day ───────────────────────────────────────────────
-const DAY_CHIPS = [
-  { label: '가게 이야기',     emoji: '🏪', colorKey: 'orange' },
-  { label: '감사한 것들',     emoji: '🌿', colorKey: 'green'  },
-  { label: '오늘 있었던 일',  emoji: '🌍', colorKey: 'teal'   },
-  { label: '마음속 이야기',   emoji: '🎵', colorKey: 'purple' },
-  { label: '읽은 것, 본 것',  emoji: '📖', colorKey: 'pink'   },
-];
-
-const NIGHT_CHIPS = [
-  { label: '잠이 안 와요',        emoji: '💤', colorKey: 'purple' },
-  { label: '오늘의 작은 기쁨',    emoji: '✨', colorKey: 'yellow' },
-  { label: '외로울 때',           emoji: '💙', colorKey: 'blue'   },
-  { label: '내일이 걱정돼요',     emoji: '🕐', colorKey: 'orange' },
-  { label: '그냥 얘기하고 싶어요', emoji: '🌙', colorKey: 'teal'  },
-];
+// ── topic chips per time-of-day × language ───────────────────────────────────
+const CHIPS = {
+  EN: {
+    day: [
+      { label: 'Shop talk',          emoji: '🏪', colorKey: 'orange' },
+      { label: 'Things I\'m grateful for', emoji: '🌿', colorKey: 'green'  },
+      { label: 'What happened today',      emoji: '🌍', colorKey: 'teal'   },
+      { label: 'What\'s on my mind',       emoji: '🎵', colorKey: 'purple' },
+      { label: 'Something I read or saw',  emoji: '📖', colorKey: 'pink'   },
+    ],
+    night: [
+      { label: 'Can\'t sleep',          emoji: '💤', colorKey: 'purple' },
+      { label: 'Today\'s small joys',   emoji: '✨', colorKey: 'yellow' },
+      { label: 'Feeling lonely',      emoji: '💙', colorKey: 'blue'   },
+      { label: 'Worried about tomorrow', emoji: '🕐', colorKey: 'orange' },
+      { label: 'Just want to talk',   emoji: '🌙', colorKey: 'teal'   },
+    ],
+  },
+  KO: {
+    day: [
+      { label: '가게 이야기',      emoji: '🏪', colorKey: 'orange' },
+      { label: '감사한 것들',      emoji: '🌿', colorKey: 'green'  },
+      { label: '오늘 있었던 일',   emoji: '🌍', colorKey: 'teal'   },
+      { label: '마음속 이야기',    emoji: '🎵', colorKey: 'purple' },
+      { label: '읽은 것, 본 것',   emoji: '📖', colorKey: 'pink'   },
+    ],
+    night: [
+      { label: '잠이 안 와요',        emoji: '💤', colorKey: 'purple' },
+      { label: '오늘의 작은 기쁨',    emoji: '✨', colorKey: 'yellow' },
+      { label: '외로울 때',           emoji: '💙', colorKey: 'blue'   },
+      { label: '내일이 걱정돼요',     emoji: '🕐', colorKey: 'orange' },
+      { label: '그냥 얘기하고 싶어요', emoji: '🌙', colorKey: 'teal'  },
+    ],
+  },
+  ES: {
+    day: [
+      { label: 'Hablar del trabajo',   emoji: '🏪', colorKey: 'orange' },
+      { label: 'Cosas por las que agradezco', emoji: '🌿', colorKey: 'green' },
+      { label: 'Lo que pasó hoy',      emoji: '🌍', colorKey: 'teal'   },
+      { label: 'Lo que tengo en mente', emoji: '🎵', colorKey: 'purple' },
+      { label: 'Algo que leí o vi',    emoji: '📖', colorKey: 'pink'   },
+    ],
+    night: [
+      { label: 'No puedo dormir',       emoji: '💤', colorKey: 'purple' },
+      { label: 'Las pequeñas alegrías', emoji: '✨', colorKey: 'yellow' },
+      { label: 'Me siento solo/a',      emoji: '💙', colorKey: 'blue'   },
+      { label: 'Preocupado por mañana', emoji: '🕐', colorKey: 'orange' },
+      { label: 'Solo quiero hablar',    emoji: '🌙', colorKey: 'teal'   },
+    ],
+  },
+};
 
 // ── language cycle: EN → KO → ES ─────────────────────────────────────────────
 const LANGS = ['EN', 'KO', 'ES'];
@@ -126,9 +161,10 @@ export default function EmmaHome({ userName = '' }) {
     saveLang(next.toLowerCase());
   }
 
-  const isDay = mode === 'day';
-  const chips = isDay ? DAY_CHIPS : NIGHT_CHIPS;
-  const name  = displayName || '친구';
+  const isDay  = mode === 'day';
+  const langChips = CHIPS[lang] || CHIPS.KO;
+  const chips  = isDay ? langChips.day : langChips.night;
+  const name   = displayName || '친구';
   const t     = GREETINGS[lang] || GREETINGS.KO;
 
   function handleChip(chip) {
