@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaHome.module.css';
@@ -278,11 +278,31 @@ function XIcon({ color }) {
   );
 }
 
+// ── iOS tip / toast strings per language ─────────────────────────────────────
+const IOS_TIP = {
+  EN: "Tap the Share button in Safari, then 'Add to Home Screen'",
+  KO: "Safari 하단 공유 버튼 → '홈 화면에 추가' 를 눌러주세요",
+  ES: "Toca Compartir en Safari y luego 'Añadir a inicio'",
+};
+const NOTIF_MSG = {
+  granted: { EN: 'Notifications are enabled ✓', KO: '알림이 허용되어 있어요 ✓', ES: 'Notificaciones habilitadas ✓' },
+  denied:  { EN: 'Notifications blocked — please allow in browser settings', KO: '알림이 차단되어 있어요 — 브라우저 설정에서 허용해 주세요', ES: 'Notificaciones bloqueadas — permite en ajustes del navegador' },
+  noapi:   { EN: 'Notifications not supported in this browser', KO: '이 브라우저는 알림을 지원하지 않아요', ES: 'Este navegador no admite notificaciones' },
+  asked:   { EN: 'Notification permission requested', KO: '알림 권한을 요청했어요', ES: 'Permiso de notificación solicitado' },
+};
+
 export default function EmmaHome({ userName = '' }) {
   const router  = useRouter();
   const [mode, setMode]   = useState('day');
   const [lang, setLang]   = useState('KO');
   const [displayName, setDisplayName] = useState(userName);
+  const [toast, setToast] = useState('');          // brief feedback message
+  const deferredPromptRef = useRef(null);          // PWA install prompt (Android)
+
+  function showToast(msg, ms = 3500) {
+    setToast(msg);
+    setTimeout(() => setToast(''), ms);
+  }
 
   useEffect(() => {
     setMode(getTimeMode());
@@ -297,12 +317,66 @@ export default function EmmaHome({ userName = '' }) {
         }
       } catch {}
     }
+
+    // capture PWA install prompt (Android Chrome)
+    const handler = (e) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function cycleLang() {
     const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     setLang(next);
     saveLang(next.toLowerCase());
+  }
+
+  // ── Add to Home Screen ──────────────────────────────────────────────────────
+  async function handleAddToHome() {
+    // Already installed (standalone mode)
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+      showToast(lang === 'KO' ? '이미 홈 화면에 추가되어 있어요 ✓' : lang === 'ES' ? 'Ya está en la pantalla de inicio ✓' : 'Already added to home screen ✓');
+      return;
+    }
+    // Android Chrome — show native prompt
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      const { outcome } = await deferredPromptRef.current.userChoice;
+      deferredPromptRef.current = null;
+      if (outcome === 'accepted') {
+        showToast(lang === 'KO' ? '홈 화면에 추가했어요! 🎉' : lang === 'ES' ? '¡Añadido al inicio! 🎉' : 'Added to home screen! 🎉');
+      }
+      return;
+    }
+    // iOS Safari — show instructions
+    showToast(IOS_TIP[lang] || IOS_TIP.EN, 5000);
+  }
+
+  // ── Notification Settings ───────────────────────────────────────────────────
+  async function handleNotif() {
+    if (!('Notification' in window)) {
+      showToast(NOTIF_MSG.noapi[lang] || NOTIF_MSG.noapi.EN);
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      showToast(NOTIF_MSG.granted[lang] || NOTIF_MSG.granted.EN);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      showToast(NOTIF_MSG.denied[lang] || NOTIF_MSG.denied.EN, 5000);
+      return;
+    }
+    // 'default' — request permission
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      showToast(NOTIF_MSG.granted[lang] || NOTIF_MSG.granted.EN);
+      // send a test notification
+      new Notification('Emma', { body: lang === 'KO' ? '안녕하세요! 알림이 설정됐어요 😊' : lang === 'ES' ? '¡Hola! Las notificaciones están activadas 😊' : 'Hi! Notifications are set up 😊', icon: '/icons/icon-192.png' });
+    } else {
+      showToast(NOTIF_MSG.denied[lang] || NOTIF_MSG.denied.EN, 5000);
+    }
   }
 
   const isDay  = mode === 'day';
@@ -327,6 +401,13 @@ export default function EmmaHome({ userName = '' }) {
 
   return (
     <div className={`${styles.screen} ${isDay ? styles.day : styles.night}`}>
+
+      {/* ── toast feedback ── */}
+      {toast && (
+        <div className={`${styles.toast} ${isDay ? styles.toastDay : styles.toastNight}`}>
+          {toast}
+        </div>
+      )}
 
       {/* ── top bar ── */}
       <header className={styles.topbar}>
@@ -405,6 +486,12 @@ export default function EmmaHome({ userName = '' }) {
           <MicIcon />
           {t.cta}
         </button>
+
+        {/* bottom utility links — right below CTA */}
+        <div className={styles.bottomLinks}>
+          <button className={styles.bottomLink} onClick={handleAddToHome}>{t.home}</button>
+          <button className={styles.bottomLink} onClick={handleNotif}>{t.notif}</button>
+        </div>
 
         {/* ── divider before onboarding ── */}
         <div className={styles.obDivider} />
@@ -546,12 +633,6 @@ export default function EmmaHome({ userName = '' }) {
               : { background: 'rgba(168,85,247,0.14)', color: 'rgba(196,148,255,0.9)' }
             }>{ob.betaTag}</span>
           </div>
-        </div>
-
-        {/* bottom links */}
-        <div className={styles.bottomLinks}>
-          <button className={styles.bottomLink}>{t.home}</button>
-          <button className={styles.bottomLink}>{t.notif}</button>
         </div>
 
       </main>
