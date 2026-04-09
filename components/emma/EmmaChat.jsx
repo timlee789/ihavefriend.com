@@ -78,6 +78,86 @@ function getEmma(lang) {
   return EMMA_CHARS[lang] || EMMA_CHARS.KO;
 }
 
+// ── topic chips (same set as EmmaHome, day & night per language) ──────────────
+const CHAT_CHIPS = {
+  EN: {
+    emptyHint: 'What shall we talk about today?',
+    emptyOr:   'or tap the mic to start',
+    day: [
+      { label: 'Shop talk',               emoji: '🏪', c: 'orange' },
+      { label: "Things I'm grateful for", emoji: '🌿', c: 'green'  },
+      { label: 'What happened today',     emoji: '🌍', c: 'teal'   },
+      { label: "What's on my mind",       emoji: '🎵', c: 'purple' },
+      { label: 'Something I read or saw', emoji: '📖', c: 'pink'   },
+    ],
+    night: [
+      { label: "Can't sleep",           emoji: '💤', c: 'purple' },
+      { label: "Today's small joys",    emoji: '✨', c: 'yellow' },
+      { label: 'Feeling lonely',        emoji: '💙', c: 'blue'   },
+      { label: 'Worried about tomorrow',emoji: '🕐', c: 'orange' },
+      { label: 'Just want to talk',     emoji: '🌙', c: 'teal'   },
+    ],
+  },
+  KO: {
+    emptyHint: '오늘 어떤 이야기 할까요?',
+    emptyOr:   '또는 마이크를 눌러 바로 시작해요',
+    day: [
+      { label: '가게 이야기',      emoji: '🏪', c: 'orange' },
+      { label: '감사한 것들',      emoji: '🌿', c: 'green'  },
+      { label: '오늘 있었던 일',   emoji: '🌍', c: 'teal'   },
+      { label: '마음속 이야기',    emoji: '🎵', c: 'purple' },
+      { label: '읽은 것, 본 것',   emoji: '📖', c: 'pink'   },
+    ],
+    night: [
+      { label: '잠이 안 와요',         emoji: '💤', c: 'purple' },
+      { label: '오늘의 작은 기쁨',     emoji: '✨', c: 'yellow' },
+      { label: '외로울 때',            emoji: '💙', c: 'blue'   },
+      { label: '내일이 걱정돼요',      emoji: '🕐', c: 'orange' },
+      { label: '그냥 얘기하고 싶어요', emoji: '🌙', c: 'teal'   },
+    ],
+  },
+  ES: {
+    emptyHint: '¿De qué hablamos hoy?',
+    emptyOr:   'o toca el micrófono para empezar',
+    day: [
+      { label: 'Hablar del trabajo',          emoji: '🏪', c: 'orange' },
+      { label: 'Cosas por las que agradezco', emoji: '🌿', c: 'green'  },
+      { label: 'Lo que pasó hoy',             emoji: '🌍', c: 'teal'   },
+      { label: 'Lo que tengo en mente',       emoji: '🎵', c: 'purple' },
+      { label: 'Algo que leí o vi',           emoji: '📖', c: 'pink'   },
+    ],
+    night: [
+      { label: 'No puedo dormir',        emoji: '💤', c: 'purple' },
+      { label: 'Las pequeñas alegrías',  emoji: '✨', c: 'yellow' },
+      { label: 'Me siento solo/a',       emoji: '💙', c: 'blue'   },
+      { label: 'Preocupado por mañana',  emoji: '🕐', c: 'orange' },
+      { label: 'Solo quiero hablar',     emoji: '🌙', c: 'teal'   },
+    ],
+  },
+};
+
+// chip colour palette for inline styles (avoids extra CSS classes)
+const CHIP_PAL = {
+  day: {
+    orange: { bg:'rgba(234,88,12,0.10)',  color:'#9a3a08',        border:'rgba(234,88,12,0.22)'  },
+    green:  { bg:'rgba(22,163,74,0.08)',  color:'#14532d',        border:'rgba(22,163,74,0.18)'  },
+    teal:   { bg:'rgba(20,184,166,0.08)', color:'#134e4a',        border:'rgba(20,184,166,0.2)'  },
+    purple: { bg:'rgba(168,85,247,0.08)', color:'#4c1d95',        border:'rgba(168,85,247,0.18)' },
+    pink:   { bg:'rgba(236,72,153,0.08)', color:'#831843',        border:'rgba(236,72,153,0.18)' },
+    yellow: { bg:'rgba(234,179,8,0.10)',  color:'#713f12',        border:'rgba(234,179,8,0.20)'  },
+    blue:   { bg:'rgba(59,130,246,0.10)', color:'#1e3a5f',        border:'rgba(59,130,246,0.20)' },
+  },
+  night: {
+    purple: { bg:'rgba(168,85,247,0.14)', color:'rgba(196,148,255,0.9)', border:'rgba(168,85,247,0.28)' },
+    yellow: { bg:'rgba(251,191,36,0.10)', color:'rgba(252,211,77,0.9)',  border:'rgba(251,191,36,0.20)' },
+    blue:   { bg:'rgba(96,165,250,0.12)', color:'rgba(147,197,253,0.9)', border:'rgba(96,165,250,0.25)' },
+    orange: { bg:'rgba(251,146,60,0.12)', color:'rgba(253,186,116,0.9)', border:'rgba(251,146,60,0.22)' },
+    teal:   { bg:'rgba(45,212,191,0.10)', color:'rgba(94,234,212,0.9)',  border:'rgba(45,212,191,0.20)' },
+    green:  { bg:'rgba(34,197,94,0.10)',  color:'rgba(134,239,172,0.9)', border:'rgba(34,197,94,0.20)'  },
+    pink:   { bg:'rgba(236,72,153,0.10)', color:'rgba(249,168,212,0.9)', border:'rgba(236,72,153,0.20)' },
+  },
+};
+
 // ── persist lang ──────────────────────────────────────────────────────────────
 function saveLang(lang, token) {
   localStorage.setItem('lang', lang);
@@ -262,6 +342,7 @@ export default function EmmaChat({ initialMode }) {
   const isReconnectingRef   = useRef(false);
   const tokenRef            = useRef('');   // always-current token for closures
   const langRef             = useRef('KO'); // always-current lang for closures
+  const pendingTopicRef     = useRef('');   // chip topic selected before connecting
 
   // keep refs in sync
   useEffect(() => { tokenRef.current = token; }, [token]);
@@ -419,10 +500,19 @@ export default function EmmaChat({ initialMode }) {
         acquireWakeLock();
 
         if (!isReconnect) {
-          // Send greeting trigger in current language
+          // Send greeting trigger — include topic if user picked a chip
+          const topic = pendingTopicRef.current;
+          pendingTopicRef.current = '';
+          const topicGreeting = topic
+            ? (langRef.current === 'KO'
+                ? `"${topic}" 이야기를 하고 싶어요. 따뜻하게 인사하고 그 주제로 자연스럽게 시작해주세요.`
+                : langRef.current === 'ES'
+                ? `Quiero hablar de "${topic}". Por favor, salúdame con cariño y empieza con ese tema.`
+                : `I'd like to talk about "${topic}". Please greet me warmly and start on that topic.`)
+            : getEmma(langRef.current).greeting;
           ws.send(JSON.stringify({
             client_content: {
-              turns: [{ role: 'user', parts: [{ text: getEmma(langRef.current).greeting }] }],
+              turns: [{ role: 'user', parts: [{ text: topicGreeting }] }],
               turn_complete: true,
             }
           }));
@@ -601,7 +691,7 @@ export default function EmmaChat({ initialMode }) {
       const res = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ message: '', lang: currentLang.toLowerCase() }),
+        body: JSON.stringify({ message: pendingTopicRef.current || '', lang: currentLang.toLowerCase() }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -722,6 +812,21 @@ export default function EmmaChat({ initialMode }) {
     }
   }, [micOn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── chip selection from empty state ─────────────────────────────────────────
+  function selectChip(chip) {
+    if (isConnected) return;
+    pendingTopicRef.current = chip.label;
+    // Show chip as user's opening message
+    setMessages([{
+      id: Date.now(),
+      role: 'user',
+      text: `${chip.emoji} ${chip.label}`,
+      timestamp: nowStr(),
+    }]);
+    setMicOn(true);
+    connect();
+  }
+
   const isDay  = mode === 'day';
   const emma   = getEmma(lang);
   // eslint-disable-next-line no-unused-vars
@@ -772,6 +877,40 @@ export default function EmmaChat({ initialMode }) {
 
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
+
+        {/* ── empty state: topic chips ── */}
+        {messages.length === 0 && !isConnected && (() => {
+          const cc   = CHAT_CHIPS[lang] || CHAT_CHIPS.KO;
+          const pal  = CHIP_PAL[isDay ? 'day' : 'night'];
+          const timeKey = (() => { const h = new Date().getHours(); return h >= 6 && h < 21 ? 'day' : 'night'; })();
+          const chips = cc[timeKey];
+          return (
+            <div className={styles.emptyState}>
+              {/* hint text */}
+              <p className={styles.emptyHint}>{cc.emptyHint}</p>
+              {/* chips */}
+              <div className={styles.emptyChips}>
+                {chips.map(chip => {
+                  const p = pal[chip.c] || pal.orange;
+                  return (
+                    <button
+                      key={chip.label}
+                      className={styles.emptyChip}
+                      style={{ background: p.bg, color: p.color, borderColor: p.border }}
+                      onClick={() => selectChip(chip)}
+                    >
+                      <span style={{ fontSize: 15 }}>{chip.emoji}</span>
+                      {chip.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* or-mic hint */}
+              <p className={styles.emptyOr}>{cc.emptyOr}</p>
+            </div>
+          );
+        })()}
+
         {messages.map(msg => (
           <Bubble key={msg.id} msg={msg} mode={mode} />
         ))}

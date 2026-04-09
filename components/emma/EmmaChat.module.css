@@ -247,6 +247,55 @@
 .micLabelDay   { color: #b08070; }
 .micLabelNight { color: rgba(255,255,255,0.28); }
 
+/* ── empty state (no messages yet) ─────────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 4px 20px;
+}
+
+.emptyHint {
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  margin: 0;
+}
+.day   .emptyHint { color: #2d1510; }
+.night .emptyHint { color: rgba(255,255,255,0.82); }
+
+.emptyChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: center;
+}
+
+.emptyChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 9px 15px;
+  border-radius: 22px;
+  border: 0.5px solid;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+}
+.emptyChip:hover  { opacity: 0.78; }
+.emptyChip:active { transform: scale(0.96); }
+
+.emptyOr {
+  font-size: 11px;
+  text-align: center;
+  margin: 0;
+}
+.day   .emptyOr { color: #c0a090; }
+.night .emptyOr { color: rgba(255,255,255,0.25); }
+
 /* ── Feedback modal ────────────────────────────────────────────────────────── */
 .feedbackOverlay {
   position: fixed;
