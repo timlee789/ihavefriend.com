@@ -45,3 +45,12 @@ next-env.d.ts
 # local database
 *.db
 *.sqlite
+
+# emmaui source templates (applied to components/emma/ — no need to track)
+/emmaui/
+
+# backup files
+*.bak
+
+# claude settings
+.claude/
