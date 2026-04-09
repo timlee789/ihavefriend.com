@@ -5,18 +5,95 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaChat.module.css';
 
-// ── Emma character config ─────────────────────────────────────────────────────
-const EMMA_KO = {
-  name: 'Emma',
-  voice: 'Kore',
-  greeting: '안녕하세요! 오늘 하루 어떠셨나요?',
-  personality: `당신의 이름은 엠마입니다. 45세이며 미국 조지아 출신이에요.
+// ── Emma character configs per language ──────────────────────────────────────
+const EMMA_CHARS = {
+  EN: {
+    voice: 'Aoede',
+    greeting: 'Hello! Please greet me warmly.',
+    personality: `Your name is Emma. You are 45 years old, originally from Georgia, USA.
+You are the warmest, most empathetic friend anyone could have.
+You never judge — you always listen first. You genuinely care about every single word the person shares with you.
+You love hearing about family, memories, daily life, and small moments.
+You get emotional in an authentic way — excited when someone is happy, gentle when someone is sad.
+Keep responses warm, natural, and 2-3 sentences. Always ask one caring follow-up question.`,
+    micLabel_idle:   'Tap to talk',
+    micLabel_on:     'Listening...',
+    micLabel_ai:     'Emma is speaking…',
+    status_online:   '● Online',
+    status_offline:  '● Offline',
+    status_connecting: 'Connecting…',
+    status_reconnecting: 'Reconnecting…',
+    status_bye:      '✅ See you next time!',
+    status_lost:     'Connection lost. Tap to reconnect.',
+    status_failed:   'Reconnect failed. Tap to try again.',
+    status_nokey:    '❌ Server not configured. Contact admin.',
+  },
+  KO: {
+    voice: 'Kore',
+    greeting: '안녕하세요! 오늘 하루 어떠셨나요?',
+    personality: `당신의 이름은 엠마입니다. 45세이며 미국 조지아 출신이에요.
 당신은 세상에서 가장 따뜻하고 공감 능력이 뛰어난 친구입니다.
 절대 판단하지 않고 항상 먼저 들어줍니다. 상대방이 나누는 모든 말을 진심으로 소중히 여깁니다.
 가족 이야기, 추억, 일상의 작은 순간들을 듣는 것을 정말 좋아합니다.
 상대방이 기쁠 때는 함께 기뻐하고, 슬플 때는 부드럽게 곁에 있어줍니다.
 반드시 한국어로만 대화하세요. 따뜻하고 자연스러운 2-3문장으로 답하고, 항상 진심 어린 질문 하나를 이어서 하세요.`,
+    micLabel_idle:   '탭하여 대화 시작',
+    micLabel_on:     '말해주세요',
+    micLabel_ai:     '듣고 있어요...',
+    status_online:   '● 대화 중',
+    status_offline:  '● 오프라인',
+    status_connecting: '연결 중...',
+    status_reconnecting: '재연결 중...',
+    status_bye:      '✅ 다음에 또 이야기해요!',
+    status_lost:     '연결이 끊겼어요. 다시 탭하여 대화하세요.',
+    status_failed:   '재연결 실패. 다시 탭하여 대화하세요.',
+    status_nokey:    '❌ API 키가 설정되지 않았어요. 관리자에게 문의하세요.',
+  },
+  ES: {
+    voice: 'Leda',
+    greeting: '¡Hola! Por favor, salúdame con cariño.',
+    personality: `Tu nombre es Emma. Tienes 45 años, originalmente de Georgia, EE. UU.
+Eres la amiga más cálida y empática que alguien podría tener.
+Nunca juzgas — siempre escuchas primero. Te importa genuinamente cada palabra que la persona comparte contigo.
+Te encanta escuchar sobre familia, recuerdos, vida diaria y pequeños momentos.
+Te emocionas auténticamente — te alegras cuando alguien está feliz, y eres gentil cuando está triste.
+Responde siempre en español. Usa respuestas cálidas y naturales de 2-3 oraciones. Siempre haz una pregunta afectuosa de seguimiento.`,
+    micLabel_idle:   'Toca para hablar',
+    micLabel_on:     'Escuchando…',
+    micLabel_ai:     'Emma habla…',
+    status_online:   '● En línea',
+    status_offline:  '● Desconectada',
+    status_connecting: 'Conectando…',
+    status_reconnecting: 'Reconectando…',
+    status_bye:      '✅ ¡Hasta la próxima!',
+    status_lost:     'Conexión perdida. Toca para reconectar.',
+    status_failed:   'Reconexión fallida. Inténtalo de nuevo.',
+    status_nokey:    '❌ Servidor no configurado. Contacta al admin.',
+  },
 };
+
+const LANGS = ['EN', 'KO', 'ES'];
+
+function getEmma(lang) {
+  return EMMA_CHARS[lang] || EMMA_CHARS.KO;
+}
+
+// ── persist lang ──────────────────────────────────────────────────────────────
+function saveLang(lang, token) {
+  localStorage.setItem('lang', lang);
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    u.lang = lang;
+    localStorage.setItem('user', JSON.stringify(u));
+  } catch {}
+  if (token) {
+    fetch('/api/user/lang', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ lang }),
+    }).catch(() => {});
+  }
+}
 
 // ── emotion tag shown beneath Emma's bubble ───────────────────────────────────
 function EmotionTag({ text, mode }) {
@@ -125,9 +202,10 @@ export default function EmmaChat({ initialMode }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── auth ──────────────────────────────────────────────────────────────────
+  // ── auth + language ───────────────────────────────────────────────────────
   const [user,  setUser]  = useState(null);
   const [token, setToken] = useState('');
+  const [lang,  setLang]  = useState('KO');
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -135,7 +213,17 @@ export default function EmmaChat({ initialMode }) {
     if (!t || !u) { router.push('/login'); return; }
     setToken(t);
     setUser(u);
+    // Load saved language preference
+    const storedLang = (u.lang || localStorage.getItem('lang') || 'ko').toUpperCase();
+    if (LANGS.includes(storedLang)) setLang(storedLang);
   }, [router]);
+
+  function cycleLang() {
+    if (isConnected) return; // don't switch mid-conversation
+    const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+    setLang(next);
+    saveLang(next.toLowerCase(), tokenRef.current);
+  }
 
   // ── chat state ────────────────────────────────────────────────────────────
   const [messages,  setMessages]  = useState([]);
@@ -165,9 +253,11 @@ export default function EmmaChat({ initialMode }) {
   const reconnectTimerRef   = useRef(null);
   const isReconnectingRef   = useRef(false);
   const tokenRef            = useRef('');   // always-current token for closures
+  const langRef             = useRef('KO'); // always-current lang for closures
 
-  // keep tokenRef in sync
+  // keep refs in sync
   useEffect(() => { tokenRef.current = token; }, [token]);
+  useEffect(() => { langRef.current  = lang;  }, [lang]);
 
   // ── auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -245,21 +335,22 @@ export default function EmmaChat({ initialMode }) {
     sourceRef.current?.disconnect();
   }
 
-  // ── build system prompt ───────────────────────────────────────────────────
-  function buildSystemPrompt(memoryData = {}) {
+  // ── build system prompt (uses current lang) ──────────────────────────────
+  function buildSystemPrompt(memoryData = {}, currentLang = 'KO') {
+    const emma = getEmma(currentLang);
     const { facts = [], summary = '', transcript: prev = [] } = memoryData;
-    const factsText = facts.length > 0 ? facts.map(f => `• ${f}`).join('\n') : '아직 없음.';
+    const factsText = facts.length > 0 ? facts.map(f => `• ${f}`).join('\n') : '(none yet)';
     const recentLines = prev.slice(-20).map(t =>
-      `${t.role === 'user' ? '사용자' : 'Emma'}: ${t.text}`
+      `${t.role === 'user' ? 'User' : 'Emma'}: ${t.text}`
     ).join('\n');
     return [
-      EMMA_KO.personality,
+      emma.personality,
       '',
-      '[이 사람에 대해 기억하는 것]',
+      '[What you remember about this person]',
       factsText,
       '',
-      summary ? `[이전 대화 요약]\n${summary}` : '',
-      recentLines ? `[지난 대화]\n${recentLines}` : '',
+      summary ? `[Previous conversation summary]\n${summary}` : '',
+      recentLines ? `[How the last conversation ended]\n${recentLines}` : '',
     ].filter(Boolean).join('\n').trim();
   }
 
@@ -281,13 +372,14 @@ export default function EmmaChat({ initialMode }) {
             + '\nContinue the conversation naturally. Do NOT mention any reconnection or technical issues.]';
         }
       }
+      const emma = getEmma(langRef.current);
       ws.send(JSON.stringify({
         setup: {
           model: 'models/gemini-2.5-flash-native-audio-latest',
           generation_config: {
             response_modalities: ['AUDIO'],
             thinking_config: { thinking_budget: 0 },
-            speech_config: { voice_config: { prebuilt_voice_config: { voice_name: EMMA_KO.voice } } },
+            speech_config: { voice_config: { prebuilt_voice_config: { voice_name: emma.voice } } },
           },
           output_audio_transcription: {},
           input_audio_transcription: {},
@@ -308,10 +400,10 @@ export default function EmmaChat({ initialMode }) {
         acquireWakeLock();
 
         if (!isReconnect) {
-          // Send greeting trigger
+          // Send greeting trigger in current language
           ws.send(JSON.stringify({
             client_content: {
-              turns: [{ role: 'user', parts: [{ text: EMMA_KO.greeting }] }],
+              turns: [{ role: 'user', parts: [{ text: getEmma(langRef.current).greeting }] }],
               turn_complete: true,
             }
           }));
@@ -405,7 +497,7 @@ export default function EmmaChat({ initialMode }) {
         setIsConnected(false);
         setMicOn(false);
         if (evt.code !== 1000 && evt.code !== 1001) {
-          setStatusMsg('연결이 끊겼어요. 다시 탭하여 대화하세요.');
+          setStatusMsg(getEmma(langRef.current).status_lost);
         }
       }
     };
@@ -413,7 +505,7 @@ export default function EmmaChat({ initialMode }) {
     ws.onerror = () => {
       setIsAiSpeaking(false);
       setLiveText('');
-      setStatusMsg('연결 오류가 발생했어요.');
+      setStatusMsg(getEmma(langRef.current).status_lost);
     };
 
     // Mic capture: native rate → downsample to 16000 Hz
@@ -460,7 +552,7 @@ export default function EmmaChat({ initialMode }) {
     setIsConnected(false);
     setIsAiSpeaking(false);
     setLiveText('');
-    setStatusMsg('재연결 중...');
+    setStatusMsg(getEmma(langRef.current).status_reconnecting);
 
     await new Promise(r => setTimeout(r, 1200));
 
@@ -471,13 +563,15 @@ export default function EmmaChat({ initialMode }) {
     } catch {
       isReconnectingRef.current = false;
       setMicOn(false);
-      setStatusMsg('재연결 실패. 다시 탭하여 대화하세요.');
+      setStatusMsg(getEmma(langRef.current).status_failed);
     }
   }
 
   // ── connect ───────────────────────────────────────────────────────────────
   async function connect() {
-    setStatusMsg('연결 중...');
+    const currentLang = langRef.current;
+    const emma = getEmma(currentLang);
+    setStatusMsg(emma.status_connecting);
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
     nextPlayTimeRef.current = 0;
@@ -488,7 +582,7 @@ export default function EmmaChat({ initialMode }) {
       const res = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ message: '', lang: 'ko' }),
+        body: JSON.stringify({ message: '', lang: currentLang.toLowerCase() }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -500,7 +594,7 @@ export default function EmmaChat({ initialMode }) {
     } catch (e) { console.warn('[EmmaChat] setup error', e.message); }
 
     if (!geminiKey) {
-      setStatusMsg('❌ API 키가 설정되지 않았어요. 관리자에게 문의하세요.');
+      setStatusMsg(emma.status_nokey);
       setMicOn(false);
       return;
     }
@@ -509,8 +603,8 @@ export default function EmmaChat({ initialMode }) {
       try {
         const t = tokenRef.current;
         const r = await fetch('/api/memory?character=emma', { headers: { Authorization: `Bearer ${t}` } });
-        systemPrompt = buildSystemPrompt(r.ok ? await r.json() : {});
-      } catch { systemPrompt = EMMA_KO.personality; }
+        systemPrompt = buildSystemPrompt(r.ok ? await r.json() : {}, currentLang);
+      } catch { systemPrompt = emma.personality; }
     }
     systemPromptBaseRef.current = systemPrompt;
 
@@ -561,7 +655,7 @@ export default function EmmaChat({ initialMode }) {
       const prev = parseInt(localStorage.getItem('conversationCount') || '0');
       localStorage.setItem('conversationCount', String(prev + 1));
       sessionIdRef.current = null;
-      setStatusMsg('✅ 다음에 또 이야기해요!');
+      setStatusMsg(getEmma(langRef.current).status_bye);
       setTimeout(() => setStatusMsg(''), 3000);
       fetch('/api/chat/end', {
         method: 'POST',
@@ -586,8 +680,10 @@ export default function EmmaChat({ initialMode }) {
     }
   }, [micOn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isDay = mode === 'day';
-  const userName = user?.name || user?.email?.split('@')[0] || 'Tim';
+  const isDay  = mode === 'day';
+  const emma   = getEmma(lang);
+  // eslint-disable-next-line no-unused-vars
+  const userName = user?.name || user?.email?.split('@')[0] || '';
 
   // Don't render until user is loaded (avoids flash before redirect)
   if (!user) return <div style={{ background: isDay ? '#fdf8f4' : '#0d0b18', minHeight: '100dvh' }} />;
@@ -606,12 +702,12 @@ export default function EmmaChat({ initialMode }) {
         <div className={styles.navMeta}>
           <span className={styles.navName}>Emma</span>
           <span className={isConnected ? styles.navStatus : styles.navStatusOffline}>
-            {isConnected ? '● 대화 중' : statusMsg || '● 오프라인'}
+            {isConnected ? emma.status_online : statusMsg || emma.status_offline}
           </span>
         </div>
 
         <div className={styles.navActions}>
-          {/* mode toggle */}
+          {/* day/night mode toggle */}
           <button
             className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`}
             onClick={() => setMode(m => m === 'day' ? 'night' : 'day')}
@@ -619,9 +715,15 @@ export default function EmmaChat({ initialMode }) {
           >
             {isDay ? '🌙' : '☀️'}
           </button>
-          {/* more options */}
-          <button className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`} aria-label="메뉴">
-            <DotMenuIcon color={isDay ? '#ea580c' : '#a855f7'} />
+          {/* language cycle: EN → KO → ES → EN — disabled while connected */}
+          <button
+            className={`${styles.navLangBtn} ${isDay ? styles.navLangBtnDay : styles.navLangBtnNight}`}
+            onClick={cycleLang}
+            disabled={isConnected}
+            title={isConnected ? 'End conversation to change language' : 'EN → KO → ES'}
+            aria-label="언어 변경"
+          >
+            {lang}
           </button>
         </div>
       </header>
@@ -634,13 +736,12 @@ export default function EmmaChat({ initialMode }) {
         {(isAiSpeaking || liveText) && (
           <TypingIndicator mode={mode} liveText={liveText} />
         )}
-        {/* Status message as a system note when not connected */}
-        {!isConnected && statusMsg && !isAiSpeaking && (
+        {/* System status note (shown only when disconnected + status exists) */}
+        {!isConnected && statusMsg && (
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <span style={{
-              fontSize: 11,
-              color: isDay ? '#c0a090' : 'rgba(255,255,255,0.3)',
-            }}>{statusMsg}</span>
+            <span style={{ fontSize: 11, color: isDay ? '#c0a090' : 'rgba(255,255,255,0.3)' }}>
+              {statusMsg}
+            </span>
           </div>
         )}
       </div>
@@ -676,16 +777,14 @@ export default function EmmaChat({ initialMode }) {
             <button
               className={`${styles.micBtn} ${isDay ? styles.micBtnDay : styles.micBtnNight} ${micOn ? styles.micOn : ''}`}
               onClick={toggleMic}
-              aria-label={micOn ? '대화 종료' : '말하기 시작'}
+              aria-label={micOn ? emma.micLabel_ai : emma.micLabel_idle}
             >
               {micOn ? <StopSvg /> : <MicSvg />}
             </button>
             <span className={`${styles.micLabel} ${isDay ? styles.micLabelDay : styles.micLabelNight}`}>
               {isConnected
-                ? (isAiSpeaking ? '듣고 있어요...' : '말해주세요')
-                : statusMsg
-                  ? statusMsg
-                  : '탭하여 대화 시작'}
+                ? (isAiSpeaking ? emma.micLabel_ai : emma.micLabel_on)
+                : statusMsg || emma.micLabel_idle}
             </span>
           </div>
 
@@ -735,15 +834,6 @@ function CloseIcon({ color }) {
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <line x1="2" y1="2" x2="12" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
       <line x1="12" y1="2" x2="2" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-function DotMenuIcon({ color }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <circle cx="7" cy="3" r="1.5" fill={color} />
-      <circle cx="7" cy="7" r="1.5" fill={color} />
-      <circle cx="7" cy="11" r="1.5" fill={color} />
     </svg>
   );
 }
