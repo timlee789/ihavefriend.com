@@ -380,6 +380,35 @@ export default function EmmaHome({ userName = '' }) {
           <span className={styles.memText}>{isDay ? t.memHint_day : t.memHint_night}</span>
         </div>
 
+        {/* ── topic chips ── */}
+        <div>
+          <p className={styles.sectionLabel}>{isDay ? t.section_day : t.section_night}</p>
+          <div className={styles.chipsWrap}>
+            {chips.map(chip => (
+              <button
+                key={chip.label}
+                className={`${styles.chip} ${styles[`chip_${chip.colorKey}`]}`}
+                onClick={() => handleChip(chip)}
+              >
+                <span style={{ fontSize: 14 }}>{chip.emoji}</span>
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA button */}
+        <button
+          className={styles.ctaBtn}
+          onClick={() => router.push('/chat')}
+        >
+          <MicIcon />
+          {t.cta}
+        </button>
+
+        {/* ── divider before onboarding ── */}
+        <div className={styles.obDivider} />
+
         {/* ── TRUTH CARD ── */}
         <div className={styles.obSection}>
           <div className={styles.obCard} style={card}>
@@ -518,32 +547,6 @@ export default function EmmaHome({ userName = '' }) {
             }>{ob.betaTag}</span>
           </div>
         </div>
-
-        {/* ── topic chips ── */}
-        <div>
-          <p className={styles.sectionLabel}>{isDay ? t.section_day : t.section_night}</p>
-          <div className={styles.chipsWrap}>
-            {chips.map(chip => (
-              <button
-                key={chip.label}
-                className={`${styles.chip} ${styles[`chip_${chip.colorKey}`]}`}
-                onClick={() => handleChip(chip)}
-              >
-                <span style={{ fontSize: 14 }}>{chip.emoji}</span>
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA button */}
-        <button
-          className={styles.ctaBtn}
-          onClick={() => router.push('/chat')}
-        >
-          <MicIcon />
-          {t.cta}
-        </button>
 
         {/* bottom links */}
         <div className={styles.bottomLinks}>
