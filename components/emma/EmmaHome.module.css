@@ -33,7 +33,7 @@
 .day .memDot  { background: #ea580c; }
 .day .memText { color: #9a4020; }
 
-/* day chip base */
+/* day chips */
 .day .chip { border-width: 0.5px; border-style: solid; }
 .day .chip_orange { background: rgba(234,88,12,0.10); color: #9a3a08; border-color: rgba(234,88,12,0.22); }
 .day .chip_green  { background: rgba(22,163,74,0.08);  color: #14532d; border-color: rgba(22,163,74,0.18); }
@@ -41,30 +41,31 @@
 .day .chip_purple { background: rgba(168,85,247,0.08); color: #4c1d95; border-color: rgba(168,85,247,0.18); }
 .day .chip_pink   { background: rgba(236,72,153,0.08); color: #831843; border-color: rgba(236,72,153,0.18); }
 
-.day .ctaBtn { background: #ea580c; }
+.day .ctaBtn   { background: #ea580c; }
 .day .bottomLink { color: #c0a090; }
 
 /* ── NIGHT ── */
 .night { background: #0d0b18; }
 
-.night .topbar    { background: #13101f; border-bottom: 0.5px solid rgba(124,58,237,0.15); }
+.night .topbar    { background: #100d20; border-bottom: 0.5px solid rgba(124,58,237,0.2); }
 .night .backBtn   { color: rgba(255,255,255,0.3); }
 .night .topName   { color: rgba(255,255,255,0.88); }
 .night .statusDot { background: #4ade80; }
 .night .langPill  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45); }
 .night .modeToggle{ background: rgba(168,85,247,0.1); color: rgba(196,148,255,0.9); }
 
-.night .avatarArea { background: linear-gradient(170deg, #1c1230 0%, #0e1a30 100%); }
+.night .avatarArea { background: linear-gradient(170deg, #1c1230 0%, #0e1428 100%); }
 
 .night .body        { background: #0d0b18; }
-.night .greeting    { color: rgba(255,255,255,0.92); }
-.night .greetingSub { color: rgba(255,255,255,0.32); }
-.night .sectionLabel{ color: rgba(255,255,255,0.28); }
+.night .greeting    { color: rgba(255,255,255,0.95); }
+.night .greetingSub { color: rgba(255,255,255,0.45); }
+.night .sectionLabel{ color: rgba(255,255,255,0.35); }
 
-.night .memBar  { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.2); }
+.night .memBar  { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.25); }
 .night .memDot  { background: #a855f7; }
-.night .memText { color: rgba(196,148,255,0.85); }
+.night .memText { color: rgba(196,148,255,0.9); }
 
+/* night chips */
 .night .chip { border-width: 0.5px; border-style: solid; }
 .night .chip_purple { background: rgba(168,85,247,0.14); color: rgba(196,148,255,0.9); border-color: rgba(168,85,247,0.28); }
 .night .chip_yellow { background: rgba(251,191,36,0.10); color: rgba(252,211,77,0.9);  border-color: rgba(251,191,36,0.20); }
@@ -72,17 +73,18 @@
 .night .chip_orange { background: rgba(251,146,60,0.12); color: rgba(253,186,116,0.9); border-color: rgba(251,146,60,0.22); }
 .night .chip_teal   { background: rgba(45,212,191,0.10); color: rgba(94,234,212,0.9);  border-color: rgba(45,212,191,0.20); }
 
-.night .ctaBtn { background: linear-gradient(135deg, #7c3aed, #a855f7); }
-.night .bottomLink { color: rgba(255,255,255,0.2); }
+.night .ctaBtn   { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+.night .bottomLink { color: rgba(255,255,255,0.28); }
 
 /* ── SHARED LAYOUT ── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: 10px 18px;           /* compact — save vertical space */
   position: relative;
   z-index: 10;
+  flex-shrink: 0;
 }
 .backBtn {
   font-size: 14px;
@@ -91,19 +93,11 @@
   cursor: pointer;
   padding: 4px 0;
 }
-.topCenter {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.topName { font-size: 14px; font-weight: 500; }
-.topRight { display: flex; align-items: center; gap: 8px; }
+.topCenter { display: flex; align-items: center; gap: 6px; }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.topName   { font-size: 14px; font-weight: 500; }
+.topRight  { display: flex; align-items: center; gap: 8px; }
+
 .langPill {
   font-size: 11px;
   font-weight: 600;
@@ -117,23 +111,21 @@
 }
 .langPill:hover  { opacity: 0.72; }
 .langPill:active { transform: scale(0.95); }
+
 .modeToggle {
-  width: 30px;
-  height: 30px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   transition: opacity 0.15s;
 }
 .modeToggle:hover { opacity: 0.75; }
 
-/* avatar area */
+/* ── avatar area — shorter on mobile ── */
 .avatarArea {
-  height: 255px;
+  height: 170px;               /* was 255px — save 85px */
   position: relative;
   overflow: hidden;
   display: flex;
@@ -143,73 +135,64 @@
 }
 .avatar { position: relative; z-index: 2; }
 .warmGlow {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
+  position: absolute; bottom: 8px; left: 50%;
   transform: translateX(-50%);
-  width: 130px;
-  height: 50px;
-  background: radial-gradient(ellipse, rgba(234,88,12,0.15) 0%, transparent 70%);
+  width: 110px; height: 40px;
+  background: radial-gradient(ellipse, rgba(234,88,12,0.18) 0%, transparent 70%);
 }
 .nightGlow {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
+  position: absolute; bottom: 12px; left: 50%;
   transform: translateX(-50%);
-  width: 120px;
-  height: 60px;
-  background: radial-gradient(ellipse, rgba(168,85,247,0.25) 0%, transparent 70%);
+  width: 100px; height: 50px;
+  background: radial-gradient(ellipse, rgba(168,85,247,0.28) 0%, transparent 70%);
 }
 
-/* body — scrollable */
+/* ── body — scrollable ── */
 .body {
   flex: 1;
-  padding: 20px 20px 24px;
+  padding: 16px 20px 24px;     /* was 20px top */
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 13px;                   /* was 16px */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 .body::-webkit-scrollbar { width: 0; }
 
-.greetingBlock { display: flex; flex-direction: column; gap: 4px; }
-.greeting      { font-size: 17px; font-weight: 500; }
-.greetingSub   { font-size: 13px; line-height: 1.6; white-space: pre-line; }
+/* ── greeting — bigger text ── */
+.greetingBlock { display: flex; flex-direction: column; gap: 5px; }
+.greeting      { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.greetingSub   { font-size: 15px; line-height: 1.6; white-space: pre-line; }
 
-/* memory bar */
+/* ── memory bar ── */
 .memBar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 9px 13px;
   border-radius: 12px;
   border: 0.5px solid;
 }
 .memDot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.memText { font-size: 12px; line-height: 1.45; }
+.memText { font-size: 13px; line-height: 1.45; }
 
-/* section label */
+/* ── section label ── */
 .sectionLabel {
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  font-weight: 500;
-  margin-bottom: 10px;
+  font-weight: 600;
+  margin-bottom: 9px;
 }
 
-/* chips */
-.chipsWrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+/* ── chips ── */
+.chipsWrap { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  padding: 7px 13px;
+  gap: 6px;
+  font-size: 13px;             /* was 12px */
+  padding: 8px 14px;           /* was 7px 13px */
   border-radius: 20px;
   cursor: pointer;
   background: none;
@@ -219,28 +202,28 @@
 .chip:hover  { opacity: 0.78; }
 .chip:active { transform: scale(0.97); }
 
-/* CTA button */
+/* ── CTA button — bigger & bolder ── */
 .ctaBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   width: 100%;
-  padding: 15px 0;
+  padding: 17px 0;             /* was 15px */
   border-radius: 50px;
   border: none;
   color: white;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 17px;             /* was 15px */
+  font-weight: 600;            /* was 500 */
   cursor: pointer;
   font-family: inherit;
-  margin-top: 4px;
   transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .ctaBtn:hover  { opacity: 0.88; }
 .ctaBtn:active { transform: scale(0.98); }
 
-/* bottom links */
+/* ── bottom utility links ── */
 .bottomLinks {
   display: flex;
   justify-content: center;
@@ -256,7 +239,7 @@
 }
 .bottomLink:hover { opacity: 0.65; }
 
-/* toast notification */
+/* ── toast notification ── */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -280,33 +263,49 @@
 .toastDay   { background: #1a0a05; color: rgba(255,255,255,0.92); }
 .toastNight { background: #e2e8f0; color: #1a0a05; }
 
-/* ── ONBOARDING PANEL ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   ONBOARDING PANEL
+   Full-bleed rounded panel that creates a clear visual boundary between
+   the service interaction area (above) and the descriptive content (below).
+   ══════════════════════════════════════════════════════════════════════════════ */
 
-/* full-bleed rounded panel — visually separates info from service */
 .obPanel {
-  margin: 4px -20px -24px;   /* bleed past body's padding on all 3 sides */
-  padding: 22px 20px 32px;
-  border-radius: 24px 24px 0 0;
+  margin: 6px -20px -24px;     /* bleed past body padding on 3 sides */
+  padding: 20px 20px 36px;
+  border-radius: 26px 26px 0 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-.obPanelDay   { background: #ede8e0; }
-.obPanelNight { background: #14112a; }
 
-/* small label at top of panel */
+/* DAY panel — clearly warmer/darker than #fdf8f4 main bg */
+.obPanelDay {
+  background: #e6ddd2;
+  border-top: 1px solid rgba(180,130,90,0.18);
+  box-shadow: 0 -6px 24px rgba(120,80,40,0.08);
+}
+
+/* NIGHT panel — clearly purple-tinted vs #0d0b18 main bg */
+.obPanelNight {
+  background: #1d1840;
+  border-top: 1px solid rgba(124,58,237,0.4);
+  box-shadow: 0 -6px 32px rgba(80,30,180,0.25);
+}
+
+/* panel header label */
 .obPanelLabel {
   font-size: 10px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
   text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
-.day   .obPanelLabel { color: #c0a898; }
-.night .obPanelLabel { color: rgba(168,85,247,0.5); }
+.day   .obPanelLabel { color: #b8a090; }
+.night .obPanelLabel { color: rgba(168,85,247,0.6); }
 
-.obSection { /* wrapper for each onboarding block — gap handled by parent flex */ }
+/* section inside panel */
+.obSection { /* gap handled by parent flex */ }
 
 .obSectionLabel {
   font-size: 10px;
@@ -336,12 +335,9 @@
 }
 
 .obTruthIcon {
-  width: 30px;
-  height: 30px;
+  width: 30px; height: 30px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
@@ -361,11 +357,7 @@
 }
 
 /* ── who cards ── */
-.obWhoList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.obWhoList { display: flex; flex-direction: column; gap: 8px; }
 
 .obWhoCard {
   display: flex;
@@ -376,32 +368,18 @@
 }
 
 .obWhoIcon {
-  width: 34px;
-  height: 34px;
+  width: 34px; height: 34px;
   border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   font-size: 17px;
   flex-shrink: 0;
 }
 
-.obWhoTitle {
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.obWhoDesc {
-  font-size: 11px;
-  line-height: 1.5;
-}
+.obWhoTitle { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.obWhoDesc  { font-size: 11px; line-height: 1.5; }
 
 /* ── not-for card ── */
-.obNotforCard {
-  border-radius: 12px;
-  padding: 14px;
-}
+.obNotforCard { border-radius: 12px; padding: 14px; }
 
 .obNotforRow {
   display: flex;
@@ -412,20 +390,14 @@
 .obNotforRow:last-child { margin-bottom: 0; }
 
 .obNotforX {
-  width: 14px;
-  height: 14px;
+  width: 14px; height: 14px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   margin-top: 1px;
 }
 
-.obNotforText {
-  font-size: 11px;
-  line-height: 1.5;
-}
+.obNotforText { font-size: 11px; line-height: 1.5; }
 
 /* ── how steps ── */
 .obHowStep {
@@ -437,57 +409,37 @@
 .obHowStep:not(:last-child)::after {
   content: '';
   position: absolute;
-  left: 12px;
-  top: 34px;
-  bottom: 0;
+  left: 12px; top: 34px; bottom: 0;
   width: 1.5px;
   background: var(--line-color, rgba(234,88,12,0.15));
 }
 
 .obHowNum {
-  width: 26px;
-  height: 26px;
+  width: 26px; height: 26px;
   border-radius: 50%;
   color: white;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  position: relative; z-index: 1;
 }
 
-.obHowTitle {
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.obHowDesc {
-  font-size: 11px;
-  line-height: 1.5;
-}
+.obHowTitle { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.obHowDesc  { font-size: 11px; line-height: 1.5; }
 
 .obHowHighlight {
   display: inline-block;
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 10px; font-weight: 500;
   padding: 2px 8px;
   border-radius: 10px;
   margin-top: 4px;
 }
 
 /* ── promise card ── */
-.obPromiseCard {
-  border-radius: 16px;
-  padding: 18px 18px 14px;
-}
+.obPromiseCard { border-radius: 16px; padding: 18px 18px 14px; }
 
 .obPromiseTitle {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 15px; font-weight: 500;
   color: white;
   margin-bottom: 12px;
   line-height: 1.35;
@@ -501,58 +453,27 @@
 }
 
 .obPCheck {
-  width: 14px;
-  height: 14px;
+  width: 14px; height: 14px;
   border-radius: 50%;
   background: rgba(255,255,255,0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   margin-top: 1px;
 }
 
-.obPromiseText {
-  font-size: 12px;
-  color: rgba(255,255,255,0.88);
-  line-height: 1.45;
-}
-
-.obPromiseNote {
-  font-size: 10px;
-  color: rgba(255,255,255,0.5);
-  text-align: center;
-  margin-top: 12px;
-}
+.obPromiseText { font-size: 12px; color: rgba(255,255,255,0.88); line-height: 1.45; }
+.obPromiseNote { font-size: 10px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 12px; }
 
 /* ── beta badge ── */
-.obBetaCard {
-  border-radius: 12px;
-  padding: 14px;
-  text-align: center;
-}
+.obBetaCard { border-radius: 12px; padding: 14px; text-align: center; }
 
-.obBetaTop {
-  font-size: 11px;
-  margin-bottom: 3px;
-}
-
-.obBetaMain {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 3px;
-}
-
-.obBetaSub {
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: pre-line;
-}
+.obBetaTop  { font-size: 11px; margin-bottom: 3px; }
+.obBetaMain { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.obBetaSub  { font-size: 11px; line-height: 1.5; white-space: pre-line; }
 
 .obBetaTag {
   display: inline-block;
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 9px; font-weight: 500;
   padding: 3px 10px;
   border-radius: 20px;
   margin-top: 8px;
