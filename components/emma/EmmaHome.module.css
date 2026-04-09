@@ -33,13 +33,7 @@
 .day .memDot  { background: #ea580c; }
 .day .memText { color: #9a4020; }
 
-/* day chips */
-.day .chip { border-width: 0.5px; border-style: solid; }
-.day .chip_orange { background: rgba(234,88,12,0.10); color: #9a3a08; border-color: rgba(234,88,12,0.22); }
-.day .chip_green  { background: rgba(22,163,74,0.08);  color: #14532d; border-color: rgba(22,163,74,0.18); }
-.day .chip_teal   { background: rgba(20,184,166,0.08); color: #134e4a; border-color: rgba(20,184,166,0.2); }
-.day .chip_purple { background: rgba(168,85,247,0.08); color: #4c1d95; border-color: rgba(168,85,247,0.18); }
-.day .chip_pink   { background: rgba(236,72,153,0.08); color: #831843; border-color: rgba(236,72,153,0.18); }
+/* (chip colour rules removed — chips moved to chat page) */
 
 .day .ctaBtn   { background: #ea580c; }
 .day .bottomLink { color: #c0a090; }
@@ -65,13 +59,6 @@
 .night .memDot  { background: #a855f7; }
 .night .memText { color: rgba(196,148,255,0.9); }
 
-/* night chips */
-.night .chip { border-width: 0.5px; border-style: solid; }
-.night .chip_purple { background: rgba(168,85,247,0.14); color: rgba(196,148,255,0.9); border-color: rgba(168,85,247,0.28); }
-.night .chip_yellow { background: rgba(251,191,36,0.10); color: rgba(252,211,77,0.9);  border-color: rgba(251,191,36,0.20); }
-.night .chip_blue   { background: rgba(96,165,250,0.12); color: rgba(147,197,253,0.9); border-color: rgba(96,165,250,0.25); }
-.night .chip_orange { background: rgba(251,146,60,0.12); color: rgba(253,186,116,0.9); border-color: rgba(251,146,60,0.22); }
-.night .chip_teal   { background: rgba(45,212,191,0.10); color: rgba(94,234,212,0.9);  border-color: rgba(45,212,191,0.20); }
 
 .night .ctaBtn   { background: linear-gradient(135deg, #7c3aed, #a855f7); }
 .night .bottomLink { color: rgba(255,255,255,0.28); }
@@ -176,31 +163,22 @@
 .memDot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .memText { font-size: 13px; line-height: 1.45; }
 
-/* ── section label ── */
-.sectionLabel {
-  font-size: 11px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 9px;
-}
+/* ── AI diff block (replaces chips) ── */
+.diffBlock { display: flex; flex-direction: column; gap: 8px; }
 
-/* ── chips ── */
-.chipsWrap { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;             /* was 12px */
-  padding: 8px 14px;           /* was 7px 13px */
-  border-radius: 20px;
-  cursor: pointer;
-  background: none;
-  transition: opacity 0.15s, transform 0.1s;
-  font-family: inherit;
+.diffTitle {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
 }
-.chip:hover  { opacity: 0.78; }
-.chip:active { transform: scale(0.97); }
+.day   .diffTitle { color: #2d1510; }
+.night .diffTitle { color: rgba(255,255,255,0.92); }
+
+.diffCard {
+  border-radius: 16px;
+  padding: 16px;
+}
 
 /* ── CTA button — bigger & bolder ── */
 .ctaBtn {

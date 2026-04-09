@@ -5,58 +5,6 @@ import { useRouter } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaHome.module.css';
 
-// ── topic chips per time-of-day × language ───────────────────────────────────
-const CHIPS = {
-  EN: {
-    day: [
-      { label: 'Shop talk',          emoji: '🏪', colorKey: 'orange' },
-      { label: 'Things I\'m grateful for', emoji: '🌿', colorKey: 'green'  },
-      { label: 'What happened today',      emoji: '🌍', colorKey: 'teal'   },
-      { label: 'What\'s on my mind',       emoji: '🎵', colorKey: 'purple' },
-      { label: 'Something I read or saw',  emoji: '📖', colorKey: 'pink'   },
-    ],
-    night: [
-      { label: 'Can\'t sleep',          emoji: '💤', colorKey: 'purple' },
-      { label: 'Today\'s small joys',   emoji: '✨', colorKey: 'yellow' },
-      { label: 'Feeling lonely',      emoji: '💙', colorKey: 'blue'   },
-      { label: 'Worried about tomorrow', emoji: '🕐', colorKey: 'orange' },
-      { label: 'Just want to talk',   emoji: '🌙', colorKey: 'teal'   },
-    ],
-  },
-  KO: {
-    day: [
-      { label: '가게 이야기',      emoji: '🏪', colorKey: 'orange' },
-      { label: '감사한 것들',      emoji: '🌿', colorKey: 'green'  },
-      { label: '오늘 있었던 일',   emoji: '🌍', colorKey: 'teal'   },
-      { label: '마음속 이야기',    emoji: '🎵', colorKey: 'purple' },
-      { label: '읽은 것, 본 것',   emoji: '📖', colorKey: 'pink'   },
-    ],
-    night: [
-      { label: '잠이 안 와요',        emoji: '💤', colorKey: 'purple' },
-      { label: '오늘의 작은 기쁨',    emoji: '✨', colorKey: 'yellow' },
-      { label: '외로울 때',           emoji: '💙', colorKey: 'blue'   },
-      { label: '내일이 걱정돼요',     emoji: '🕐', colorKey: 'orange' },
-      { label: '그냥 얘기하고 싶어요', emoji: '🌙', colorKey: 'teal'  },
-    ],
-  },
-  ES: {
-    day: [
-      { label: 'Hablar del trabajo',   emoji: '🏪', colorKey: 'orange' },
-      { label: 'Cosas por las que agradezco', emoji: '🌿', colorKey: 'green' },
-      { label: 'Lo que pasó hoy',      emoji: '🌍', colorKey: 'teal'   },
-      { label: 'Lo que tengo en mente', emoji: '🎵', colorKey: 'purple' },
-      { label: 'Algo que leí o vi',    emoji: '📖', colorKey: 'pink'   },
-    ],
-    night: [
-      { label: 'No puedo dormir',       emoji: '💤', colorKey: 'purple' },
-      { label: 'Las pequeñas alegrías', emoji: '✨', colorKey: 'yellow' },
-      { label: 'Me siento solo/a',      emoji: '💙', colorKey: 'blue'   },
-      { label: 'Preocupado por mañana', emoji: '🕐', colorKey: 'orange' },
-      { label: 'Solo quiero hablar',    emoji: '🌙', colorKey: 'teal'   },
-    ],
-  },
-};
-
 // ── language cycle: EN → KO → ES ─────────────────────────────────────────────
 const LANGS = ['EN', 'KO', 'ES'];
 
@@ -109,6 +57,7 @@ const GREETINGS = {
 const ONBOARDING = {
   EN: {
     panelLabel: 'About this service',
+    diffTitle: 'What makes Emma different?',
     truthQ: 'When you say "I feel so lonely today"…',
     otherAI: 'Other AI',
     otherResp: '"Here are 5 ways to overcome loneliness. First…"',
@@ -153,6 +102,7 @@ const ONBOARDING = {
 
   KO: {
     panelLabel: '서비스 소개',
+    diffTitle: '다른 AI와 무엇이 다른가요?',
     truthQ: '"오늘 너무 외로워요." 라고 말하면?',
     otherAI: '다른 AI',
     otherResp: '"외로움을 극복하는 5가지 방법을 알려드릴게요. 첫째..."',
@@ -197,6 +147,7 @@ const ONBOARDING = {
 
   ES: {
     panelLabel: 'Sobre este servicio',
+    diffTitle: '¿En qué se diferencia Emma?',
     truthQ: 'Cuando dices "Hoy me siento muy solo/a"…',
     otherAI: 'Otra IA',
     otherResp: '"Te daré 5 formas de superar la soledad. Primero…"',
@@ -383,15 +334,9 @@ export default function EmmaHome({ userName = '' }) {
   }
 
   const isDay  = mode === 'day';
-  const langChips = CHIPS[lang] || CHIPS.KO;
-  const chips  = isDay ? langChips.day : langChips.night;
   const name   = displayName || '친구';
   const t      = GREETINGS[lang] || GREETINGS.KO;
   const ob     = ONBOARDING[lang] || ONBOARDING.KO;
-
-  function handleChip(chip) {
-    router.push(`/chat?topic=${encodeURIComponent(chip.label)}`);
-  }
 
   // ── inline style helpers for day/night ──────────────────────────────────────
   const card = isDay
@@ -464,20 +409,47 @@ export default function EmmaHome({ userName = '' }) {
           <span className={styles.memText}>{isDay ? t.memHint_day : t.memHint_night}</span>
         </div>
 
-        {/* ── topic chips ── */}
-        <div>
-          <p className={styles.sectionLabel}>{isDay ? t.section_day : t.section_night}</p>
-          <div className={styles.chipsWrap}>
-            {chips.map(chip => (
-              <button
-                key={chip.label}
-                className={`${styles.chip} ${styles[`chip_${chip.colorKey}`]}`}
-                onClick={() => handleChip(chip)}
-              >
-                <span style={{ fontSize: 14 }}>{chip.emoji}</span>
-                {chip.label}
-              </button>
-            ))}
+        {/* ── AI 비교 카드 (다른 AI와 무엇이 다른가) ── */}
+        <div className={styles.diffBlock}>
+          <p className={styles.diffTitle}>{ob.diffTitle}</p>
+          <div className={styles.diffCard} style={card}>
+            <p className={styles.obTruthQ} style={{ color: mutedText }}>{ob.truthQ}</p>
+
+            {/* Other AI row */}
+            <div className={styles.obTruthRow}>
+              <div className={styles.obTruthIcon} style={{ background: isDay ? '#f0f0f8' : 'rgba(255,255,255,0.06)' }}>
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="6" stroke={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} strokeWidth="1.2" fill="none"/>
+                  <text x="7" y="11" textAnchor="middle" fontSize="8" fill={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} fontFamily="sans-serif">AI</text>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className={styles.obTruthLabel} style={{ color: isDay ? '#8080a0' : 'rgba(255,255,255,0.3)' }}>{ob.otherAI}</div>
+                <div className={styles.obBubble} style={isDay
+                  ? { background: '#f5f5f8', color: '#505060' }
+                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }
+                }>{ob.otherResp}</div>
+              </div>
+            </div>
+
+            {/* Emma row */}
+            <div className={styles.obTruthRow} style={{ marginBottom: 0 }}>
+              <div className={styles.obTruthIcon} style={{ background: 'rgba(234,88,12,0.1)' }}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <ellipse cx="8" cy="8" rx="7" ry="7" fill="rgba(234,88,12,0.15)"/>
+                  <path d="M5 9 Q8 12 11 9" stroke="#ea580c" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+                  <circle cx="5.5" cy="6.5" r="1" fill="#ea580c"/>
+                  <circle cx="10.5" cy="6.5" r="1" fill="#ea580c"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className={styles.obTruthLabel} style={{ color: '#ea580c' }}>Emma</div>
+                <div className={styles.obBubble} style={isDay
+                  ? { background: 'rgba(234,88,12,0.07)', color: '#2d1510', border: '0.5px solid rgba(234,88,12,0.12)' }
+                  : { background: 'rgba(168,85,247,0.12)', color: 'rgba(255,255,255,0.82)', border: '0.5px solid rgba(168,85,247,0.2)' }
+                }>{ob.emmaResp}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -503,53 +475,6 @@ export default function EmmaHome({ userName = '' }) {
 
           {/* panel header label */}
           <p className={styles.obPanelLabel}>{ob.panelLabel}</p>
-
-          {/* ── TRUTH CARD ── */}
-          <div className={styles.obSection}>
-            <div className={styles.obCard} style={isDay
-              ? { background: '#fff', border: '0.5px solid rgba(234,88,12,0.12)' }
-              : { background: '#1e1a38', border: '0.5px solid rgba(168,85,247,0.18)' }
-            }>
-              <p className={styles.obTruthQ} style={{ color: mutedText }}>{ob.truthQ}</p>
-
-              {/* Other AI row */}
-              <div className={styles.obTruthRow}>
-                <div className={styles.obTruthIcon} style={{ background: isDay ? '#f0f0f8' : 'rgba(255,255,255,0.06)' }}>
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="6" stroke={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} strokeWidth="1.2" fill="none"/>
-                    <text x="7" y="11" textAnchor="middle" fontSize="8" fill={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} fontFamily="sans-serif">AI</text>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div className={styles.obTruthLabel} style={{ color: isDay ? '#8080a0' : 'rgba(255,255,255,0.3)' }}>{ob.otherAI}</div>
-                  <div className={styles.obBubble} style={isDay ? { background: '#f5f5f8', color: '#505060' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>
-                    {ob.otherResp}
-                  </div>
-                </div>
-              </div>
-
-              {/* Emma row */}
-              <div className={styles.obTruthRow} style={{ marginBottom: 0 }}>
-                <div className={styles.obTruthIcon} style={{ background: 'rgba(234,88,12,0.1)' }}>
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                    <ellipse cx="8" cy="8" rx="7" ry="7" fill="rgba(234,88,12,0.15)"/>
-                    <path d="M5 9 Q8 12 11 9" stroke="#ea580c" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
-                    <circle cx="5.5" cy="6.5" r="1" fill="#ea580c"/>
-                    <circle cx="10.5" cy="6.5" r="1" fill="#ea580c"/>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div className={styles.obTruthLabel} style={{ color: '#ea580c' }}>Emma</div>
-                  <div className={styles.obBubble} style={isDay
-                    ? { background: 'rgba(234,88,12,0.07)', color: '#2d1510', border: '0.5px solid rgba(234,88,12,0.12)' }
-                    : { background: 'rgba(168,85,247,0.12)', color: 'rgba(255,255,255,0.82)', border: '0.5px solid rgba(168,85,247,0.2)' }
-                  }>
-                    {ob.emmaResp}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* ── WHO IS THIS FOR ── */}
           <div className={styles.obSection}>
