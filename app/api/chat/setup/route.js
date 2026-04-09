@@ -72,8 +72,8 @@ export async function POST(request) {
   let systemPrompt = '';
   let debugInfo = null;
   try {
-    const { buildEmmaPrompt, EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO } = require('@/lib/recallEngine');
-    const result = await buildEmmaPrompt(db, user.id, message, lang);
+    const { buildEmmaPrompt } = require('@/lib/recallEngine');
+    const result = await buildEmmaPrompt(db, user.id, user, message, lang);
     systemPrompt = result.prompt;
     debugInfo = result.debugInfo;
   } catch (e) {

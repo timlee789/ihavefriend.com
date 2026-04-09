@@ -335,7 +335,7 @@ export default function EmmaChat({ initialMode }) {
     sourceRef.current?.disconnect();
   }
 
-  // ── build system prompt (uses current lang) ──────────────────────────────
+  // ── build system prompt (fallback if /api/chat/setup fails) ─────────────
   function buildSystemPrompt(memoryData = {}, currentLang = 'KO') {
     const emma = getEmma(currentLang);
     const { facts = [], summary = '', transcript: prev = [] } = memoryData;
@@ -343,6 +343,17 @@ export default function EmmaChat({ initialMode }) {
     const recentLines = prev.slice(-20).map(t =>
       `${t.role === 'user' ? 'User' : 'Emma'}: ${t.text}`
     ).join('\n');
+
+    // Always include the registered name so Emma uses it from the first message
+    const name = user?.name || '';
+    const nameBlock = name
+      ? (currentLang === 'KO'
+          ? `\n\n[사용자 정보]\n이 사람의 이름은 ${name}입니다. 대화 중 자연스럽게 이름을 불러주세요.`
+          : currentLang === 'ES'
+          ? `\n\n[Información del usuario]\nEl nombre de esta persona es ${name}. Úsalo con naturalidad.`
+          : `\n\n[User info]\nThis person's name is ${name}. Use their name naturally in conversation.`)
+      : '';
+
     return [
       emma.personality,
       '',
@@ -351,7 +362,7 @@ export default function EmmaChat({ initialMode }) {
       '',
       summary ? `[Previous conversation summary]\n${summary}` : '',
       recentLines ? `[How the last conversation ended]\n${recentLines}` : '',
-    ].filter(Boolean).join('\n').trim();
+    ].filter(Boolean).join('\n').trim() + nameBlock;
   }
 
   // ── openWS — core WebSocket connection ───────────────────────────────────
