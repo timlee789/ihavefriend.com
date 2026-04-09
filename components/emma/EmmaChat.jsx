@@ -233,6 +233,14 @@ export default function EmmaChat({ initialMode }) {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
+  // ── feedback modal state ──────────────────────────────────────────────────
+  const [showFeedback,   setShowFeedback]   = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);   // 1-5
+  const [feedbackHover,  setFeedbackHover]  = useState(0);   // hover preview
+  const [feedbackComment,setFeedbackComment]= useState('');
+  const [feedbackSent,   setFeedbackSent]   = useState(false);
+  const feedbackSessionRef = useRef(null);                    // session id at disconnect
+
   // ── refs ──────────────────────────────────────────────────────────────────
   const wsRef             = useRef(null);
   const audioCtxRef       = useRef(null);
@@ -666,17 +674,40 @@ export default function EmmaChat({ initialMode }) {
       const prev = parseInt(localStorage.getItem('conversationCount') || '0');
       localStorage.setItem('conversationCount', String(prev + 1));
       sessionIdRef.current = null;
-      setStatusMsg(getEmma(langRef.current).status_bye);
-      setTimeout(() => setStatusMsg(''), 3000);
       fetch('/api/chat/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
         body: JSON.stringify({ sessionId: sid, transcript: transcriptRef.current }),
       }).catch(() => {});
+      // Show feedback modal after conversation with enough turns
+      feedbackSessionRef.current = sid;
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      setFeedbackSent(false);
+      setShowFeedback(true);
     } else {
       sessionIdRef.current = null;
       setStatusMsg('');
     }
+  }
+
+  // ── submit feedback ───────────────────────────────────────────────────────
+  async function submitFeedback() {
+    if (!feedbackRating) return;
+    const t = tokenRef.current;
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({
+          sessionId: feedbackSessionRef.current,
+          rating: feedbackRating,
+          comment: feedbackComment,
+        }),
+      });
+    } catch {}
+    setFeedbackSent(true);
+    setTimeout(() => setShowFeedback(false), 1800);
   }
 
   // ── mic toggle (called by button press) ───────────────────────────────────
@@ -803,12 +834,93 @@ export default function EmmaChat({ initialMode }) {
           <button
             className={`${styles.sideBtn} ${isDay ? styles.sideBtnDay : styles.sideBtnNight}`}
             title="대화 종료"
-            onClick={() => { disconnect(); router.push('/friends'); }}
+            onClick={() => disconnect()}
           >
             <CloseIcon color={isDay ? '#ea580c' : '#a855f7'} />
           </button>
         </div>
       </div>
+
+      {/* ── Feedback modal ── */}
+      {showFeedback && (
+        <div className={styles.feedbackOverlay} onClick={() => setShowFeedback(false)}>
+          <div
+            className={`${styles.feedbackModal} ${isDay ? styles.feedbackDay : styles.feedbackNight}`}
+            onClick={e => e.stopPropagation()}
+          >
+            {feedbackSent ? (
+              <div className={styles.feedbackThanks}>
+                <span style={{ fontSize: 36 }}>🩷</span>
+                <p className={styles.feedbackThanksText}>
+                  {lang === 'KO' ? '고마워요! 다음에 또 이야기해요 😊' : lang === 'ES' ? '¡Gracias! Hasta la próxima 😊' : 'Thank you! See you next time 😊'}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className={styles.feedbackHeader}>
+                  <EmmaAvatar size="md" mode={mode} />
+                  <p className={styles.feedbackTitle}>
+                    {lang === 'KO' ? '오늘 대화는 어땠나요?' : lang === 'ES' ? '¿Cómo fue la conversación?' : 'How was our conversation?'}
+                  </p>
+                </div>
+
+                {/* Stars */}
+                <div className={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      className={styles.starBtn}
+                      onMouseEnter={() => setFeedbackHover(n)}
+                      onMouseLeave={() => setFeedbackHover(0)}
+                      onClick={() => setFeedbackRating(n)}
+                      aria-label={`${n}점`}
+                    >
+                      <StarIcon
+                        filled={n <= (feedbackHover || feedbackRating)}
+                        color={isDay ? '#ea580c' : '#a855f7'}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Rating label */}
+                {(feedbackHover || feedbackRating) > 0 && (
+                  <p className={`${styles.ratingLabel} ${isDay ? styles.ratingLabelDay : styles.ratingLabelNight}`}>
+                    {RATING_LABELS[lang]?.[feedbackHover || feedbackRating]}
+                  </p>
+                )}
+
+                {/* Comment */}
+                <textarea
+                  className={`${styles.feedbackTextarea} ${isDay ? styles.textareaDay : styles.textareaNight}`}
+                  placeholder={lang === 'KO' ? '하고 싶은 말이 있으면 남겨주세요 (선택)' : lang === 'ES' ? 'Deja un comentario (opcional)' : 'Leave a comment (optional)'}
+                  value={feedbackComment}
+                  onChange={e => setFeedbackComment(e.target.value)}
+                  rows={2}
+                  maxLength={300}
+                />
+
+                {/* Buttons */}
+                <div className={styles.feedbackBtns}>
+                  <button
+                    className={`${styles.skipBtn} ${isDay ? styles.skipBtnDay : styles.skipBtnNight}`}
+                    onClick={() => { setShowFeedback(false); router.push('/friends'); }}
+                  >
+                    {lang === 'KO' ? '건너뛰기' : lang === 'ES' ? 'Omitir' : 'Skip'}
+                  </button>
+                  <button
+                    className={`${styles.submitBtn} ${isDay ? styles.submitBtnDay : styles.submitBtnNight}`}
+                    onClick={submitFeedback}
+                    disabled={!feedbackRating}
+                  >
+                    {lang === 'KO' ? '보내기' : lang === 'ES' ? 'Enviar' : 'Send'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -848,3 +960,23 @@ function CloseIcon({ color }) {
     </svg>
   );
 }
+function StarIcon({ filled, color }) {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+      <path
+        d="M18 3l3.9 8.1 8.9 1.3-6.4 6.3 1.5 8.8L18 23l-7.9 4.5 1.5-8.8-6.4-6.3 8.9-1.3z"
+        fill={filled ? color : 'transparent'}
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// ── rating label text per language ───────────────────────────────────────────
+const RATING_LABELS = {
+  KO: { 1: '별로였어요 😔', 2: '조금 아쉬워요', 3: '괜찮았어요 😊', 4: '좋았어요!', 5: '최고예요! 🩷' },
+  EN: { 1: 'Not great 😔', 2: 'Could be better', 3: 'It was okay 😊', 4: 'It was good!', 5: 'Loved it! 🩷' },
+  ES: { 1: 'No fue bien 😔', 2: 'Podría mejorar', 3: 'Estuvo bien 😊', 4: '¡Fue buena!', 5: '¡Me encantó! 🩷' },
+};

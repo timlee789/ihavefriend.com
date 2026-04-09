@@ -87,6 +87,16 @@ export default function AdminPage() {
         <StatCard label="Month Minutes Used" value={totalMonthMinutes.toFixed(0)} color="#f59e0b" />
       </div>
 
+      {/* Quick links */}
+      <div style={{ padding: '0 20px 4px' }}>
+        <button
+          style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          onClick={() => router.push('/admin/feedback')}
+        >
+          ⭐ View Feedback
+        </button>
+      </div>
+
       {/* Users table */}
       <div style={S.card}>
         <h2 style={S.sectionTitle}>Users</h2>
