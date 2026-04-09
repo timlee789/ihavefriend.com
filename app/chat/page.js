@@ -140,6 +140,34 @@ function ChatPageInner() {
     fetchMemory(t);
   }, [router]);
 
+  // ── Page-close beacon: end session even if user doesn't press "End" ──
+  useEffect(() => {
+    const sendEndBeacon = () => {
+      const sid = sessionIdRef.current;
+      const t   = localStorage.getItem('token');
+      if (!sid || !t) return;
+      // Use sendBeacon — works even when page is being unloaded
+      // sendBeacon can't set Authorization header, so we put token in body
+      // Server reads transcript from transcript_data (saved each turn)
+      const payload = JSON.stringify({ sessionId: sid, transcript: [], _token: t });
+      navigator.sendBeacon(
+        `/api/chat/end`,
+        new Blob([payload], { type: 'application/json' })
+      );
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') sendEndBeacon();
+    };
+
+    window.addEventListener('beforeunload', sendEndBeacon);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', sendEndBeacon);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── PWA: Install prompt + push permission ────────────────────
   useEffect(() => {
     // Restore dismissed state from localStorage
@@ -396,11 +424,18 @@ function ChatPageInner() {
           subtitleTimerRef.current = setTimeout(() => setSubtitle(''), 8000);
         }
 
-        if (userMsg && sessionIdRef.current) {
+        if (sessionIdRef.current) {
           fetch('/api/chat/turn', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ sessionId: sessionIdRef.current, turnNumber: turnNum, userMessage: userMsg }),
+            body: JSON.stringify({
+              sessionId: sessionIdRef.current,
+              turnNumber: turnNum,
+              userMessage: userMsg || '(no transcript)',
+              // Also send full text for server-side accumulation
+              userText: userMsg || null,
+              aiText:   aiMsg  || null,
+            }),
           })
             .then(r => r.ok ? r.json() : null)
             .then(data => { if (data?.emotion) setEmotionData(data.emotion); })

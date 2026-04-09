@@ -18,7 +18,7 @@ export async function POST(request) {
   // API key comes from server env — never from client
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const { sessionId, turnNumber, userMessage } = await request.json().catch(() => ({}));
+  const { sessionId, turnNumber, userMessage, userText, aiText } = await request.json().catch(() => ({}));
   if (!sessionId || !userMessage) {
     return Response.json({ ok: true }); // nothing to do
   }
@@ -76,6 +76,23 @@ User message: "${userMessage.substring(0, 300)}"` }]
       await saveEmotionTurn(db, user.id, sessionId, turnNumber, userMessage, emotion);
     } catch (e) {
       console.error('[chat/turn] saveEmotionTurn failed:', e.message);
+    }
+  }
+
+  // Accumulate transcript in DB so page-close doesn't lose conversation
+  if (userText || aiText) {
+    try {
+      const newTurns = [];
+      if (userText) newTurns.push({ role: 'user',      content: userText });
+      if (aiText)   newTurns.push({ role: 'assistant', content: aiText  });
+      await db.query(`
+        UPDATE chat_sessions
+        SET transcript_data = COALESCE(transcript_data, '[]'::jsonb) || $1::jsonb,
+            total_turns = $2
+        WHERE id = $3
+      `, [JSON.stringify(newTurns), turnNumber, sessionId]);
+    } catch (e) {
+      console.error('[chat/turn] transcript save failed:', e.message);
     }
   }
 

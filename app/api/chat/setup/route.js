@@ -19,6 +19,41 @@ export async function POST(request) {
 
   const db = createDb();
 
+  // 0. Close any abandoned sessions for this user (no ended_at, older than 5 min)
+  //    Process their saved transcript_data so memories aren't lost
+  try {
+    const abandoned = await db.query(`
+      SELECT id, transcript_data
+      FROM chat_sessions
+      WHERE user_id = $1
+        AND ended_at IS NULL
+        AND memories_extracted = false
+        AND started_at < NOW() - INTERVAL '5 minutes'
+      LIMIT 5
+    `, [user.id]);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    for (const sess of abandoned.rows) {
+      const savedTranscript = sess.transcript_data || [];
+      if (apiKey && savedTranscript.length >= 2) {
+        // Extract memories from the saved transcript in the background
+        try {
+          const { processSessionEnd } = require('@/lib/recallEngine');
+          await processSessionEnd(db, user.id, sess.id, savedTranscript, apiKey);
+          console.log(`[chat/setup] Recovered abandoned session ${sess.id} — extracted memories`);
+        } catch (e) {
+          console.warn(`[chat/setup] Could not recover session ${sess.id}:`, e.message);
+          // At least mark it ended
+          await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sess.id]);
+        }
+      } else {
+        await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sess.id]);
+      }
+    }
+  } catch (e) {
+    console.warn('[chat/setup] Abandoned session cleanup failed:', e.message);
+  }
+
   // 1. Create chat session row
   let sessionId;
   try {

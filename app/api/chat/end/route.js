@@ -11,38 +11,86 @@
  * Body: { sessionId, transcript: [{role, text}] }
  * Returns: { ok: true, memoriesExtracted: number }
  */
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, verifyToken } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request) {
-  const { user, error } = await requireAuth(request);
-  if (error) return error;
-
   // API key comes from server env — never from client
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const { sessionId, transcript = [] } = await request.json().catch(() => ({}));
+  // Read body first (sendBeacon can't send Authorization header)
+  let body = {};
+  try {
+    const text = await request.text();
+    body = JSON.parse(text);
+  } catch {}
 
-  console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey}`);
+  const { sessionId, transcript: clientTranscript = [], _token } = body;
+
+  // Auth: prefer Authorization header, fall back to _token in body (for sendBeacon)
+  let user = null;
+  const authHeader = request.headers.get('authorization') || '';
+  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const tokenToUse = headerToken || _token;
+
+  if (tokenToUse) {
+    try {
+      const { verifyToken } = await import('@/lib/auth');
+      const decoded = verifyToken(tokenToUse);
+      if (decoded?.userId) {
+        user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        if (user && !user.isActive) user = null;
+      }
+    } catch {}
+  }
+
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   if (!sessionId) {
-    return Response.json({ ok: true, memoriesExtracted: 0 });
-  }
-  if (!apiKey) {
-    console.warn('[chat/end] GEMINI_API_KEY not set in server env — cannot extract memories');
-    return Response.json({ ok: true, memoriesExtracted: 0 });
-  }
-  if (transcript.length < 2) {
-    console.warn('[chat/end] Transcript too short — skipping extraction');
     return Response.json({ ok: true, memoriesExtracted: 0 });
   }
 
   const db = createDb();
 
+  // Prefer client-sent transcript; fall back to server-accumulated transcript_data
+  let transcript = clientTranscript;
+  if (transcript.length < 2) {
+    try {
+      const row = await db.query(
+        `SELECT transcript_data FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+        [sessionId, user.id]
+      );
+      const saved = row.rows[0]?.transcript_data || [];
+      if (saved.length >= 2) {
+        // transcript_data is [{role, content}] — convert to [{role, text}] for compatibility
+        transcript = saved.map(m => ({ role: m.role, text: m.content || '' }));
+        console.log(`[chat/end] Using server-saved transcript (${transcript.length} msgs) for session ${sessionId}`);
+      }
+    } catch (e) {
+      console.warn('[chat/end] Could not load server transcript:', e.message);
+    }
+  }
+
+  console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey}`);
+
+  if (!apiKey) {
+    console.warn('[chat/end] GEMINI_API_KEY not set — cannot extract memories');
+    await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sessionId]);
+    return Response.json({ ok: true, memoriesExtracted: 0 });
+  }
+  if (transcript.length < 2) {
+    console.warn('[chat/end] Transcript too short — skipping extraction');
+    await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sessionId]);
+    return Response.json({ ok: true, memoriesExtracted: 0 });
+  }
+
   // Convert transcript format: [{role, text}] → [{role, content}]
   const history = transcript.map(t => ({
     role: t.role === 'user' ? 'user' : 'assistant',
-    content: t.text || '',
+    content: t.text || t.content || '',
   }));
 
   let result = { memoriesExtracted: 0 };

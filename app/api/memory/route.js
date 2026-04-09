@@ -24,10 +24,10 @@ export async function GET(request) {
           data->>'notes',
           data->>'text'
         ) AS content,
-        emotional_weight, last_updated
+        emotional_weight, last_mentioned
       FROM memory_nodes
       WHERE user_id = $1 AND is_active = true
-      ORDER BY last_updated DESC
+      ORDER BY last_mentioned DESC NULLS LAST
       LIMIT 50
     `, [user.id]);
 
