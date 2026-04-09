@@ -87,10 +87,9 @@ User message: "${userMessage.substring(0, 300)}"` }]
       if (aiText)   newTurns.push({ role: 'assistant', content: aiText  });
       await db.query(`
         UPDATE chat_sessions
-        SET transcript_data = COALESCE(transcript_data, '[]'::jsonb) || $1::jsonb,
-            total_turns = $2
-        WHERE id = $3
-      `, [JSON.stringify(newTurns), turnNumber, sessionId]);
+        SET transcript_data = COALESCE(transcript_data, '[]'::jsonb) || $1::jsonb
+        WHERE id = $2
+      `, [JSON.stringify(newTurns), sessionId]);
     } catch (e) {
       console.error('[chat/turn] transcript save failed:', e.message);
     }
