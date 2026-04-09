@@ -7,16 +7,16 @@
  * 3. Push notifications (reminders from Emma)
  */
 
-const CACHE_NAME = 'emma-v3';
+const CACHE_NAME = 'emma-v4';
 
 // Core app shell files to cache
 const APP_SHELL = [
   '/',
+  '/friends',
   '/chat',
   '/offline',
   '/icons/emma-192.png',
   '/icons/emma-512.png',
-  '/avatars/avaturn.glb',
 ];
 
 // ============================================================
