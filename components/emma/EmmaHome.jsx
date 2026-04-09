@@ -108,6 +108,7 @@ const GREETINGS = {
 // ── Onboarding content (truth, who, notfor, how, promise, beta) ───────────────
 const ONBOARDING = {
   EN: {
+    panelLabel: 'About this service',
     truthQ: 'When you say "I feel so lonely today"…',
     otherAI: 'Other AI',
     otherResp: '"Here are 5 ways to overcome loneliness. First…"',
@@ -151,6 +152,7 @@ const ONBOARDING = {
   },
 
   KO: {
+    panelLabel: '서비스 소개',
     truthQ: '"오늘 너무 외로워요." 라고 말하면?',
     otherAI: '다른 AI',
     otherResp: '"외로움을 극복하는 5가지 방법을 알려드릴게요. 첫째..."',
@@ -194,6 +196,7 @@ const ONBOARDING = {
   },
 
   ES: {
+    panelLabel: 'Sobre este servicio',
     truthQ: 'Cuando dices "Hoy me siento muy solo/a"…',
     otherAI: 'Otra IA',
     otherResp: '"Te daré 5 formas de superar la soledad. Primero…"',
@@ -493,147 +496,160 @@ export default function EmmaHome({ userName = '' }) {
           <button className={styles.bottomLink} onClick={handleNotif}>{t.notif}</button>
         </div>
 
-        {/* ── divider before onboarding ── */}
-        <div className={styles.obDivider} />
+        {/* ══════════════════════════════════════════════════════
+            SERVICE INFO PANEL — visually distinct from service area
+        ══════════════════════════════════════════════════════ */}
+        <div className={`${styles.obPanel} ${isDay ? styles.obPanelDay : styles.obPanelNight}`}>
 
-        {/* ── TRUTH CARD ── */}
-        <div className={styles.obSection}>
-          <div className={styles.obCard} style={card}>
-            <p className={styles.obTruthQ} style={{ color: mutedText }}>{ob.truthQ}</p>
+          {/* panel header label */}
+          <p className={styles.obPanelLabel}>{ob.panelLabel}</p>
 
-            {/* Other AI row */}
-            <div className={styles.obTruthRow}>
-              <div className={styles.obTruthIcon} style={{ background: isDay ? '#f0f0f8' : 'rgba(255,255,255,0.06)' }}>
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="6" stroke={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} strokeWidth="1.2" fill="none"/>
-                  <text x="7" y="11" textAnchor="middle" fontSize="8" fill={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} fontFamily="sans-serif">AI</text>
-                </svg>
+          {/* ── TRUTH CARD ── */}
+          <div className={styles.obSection}>
+            <div className={styles.obCard} style={isDay
+              ? { background: '#fff', border: '0.5px solid rgba(234,88,12,0.12)' }
+              : { background: '#1e1a38', border: '0.5px solid rgba(168,85,247,0.18)' }
+            }>
+              <p className={styles.obTruthQ} style={{ color: mutedText }}>{ob.truthQ}</p>
+
+              {/* Other AI row */}
+              <div className={styles.obTruthRow}>
+                <div className={styles.obTruthIcon} style={{ background: isDay ? '#f0f0f8' : 'rgba(255,255,255,0.06)' }}>
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="6" stroke={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} strokeWidth="1.2" fill="none"/>
+                    <text x="7" y="11" textAnchor="middle" fontSize="8" fill={isDay ? '#8080b0' : 'rgba(255,255,255,0.3)'} fontFamily="sans-serif">AI</text>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className={styles.obTruthLabel} style={{ color: isDay ? '#8080a0' : 'rgba(255,255,255,0.3)' }}>{ob.otherAI}</div>
+                  <div className={styles.obBubble} style={isDay ? { background: '#f5f5f8', color: '#505060' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>
+                    {ob.otherResp}
+                  </div>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div className={styles.obTruthLabel} style={{ color: isDay ? '#8080a0' : 'rgba(255,255,255,0.3)' }}>{ob.otherAI}</div>
-                <div className={styles.obBubble} style={isDay ? { background: '#f5f5f8', color: '#505060' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>
-                  {ob.otherResp}
+
+              {/* Emma row */}
+              <div className={styles.obTruthRow} style={{ marginBottom: 0 }}>
+                <div className={styles.obTruthIcon} style={{ background: 'rgba(234,88,12,0.1)' }}>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <ellipse cx="8" cy="8" rx="7" ry="7" fill="rgba(234,88,12,0.15)"/>
+                    <path d="M5 9 Q8 12 11 9" stroke="#ea580c" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+                    <circle cx="5.5" cy="6.5" r="1" fill="#ea580c"/>
+                    <circle cx="10.5" cy="6.5" r="1" fill="#ea580c"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className={styles.obTruthLabel} style={{ color: '#ea580c' }}>Emma</div>
+                  <div className={styles.obBubble} style={isDay
+                    ? { background: 'rgba(234,88,12,0.07)', color: '#2d1510', border: '0.5px solid rgba(234,88,12,0.12)' }
+                    : { background: 'rgba(168,85,247,0.12)', color: 'rgba(255,255,255,0.82)', border: '0.5px solid rgba(168,85,247,0.2)' }
+                  }>
+                    {ob.emmaResp}
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Emma row */}
-            <div className={styles.obTruthRow} style={{ marginBottom: 0 }}>
-              <div className={styles.obTruthIcon} style={{ background: 'rgba(234,88,12,0.1)' }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <ellipse cx="8" cy="8" rx="7" ry="7" fill="rgba(234,88,12,0.15)"/>
-                  <path d="M5 9 Q8 12 11 9" stroke="#ea580c" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
-                  <circle cx="5.5" cy="6.5" r="1" fill="#ea580c"/>
-                  <circle cx="10.5" cy="6.5" r="1" fill="#ea580c"/>
-                </svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div className={styles.obTruthLabel} style={{ color: '#ea580c' }}>Emma</div>
-                <div className={styles.obBubble} style={isDay
-                  ? { background: 'rgba(234,88,12,0.07)', color: '#2d1510', border: '0.5px solid rgba(234,88,12,0.12)' }
-                  : { background: 'rgba(168,85,247,0.12)', color: 'rgba(255,255,255,0.82)', border: '0.5px solid rgba(168,85,247,0.2)' }
+          {/* ── WHO IS THIS FOR ── */}
+          <div className={styles.obSection}>
+            <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.whoTitle}</p>
+            <div className={styles.obWhoList}>
+              {ob.who.map((w, i) => (
+                <div key={i} className={styles.obWhoCard} style={isDay
+                  ? { background: '#fff', border: '0.5px solid rgba(0,0,0,0.07)' }
+                  : { background: '#1e1a38', border: '0.5px solid rgba(255,255,255,0.07)' }
                 }>
-                  {ob.emmaResp}
+                  <div className={styles.obWhoIcon} style={{ background: isDay ? w.bg : w.bgNight }}>{w.icon}</div>
+                  <div>
+                    <div className={styles.obWhoTitle} style={{ color: strongText }}>{w.title}</div>
+                    <div className={styles.obWhoDesc} style={{ color: descText }}>{w.desc}</div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* ── WHO IS THIS FOR ── */}
-        <div className={styles.obSection}>
-          <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.whoTitle}</p>
-          <div className={styles.obWhoList}>
-            {ob.who.map((w, i) => (
-              <div key={i} className={styles.obWhoCard} style={isDay
-                ? { background: '#fff', border: '0.5px solid rgba(0,0,0,0.07)' }
-                : { background: '#1c1630', border: '0.5px solid rgba(255,255,255,0.07)' }
-              }>
-                <div className={styles.obWhoIcon} style={{ background: isDay ? w.bg : w.bgNight }}>{w.icon}</div>
-                <div>
-                  <div className={styles.obWhoTitle} style={{ color: strongText }}>{w.title}</div>
-                  <div className={styles.obWhoDesc} style={{ color: descText }}>{w.desc}</div>
+          {/* ── NOT FOR ── */}
+          <div className={styles.obSection}>
+            <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.notforTitle}</p>
+            <div className={styles.obNotforCard} style={isDay
+              ? { background: 'rgba(0,0,0,0.05)' }
+              : { background: 'rgba(255,255,255,0.04)' }
+            }>
+              {ob.notfor.map((item, i) => (
+                <div key={i} className={styles.obNotforRow}>
+                  <div className={styles.obNotforX} style={isDay ? { background: 'rgba(0,0,0,0.08)' } : { background: 'rgba(255,255,255,0.08)' }}>
+                    <XIcon color={isDay ? '#b0a090' : 'rgba(255,255,255,0.3)'} />
+                  </div>
+                  <span className={styles.obNotforText} style={{ color: isDay ? '#9a8878' : 'rgba(255,255,255,0.4)' }}>{item}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* ── NOT FOR ── */}
-        <div className={styles.obSection}>
-          <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.notforTitle}</p>
-          <div className={styles.obNotforCard} style={isDay ? { background: '#f8f6f4' } : { background: 'rgba(255,255,255,0.04)' }}>
-            {ob.notfor.map((item, i) => (
-              <div key={i} className={styles.obNotforRow}>
-                <div className={styles.obNotforX} style={isDay ? { background: 'rgba(0,0,0,0.06)' } : { background: 'rgba(255,255,255,0.08)' }}>
-                  <XIcon color={isDay ? '#b0a090' : 'rgba(255,255,255,0.3)'} />
+          {/* ── HOW IT WORKS ── */}
+          <div className={styles.obSection}>
+            <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.howTitle}</p>
+            <div>
+              {ob.how.map((step, i) => (
+                <div key={i} className={styles.obHowStep} style={i < ob.how.length - 1
+                  ? { '--line-color': isDay ? 'rgba(234,88,12,0.15)' : 'rgba(168,85,247,0.2)' }
+                  : {}
+                }>
+                  <div className={styles.obHowNum} style={isDay
+                    ? { background: '#ea580c' }
+                    : { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }
+                  }>{i + 1}</div>
+                  <div>
+                    <div className={styles.obHowTitle} style={{ color: strongText }}>{step.title}</div>
+                    <div className={styles.obHowDesc} style={{ color: descText }}>{step.desc}</div>
+                    {step.hl && (
+                      <span className={styles.obHowHighlight} style={isDay
+                        ? { background: 'rgba(234,88,12,0.08)', color: '#9a3a08' }
+                        : { background: 'rgba(168,85,247,0.14)', color: 'rgba(196,148,255,0.9)' }
+                      }>{step.hl}</span>
+                    )}
+                  </div>
                 </div>
-                <span className={styles.obNotforText} style={{ color: isDay ? '#9a8878' : 'rgba(255,255,255,0.4)' }}>{item}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* ── HOW IT WORKS ── */}
-        <div className={styles.obSection}>
-          <p className={styles.obSectionLabel} style={{ color: mutedText }}>{ob.howTitle}</p>
-          <div>
-            {ob.how.map((step, i) => (
-              <div key={i} className={styles.obHowStep} style={i < ob.how.length - 1
-                ? { '--line-color': isDay ? 'rgba(234,88,12,0.15)' : 'rgba(168,85,247,0.2)' }
-                : {}
-              }>
-                <div className={styles.obHowNum} style={isDay
-                  ? { background: '#ea580c' }
-                  : { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }
-                }>{i + 1}</div>
-                <div>
-                  <div className={styles.obHowTitle} style={{ color: strongText }}>{step.title}</div>
-                  <div className={styles.obHowDesc} style={{ color: descText }}>{step.desc}</div>
-                  {step.hl && (
-                    <span className={styles.obHowHighlight} style={isDay
-                      ? { background: 'rgba(234,88,12,0.08)', color: '#9a3a08' }
-                      : { background: 'rgba(168,85,247,0.14)', color: 'rgba(196,148,255,0.9)' }
-                    }>{step.hl}</span>
-                  )}
+          {/* ── PROMISE ── */}
+          <div className={styles.obSection}>
+            <div className={styles.obPromiseCard} style={isDay
+              ? { background: '#ea580c' }
+              : { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }
+            }>
+              <p className={styles.obPromiseTitle}>{ob.promiseTitle}</p>
+              {ob.promises.map((p, i) => (
+                <div key={i} className={styles.obPromiseItem}>
+                  <div className={styles.obPCheck}><CheckIcon /></div>
+                  <span className={styles.obPromiseText}>{p}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+              <p className={styles.obPromiseNote}>{ob.promiseNote}</p>
+            </div>
           </div>
-        </div>
 
-        {/* ── PROMISE ── */}
-        <div className={styles.obSection}>
-          <div className={styles.obPromiseCard} style={isDay
-            ? { background: '#ea580c' }
-            : { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }
-          }>
-            <p className={styles.obPromiseTitle}>{ob.promiseTitle}</p>
-            {ob.promises.map((p, i) => (
-              <div key={i} className={styles.obPromiseItem}>
-                <div className={styles.obPCheck}><CheckIcon /></div>
-                <span className={styles.obPromiseText}>{p}</span>
-              </div>
-            ))}
-            <p className={styles.obPromiseNote}>{ob.promiseNote}</p>
+          {/* ── BETA BADGE ── */}
+          <div className={styles.obSection} style={{ marginBottom: 0 }}>
+            <div className={styles.obBetaCard} style={isDay
+              ? { background: '#fff', border: '0.5px solid rgba(234,88,12,0.2)' }
+              : { background: '#1e1a38', border: '0.5px solid rgba(168,85,247,0.25)' }
+            }>
+              <p className={styles.obBetaTop} style={{ color: mutedText }}>{ob.betaTop}</p>
+              <p className={styles.obBetaMain} style={{ color: strongText }}>{ob.betaMain}</p>
+              <p className={styles.obBetaSub} style={{ color: mutedText }}>{ob.betaSub}</p>
+              <span className={styles.obBetaTag} style={isDay
+                ? { background: 'rgba(234,88,12,0.08)', color: '#9a3a08' }
+                : { background: 'rgba(168,85,247,0.14)', color: 'rgba(196,148,255,0.9)' }
+              }>{ob.betaTag}</span>
+            </div>
           </div>
-        </div>
 
-        {/* ── BETA BADGE ── */}
-        <div className={styles.obSection}>
-          <div className={styles.obBetaCard} style={isDay
-            ? { background: '#fff', border: '0.5px solid rgba(234,88,12,0.2)' }
-            : { background: '#1c1630', border: '0.5px solid rgba(168,85,247,0.25)' }
-          }>
-            <p className={styles.obBetaTop} style={{ color: mutedText }}>{ob.betaTop}</p>
-            <p className={styles.obBetaMain} style={{ color: strongText }}>{ob.betaMain}</p>
-            <p className={styles.obBetaSub} style={{ color: mutedText }}>{ob.betaSub}</p>
-            <span className={styles.obBetaTag} style={isDay
-              ? { background: 'rgba(234,88,12,0.08)', color: '#9a3a08' }
-              : { background: 'rgba(168,85,247,0.14)', color: 'rgba(196,148,255,0.9)' }
-            }>{ob.betaTag}</span>
-          </div>
-        </div>
+        </div>{/* end obPanel */}
 
       </main>
     </div>
