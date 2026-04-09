@@ -1,0 +1,229 @@
+/* ── EmmaChat.module.css ─────────────────────────────────────────────────── */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  overflow: hidden;
+  transition: background 0.35s ease;
+}
+.day   { background: #fdf8f4; }
+.night { background: #0d0b18; }
+
+/* ── top nav ── */
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.topnavDay   { background: #fff5ee; border-bottom: 0.5px solid rgba(234,88,12,0.12); }
+.topnavNight { background: #13101f; border-bottom: 0.5px solid rgba(124,58,237,0.15); }
+
+.backBtn {
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.day .backBtn   { color: #b07050; }
+.night .backBtn { color: rgba(255,255,255,0.3); }
+
+.navAvatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.navAvatarDay   { border: 1.5px solid rgba(234,88,12,0.22); }
+.navAvatarNight { border: 1.5px solid rgba(168,85,247,0.3); }
+
+.navMeta { display: flex; flex-direction: column; gap: 1px; }
+.navName {
+  font-size: 14px;
+  font-weight: 500;
+}
+.day .navName   { color: #2d1510; }
+.night .navName { color: rgba(255,255,255,0.88); }
+.navStatus        { font-size: 11px; font-weight: 500; color: #22c55e; }
+.navStatusOffline { font-size: 11px; font-weight: 500; color: #a8a29e; }
+
+.navActions { margin-left: auto; display: flex; gap: 8px; }
+.navIcon {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.15s;
+}
+.navIcon:hover { opacity: 0.72; }
+.navIconDay   { background: rgba(234,88,12,0.08); }
+.navIconNight { background: rgba(168,85,247,0.1); }
+
+/* ── chat scroll area ── */
+.chatArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+.chatArea::-webkit-scrollbar { width: 0; }
+
+/* ── bubble rows ── */
+.rowEmma { display: flex; gap: 8px; align-items: flex-end; }
+.rowUser { display: flex; justify-content: flex-end; }
+
+.miniAvatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.miniAvatarDay   { border: 1px solid rgba(234,88,12,0.15); }
+.miniAvatarNight { border: 1px solid rgba(168,85,247,0.25); }
+
+.bubble {
+  max-width: 220px;
+  border-radius: 18px;
+  padding: 10px 13px;
+}
+.bubbleText { font-size: 13px; line-height: 1.55; margin: 0; }
+
+.bubbleEmmaDay   { background: #fff; border: 0.5px solid rgba(234,88,12,0.15); border-radius: 18px 18px 18px 4px; }
+.bubbleEmmaDay .bubbleText { color: #2d1510; }
+.bubbleEmmaNight { background: #1c1630; border: 0.5px solid rgba(168,85,247,0.18); border-radius: 18px 18px 18px 4px; }
+.bubbleEmmaNight .bubbleText { color: rgba(255,255,255,0.82); }
+
+.bubbleUserDay   { background: #ea580c; border-radius: 18px 18px 4px 18px; }
+.bubbleUserDay .bubbleText { color: white; }
+.bubbleUserNight { background: #5b21b6; border-radius: 18px 18px 4px 18px; }
+.bubbleUserNight .bubbleText { color: rgba(255,255,255,0.92); }
+
+.timestamp { font-size: 10px; margin-top: 4px; }
+.tsDay   { color: #c0a090; }
+.tsNight { color: rgba(255,255,255,0.22); }
+
+/* emotion tag */
+.emotionTag {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-top: 6px;
+  width: fit-content;
+  border: 0.5px solid;
+}
+.emotionDay   { background: rgba(34,197,94,0.08);  border-color: rgba(34,197,94,0.2); }
+.emotionNight { background: rgba(96,165,250,0.10); border-color: rgba(96,165,250,0.2); }
+.emotionDot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.emotionDay   .emotionDot { background: #16a34a; }
+.emotionNight .emotionDot { background: #60a5fa; }
+.emotionText { font-size: 10px; }
+.emotionDay   .emotionText { color: #14532d; }
+.emotionNight .emotionText { color: rgba(147,197,253,0.9); }
+
+/* typing bubble */
+.typingBubble {
+  display: flex; align-items: center; gap: 5px;
+  padding: 13px 16px !important;
+}
+.typingDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bop 1.2s infinite;
+}
+.day .typingDot   { background: rgba(234,88,12,0.35); }
+.night .typingDot { background: rgba(168,85,247,0.4); }
+
+@keyframes bop {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%       { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ── voice bar ── */
+.voiceBar {
+  flex-shrink: 0;
+  padding: 12px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.voiceBarDay   { background: #fff5ee; border-top: 0.5px solid rgba(234,88,12,0.12); }
+.voiceBarNight { background: #13101f; border-top: 0.5px solid rgba(124,58,237,0.15); }
+
+/* waveform */
+.waveArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 38px;
+}
+.waveBar {
+  width: 3px;
+  border-radius: 4px;
+  display: inline-block;
+  transition: height 0.15s;
+}
+.waveBarIdle        { background: rgba(128,128,128,0.15); }
+.waveBarActiveDay   { background: #ea580c; animation: grow 0.9s infinite ease-in-out; }
+.waveBarActiveNight { background: #a855f7; animation: grow 0.9s infinite ease-in-out; }
+
+@keyframes grow {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+/* controls row */
+.voiceControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sideBtn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 0.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: none;
+  transition: opacity 0.15s;
+}
+.sideBtn:hover { opacity: 0.72; }
+.sideBtnDay   { background: rgba(234,88,12,0.07); border-color: rgba(234,88,12,0.2); }
+.sideBtnNight { background: rgba(168,85,247,0.1);  border-color: rgba(168,85,247,0.2); }
+
+.micCenter {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.micBtn {
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.micBtn:hover  { opacity: 0.88; }
+.micBtn:active { transform: scale(0.95); }
+.micBtnDay   { background: #ea580c; }
+.micBtnNight { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+.micOn { box-shadow: 0 0 0 4px rgba(234,88,12,0.18); }
+.night .micOn { box-shadow: 0 0 0 4px rgba(168,85,247,0.2); }
+
+.micLabel { font-size: 11px; }
+.micLabelDay   { color: #b08070; }
+.micLabelNight { color: rgba(255,255,255,0.28); }
