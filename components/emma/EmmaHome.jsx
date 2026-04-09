@@ -73,7 +73,7 @@ const GREETINGS = {
     cta: 'Talk with Emma',
     home: 'Add to Home Screen',
     notif: 'Notification Settings',
-    back: '← Home',
+    logout: 'Log out',
   },
   KO: {
     day:       (n) => `안녕하세요, ${n}! 😊`,
@@ -87,7 +87,7 @@ const GREETINGS = {
     cta: 'Emma와 대화하기',
     home: '🏠 홈 화면 추가',
     notif: '🔔 알림 설정',
-    back: '← 홈',
+    logout: '로그아웃',
   },
   ES: {
     day:       (n) => `¡Hola, ${n}! 😊`,
@@ -101,7 +101,7 @@ const GREETINGS = {
     cta: 'Hablar con Emma',
     home: '🏠 Añadir al inicio',
     notif: '🔔 Notificaciones',
-    back: '← Inicio',
+    logout: 'Salir',
   },
 };
 
@@ -176,7 +176,11 @@ export default function EmmaHome({ userName = '' }) {
 
       {/* ── top bar ── */}
       <header className={styles.topbar}>
-        <button className={styles.backBtn} onClick={() => router.push('/')}>{t.back}</button>
+        <button className={styles.backBtn} onClick={() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          router.push('/login');
+        }}>{t.logout}</button>
         <div className={styles.topCenter}>
           <span className={styles.statusDot} />
           <span className={styles.topName}>Emma</span>
