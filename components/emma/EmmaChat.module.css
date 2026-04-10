@@ -364,6 +364,73 @@
 .ratingLabelDay   { color: #ea580c; }
 .ratingLabelNight { color: #a855f7; }
 
+/* ── news list (below Emma's bubble) ─────────────────────────────────────── */
+.newsList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 0.5px solid;
+}
+.newsListDay   { border-color: rgba(234,88,12,0.15); }
+.newsListNight { border-color: rgba(168,85,247,0.2); }
+
+.newsItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  border-bottom: 0.5px solid;
+}
+.newsItem:last-child { border-bottom: none; }
+.newsItem:hover { opacity: 0.75; }
+.newsItemDay   { background: rgba(255,255,255,0.85); border-color: rgba(234,88,12,0.08); }
+.newsItemNight { background: rgba(28,22,48,0.9);      border-color: rgba(168,85,247,0.12); }
+
+.newsNum {
+  font-size: 10px;
+  font-weight: 700;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.newsNumDay   { background: rgba(234,88,12,0.12); color: #b05020; }
+.newsNumNight { background: rgba(168,85,247,0.2);  color: rgba(196,148,255,0.9); }
+
+.newsTitle {
+  font-size: 12px;
+  line-height: 1.45;
+  flex: 1;
+}
+.newsItemDay   .newsTitle { color: #2d1510; }
+.newsItemNight .newsTitle { color: rgba(255,255,255,0.82); }
+
+/* phone number input */
+.phoneInput {
+  width: 100%;
+  border-radius: 12px;
+  border: 0.5px solid;
+  padding: 12px 14px;
+  font-size: 16px;         /* 16px prevents iOS auto-zoom */
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.phoneInputDay   { background: #fdf8f4; border-color: rgba(234,88,12,0.2); color: #2d1510; }
+.phoneInputDay:focus   { border-color: #ea580c; }
+.phoneInputNight { background: #13101f; border-color: rgba(168,85,247,0.25); color: rgba(255,255,255,0.82); }
+.phoneInputNight:focus { border-color: #a855f7; }
+
 /* textarea */
 .feedbackTextarea {
   width: 100%;

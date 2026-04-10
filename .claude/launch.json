@@ -6,6 +6,7 @@
       "runtimeExecutable": "/opt/homebrew/bin/node",
       "runtimeArgs": ["node_modules/.bin/next", "dev"],
       "port": 3000,
+      "autoPort": false,
       "cwd": "/Users/mac-mini-tim/Documents/projects/speechrobot"
     }
   ]

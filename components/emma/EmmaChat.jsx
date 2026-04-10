@@ -84,6 +84,8 @@ const CHAT_CHIPS = {
     emptyHint: 'What shall we talk about today?',
     emptyOr:   'or tap the mic to start',
     day: [
+      { label: "What's in the news",      emoji: '📰', c: 'blue',   type: 'news' },
+      { label: 'Plan my day',             emoji: '📋', c: 'teal'   },
       { label: 'Shop talk',               emoji: '🏪', c: 'orange' },
       { label: "Things I'm grateful for", emoji: '🌿', c: 'green'  },
       { label: 'What happened today',     emoji: '🌍', c: 'teal'   },
@@ -91,6 +93,8 @@ const CHAT_CHIPS = {
       { label: 'Something I read or saw', emoji: '📖', c: 'pink'   },
     ],
     night: [
+      { label: "What's in the news",    emoji: '📰', c: 'blue',   type: 'news' },
+      { label: 'Plan my day',           emoji: '📋', c: 'teal'   },
       { label: "Can't sleep",           emoji: '💤', c: 'purple' },
       { label: "Today's small joys",    emoji: '✨', c: 'yellow' },
       { label: 'Feeling lonely',        emoji: '💙', c: 'blue'   },
@@ -102,6 +106,8 @@ const CHAT_CHIPS = {
     emptyHint: '오늘 어떤 이야기 할까요?',
     emptyOr:   '또는 마이크를 눌러 바로 시작해요',
     day: [
+      { label: '새로운 소식',      emoji: '📰', c: 'blue',   type: 'news' },
+      { label: '오늘 할 일 정리',  emoji: '📋', c: 'teal'   },
       { label: '가게 이야기',      emoji: '🏪', c: 'orange' },
       { label: '감사한 것들',      emoji: '🌿', c: 'green'  },
       { label: '오늘 있었던 일',   emoji: '🌍', c: 'teal'   },
@@ -109,6 +115,8 @@ const CHAT_CHIPS = {
       { label: '읽은 것, 본 것',   emoji: '📖', c: 'pink'   },
     ],
     night: [
+      { label: '새로운 소식',          emoji: '📰', c: 'blue',   type: 'news' },
+      { label: '오늘 할 일 정리',      emoji: '📋', c: 'teal'   },
       { label: '잠이 안 와요',         emoji: '💤', c: 'purple' },
       { label: '오늘의 작은 기쁨',     emoji: '✨', c: 'yellow' },
       { label: '외로울 때',            emoji: '💙', c: 'blue'   },
@@ -120,6 +128,8 @@ const CHAT_CHIPS = {
     emptyHint: '¿De qué hablamos hoy?',
     emptyOr:   'o toca el micrófono para empezar',
     day: [
+      { label: 'Últimas noticias',            emoji: '📰', c: 'blue',   type: 'news' },
+      { label: 'Organizar mi día',            emoji: '📋', c: 'teal'   },
       { label: 'Hablar del trabajo',          emoji: '🏪', c: 'orange' },
       { label: 'Cosas por las que agradezco', emoji: '🌿', c: 'green'  },
       { label: 'Lo que pasó hoy',             emoji: '🌍', c: 'teal'   },
@@ -127,6 +137,8 @@ const CHAT_CHIPS = {
       { label: 'Algo que leí o vi',           emoji: '📖', c: 'pink'   },
     ],
     night: [
+      { label: 'Últimas noticias',       emoji: '📰', c: 'blue',   type: 'news' },
+      { label: 'Organizar mi día',       emoji: '📋', c: 'teal'   },
       { label: 'No puedo dormir',        emoji: '💤', c: 'purple' },
       { label: 'Las pequeñas alegrías',  emoji: '✨', c: 'yellow' },
       { label: 'Me siento solo/a',       emoji: '💙', c: 'blue'   },
@@ -188,22 +200,45 @@ function EmotionTag({ text, mode }) {
 // ── single chat bubble ────────────────────────────────────────────────────────
 function Bubble({ msg, mode }) {
   const isEmma = msg.role === 'emma';
+  const isDay  = mode === 'day';
   return (
     <div className={isEmma ? styles.rowEmma : styles.rowUser}>
       {isEmma && (
-        <div className={`${styles.miniAvatar} ${mode === 'day' ? styles.miniAvatarDay : styles.miniAvatarNight}`}>
+        <div className={`${styles.miniAvatar} ${isDay ? styles.miniAvatarDay : styles.miniAvatarNight}`}>
           <EmmaAvatar size="sm" mode={mode} />
         </div>
       )}
-      <div>
+      <div style={{ maxWidth: msg.newsItems ? 310 : undefined }}>
         <div className={`${styles.bubble} ${isEmma
-          ? (mode === 'day' ? styles.bubbleEmmaDay : styles.bubbleEmmaNight)
-          : (mode === 'day' ? styles.bubbleUserDay : styles.bubbleUserNight)
+          ? (isDay ? styles.bubbleEmmaDay : styles.bubbleEmmaNight)
+          : (isDay ? styles.bubbleUserDay : styles.bubbleUserNight)
         }`}>
           <p className={styles.bubbleText}>{msg.text}</p>
         </div>
+
+        {/* ── news items list ── */}
+        {isEmma && msg.newsItems?.length > 0 && (
+          <div className={`${styles.newsList} ${isDay ? styles.newsListDay : styles.newsListNight}`}>
+            {msg.newsItems.map((item, i) => (
+              <a
+                key={i}
+                href={item.url || undefined}
+                target={item.url ? '_blank' : undefined}
+                rel="noopener noreferrer"
+                className={`${styles.newsItem} ${isDay ? styles.newsItemDay : styles.newsItemNight}`}
+                style={!item.url ? { cursor: 'default', opacity: 0.7 } : undefined}
+              >
+                <span className={`${styles.newsNum} ${isDay ? styles.newsNumDay : styles.newsNumNight}`}>
+                  {i + 1}
+                </span>
+                <span className={styles.newsTitle}>{item.title}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
         {msg.timestamp && (
-          <p className={`${styles.timestamp} ${mode === 'day' ? styles.tsDay : styles.tsNight}`}>
+          <p className={`${styles.timestamp} ${isDay ? styles.tsDay : styles.tsNight}`}>
             {msg.timestamp}
           </p>
         )}
@@ -296,6 +331,10 @@ export default function EmmaChat({ initialMode }) {
     // Load saved language preference
     const storedLang = (u.lang || localStorage.getItem('lang') || 'ko').toUpperCase();
     if (LANGS.includes(storedLang)) setLang(storedLang);
+    // Load saved mute preference
+    const muted = localStorage.getItem('emmaMuted') === 'true';
+    setIsMuted(muted);
+    isMutedRef.current = muted;
   }, [router]);
 
   function cycleLang() {
@@ -305,6 +344,123 @@ export default function EmmaChat({ initialMode }) {
     saveLang(next.toLowerCase(), tokenRef.current);
   }
 
+  function toggleMute() {
+    const next = !isMuted;
+    setIsMuted(next);
+    isMutedRef.current = next;
+    localStorage.setItem('emmaMuted', String(next));
+  }
+
+  // ── news fetch (for news chip) ──────────────────────────────────────────────
+  async function fetchNews() {
+    const t = tokenRef.current;
+    if (!t || newsLoading) return;
+
+    setNewsLoading(true);
+    setIsAiSpeaking(true); // show typing indicator
+
+    try {
+      const res = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      });
+      const data = await res.json();
+
+      setIsAiSpeaking(false);
+      setNewsLoading(false);
+
+      const currentLang = langRef.current;
+      if (data.newsItems?.length > 0) {
+        setMessages([{
+          id: Date.now(),
+          role: 'emma',
+          text: currentLang === 'KO' ? '오늘의 뉴스예요! 궁금한 게 있으면 물어봐요 🗞️'
+              : currentLang === 'ES' ? '¡Aquí van las noticias de hoy! Cuéntame si algo te llama la atención 🗞️'
+              : "Here's what's happening today! Ask me about anything that catches your eye 🗞️",
+          newsItems: data.newsItems,
+          timestamp: nowStr(),
+        }]);
+      } else {
+        setMessages([{
+          id: Date.now(),
+          role: 'emma',
+          text: currentLang === 'KO' ? '지금은 뉴스를 불러오기가 어렵네요. 잠시 후 다시 해볼까요?'
+              : currentLang === 'ES' ? 'No pude cargar las noticias ahora. ¿Lo intentamos luego?'
+              : "Couldn't load news right now. Want to try again in a moment?",
+          timestamp: nowStr(),
+        }]);
+      }
+    } catch {
+      setIsAiSpeaking(false);
+      setNewsLoading(false);
+    }
+  }
+
+  // ── reminder helpers ────────────────────────────────────────────────────────
+
+  // Keywords that signal a reminder/alarm request (KO / EN / ES)
+  const REMINDER_KEYWORDS = [
+    '알림', '리마인더', '알려줘', '알려 줘', '문자로', '문자 보내', '상기시켜', '잊지 않게',
+    'remind', 'reminder', 'send me a text', 'text me', 'let me know',
+    'recordar', 'recuérdame', 'recuerda', 'avísame', 'manda', 'recordatorio',
+  ];
+
+  function checkAndSendReminder(userMsg, aiMsg) {
+    const lower = userMsg.toLowerCase();
+    const hasIntent = REMINDER_KEYWORDS.some(kw => lower.includes(kw));
+    if (!hasIntent) return;
+
+    const t = tokenRef.current;
+    if (!t) return;
+
+    fetch('/api/reminder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ userMessage: userMsg, aiResponse: aiMsg }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.needs_phone) {
+          setReminderPending({ message: data.message, time: data.time });
+          setShowPhoneModal(true);
+        }
+        // If sent: Emma already said she'd send it — no extra toast needed
+      })
+      .catch(() => {});
+  }
+
+  async function savePhoneAndSend() {
+    const phone = phoneInput.trim();
+    if (!phone) return;
+    const t = tokenRef.current;
+    setPhoneSaving(true);
+
+    try {
+      const res = await fetch('/api/user/phone', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ phone }),
+      });
+      if (!res.ok) { setPhoneSaving(false); return; }
+
+      setShowPhoneModal(false);
+      setPhoneInput('');
+      setPhoneSaving(false);
+
+      // Retry SMS with pre-extracted reminder data
+      if (reminderPending) {
+        fetch('/api/reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+          body: JSON.stringify(reminderPending), // { message, time } — skips Gemini re-extraction
+        }).catch(() => {});
+        setReminderPending(null);
+      }
+    } catch {
+      setPhoneSaving(false);
+    }
+  }
+
   // ── chat state ────────────────────────────────────────────────────────────
   const [messages,  setMessages]  = useState([]);
   const [micOn,     setMicOn]     = useState(false);
@@ -312,6 +468,19 @@ export default function EmmaChat({ initialMode }) {
   const [liveText,  setLiveText]  = useState('');   // streaming AI text
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+
+  // ── mute (TTS on/off) ─────────────────────────────────────────────────────
+  const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef(false);
+
+  // ── reminder / phone modal ─────────────────────────────────────────────────
+  const [showPhoneModal,    setShowPhoneModal]    = useState(false);
+  const [phoneInput,        setPhoneInput]        = useState('');
+  const [phoneSaving,       setPhoneSaving]       = useState(false);
+  const [reminderPending,   setReminderPending]   = useState(null); // { message, time }
+
+  // ── news loading ──────────────────────────────────────────────────────────
+  const [newsLoading, setNewsLoading] = useState(false);
 
   // ── feedback modal state ──────────────────────────────────────────────────
   const [showFeedback,   setShowFeedback]   = useState(false);
@@ -345,8 +514,9 @@ export default function EmmaChat({ initialMode }) {
   const pendingTopicRef     = useRef('');   // chip topic selected before connecting
 
   // keep refs in sync
-  useEffect(() => { tokenRef.current = token; }, [token]);
-  useEffect(() => { langRef.current  = lang;  }, [lang]);
+  useEffect(() => { tokenRef.current  = token;   }, [token]);
+  useEffect(() => { langRef.current   = lang;    }, [lang]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   // ── auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -406,6 +576,7 @@ export default function EmmaChat({ initialMode }) {
 
   // ── audio helpers ─────────────────────────────────────────────────────────
   function scheduleChunk(f32) {
+    if (isMutedRef.current) return;
     const ctx = audioCtxRef.current;
     if (!ctx) return;
     const buf = ctx.createBuffer(1, f32.length, 24000);
@@ -481,6 +652,7 @@ export default function EmmaChat({ initialMode }) {
             thinking_config: { thinking_budget: 0 },
             speech_config: { voice_config: { prebuilt_voice_config: { voice_name: emma.voice } } },
           },
+          tools: [{ googleSearch: {} }],
           output_audio_transcription: {},
           input_audio_transcription: {},
           system_instruction: { parts: [{ text: prompt }] },
@@ -582,6 +754,9 @@ export default function EmmaChat({ initialMode }) {
             }),
           }).catch(() => {});
         }
+
+        // Check for reminder intent in user's message
+        if (userMsg) checkAndSendReminder(userMsg, aiMsg);
       }
     };
 
@@ -854,6 +1029,15 @@ export default function EmmaChat({ initialMode }) {
         </div>
 
         <div className={styles.navActions}>
+          {/* mute/unmute TTS */}
+          <button
+            className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`}
+            onClick={toggleMute}
+            aria-label={isMuted ? '음성 켜기' : '음소거'}
+            title={isMuted ? '음성 켜기' : '음소거'}
+          >
+            {isMuted ? <SpeakerMutedIcon color={isDay ? '#ea580c' : '#a855f7'} /> : <SpeakerIcon color={isDay ? '#ea580c' : '#a855f7'} />}
+          </button>
           {/* day/night mode toggle */}
           <button
             className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`}
@@ -897,7 +1081,7 @@ export default function EmmaChat({ initialMode }) {
                       key={chip.label}
                       className={styles.emptyChip}
                       style={{ background: p.bg, color: p.color, borderColor: p.border }}
-                      onClick={() => selectChip(chip)}
+                      onClick={() => chip.type === 'news' ? fetchNews() : selectChip(chip)}
                     >
                       <span style={{ fontSize: 15 }}>{chip.emoji}</span>
                       {chip.label}
@@ -979,6 +1163,60 @@ export default function EmmaChat({ initialMode }) {
           </button>
         </div>
       </div>
+
+      {/* ── Phone number modal (for SMS reminders) ── */}
+      {showPhoneModal && (
+        <div className={styles.feedbackOverlay} onClick={() => setShowPhoneModal(false)}>
+          <div
+            className={`${styles.feedbackModal} ${isDay ? styles.feedbackDay : styles.feedbackNight}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={styles.feedbackHeader}>
+              <EmmaAvatar size="md" mode={mode} />
+              <p className={styles.feedbackTitle}>
+                {lang === 'KO'
+                  ? '📱 어떤 번호로 문자를 보내드릴까요?'
+                  : lang === 'ES'
+                  ? '📱 ¿A qué número te envío el recordatorio?'
+                  : '📱 What number should I text the reminder to?'}
+              </p>
+            </div>
+            {reminderPending?.message && (
+              <p style={{ fontSize: 12, margin: '0 0 4px', opacity: 0.65, lineHeight: 1.45 }}>
+                {lang === 'KO' ? `알림: ${reminderPending.message}${reminderPending.time ? ` — ${reminderPending.time}` : ''}` :
+                 lang === 'ES' ? `Recordatorio: ${reminderPending.message}${reminderPending.time ? ` — ${reminderPending.time}` : ''}` :
+                 `Reminder: ${reminderPending.message}${reminderPending.time ? ` — ${reminderPending.time}` : ''}`}
+              </p>
+            )}
+            <input
+              type="tel"
+              className={`${styles.phoneInput} ${isDay ? styles.phoneInputDay : styles.phoneInputNight}`}
+              placeholder={lang === 'KO' ? '010-1234-5678' : lang === 'ES' ? '+34 612 345 678' : '+1 555 123 4567'}
+              value={phoneInput}
+              onChange={e => setPhoneInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && savePhoneAndSend()}
+              autoFocus
+            />
+            <div className={styles.feedbackBtns}>
+              <button
+                className={`${styles.skipBtn} ${isDay ? styles.skipBtnDay : styles.skipBtnNight}`}
+                onClick={() => { setShowPhoneModal(false); setPhoneInput(''); setReminderPending(null); }}
+              >
+                {lang === 'KO' ? '취소' : lang === 'ES' ? 'Cancelar' : 'Cancel'}
+              </button>
+              <button
+                className={`${styles.submitBtn} ${isDay ? styles.submitBtnDay : styles.submitBtnNight}`}
+                onClick={savePhoneAndSend}
+                disabled={!phoneInput.trim() || phoneSaving}
+              >
+                {phoneSaving
+                  ? (lang === 'KO' ? '저장 중…' : lang === 'ES' ? 'Guardando…' : 'Saving…')
+                  : (lang === 'KO' ? '저장 후 발송' : lang === 'ES' ? 'Guardar y enviar' : 'Save & send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Feedback modal ── */}
       {showFeedback && (
@@ -1096,6 +1334,24 @@ function CloseIcon({ color }) {
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <line x1="2" y1="2" x2="12" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
       <line x1="12" y1="2" x2="2" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+function SpeakerIcon({ color }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M2 5h2.5L8 2v10L4.5 9H2a1 1 0 01-1-1V6a1 1 0 011-1z" fill={color} />
+      <path d="M10 4.5a3.5 3.5 0 010 5" stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      <path d="M11.5 2.5a6 6 0 010 9" stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+function SpeakerMutedIcon({ color }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M2 5h2.5L8 2v10L4.5 9H2a1 1 0 01-1-1V6a1 1 0 011-1z" fill={color} />
+      <line x1="10" y1="4" x2="14" y2="10" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <line x1="14" y1="4" x2="10" y2="10" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
