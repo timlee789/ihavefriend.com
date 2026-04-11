@@ -13,216 +13,265 @@
 }
 
 /* ── DAY ── */
-.day { background: #fdf8f4; }
+.day { background: #faf7f4; }
 
-.day .topbar    { background: #fff5ee; border-bottom: 0.5px solid rgba(234,88,12,0.12); }
-.day .backBtn   { color: #b08070; }
-.day .topName   { color: #5a3020; }
-.day .statusDot { background: #22c55e; }
-.day .langPill  { background: rgba(180,100,60,0.1); color: #b05030; }
-.day .modeToggle{ background: rgba(234,88,12,0.07); color: #b05030; }
+.day .topbar     { background: #faf7f4; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+.day .backBtn    { color: rgba(0,0,0,0.3); }
+.day .topName    { color: rgba(0,0,0,0.55); }
+.day .statusDot  { background: #34c759; }
+.day .langPill   { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.4); }
+.day .modeToggle { background: rgba(0,0,0,0.05); }
 
-.day .avatarArea { background: linear-gradient(170deg, #fff5ee 0%, #fde8d4 60%, #fad4b8 100%); }
+.day .avatarArea { background: #f5ebe0; }
+.day .yourFriend { color: rgba(180,100,60,0.6); }
+.day .warmGlow   { background: radial-gradient(ellipse, rgba(234,88,12,0.12) 0%, transparent 70%); }
 
-.day .body       { background: #fdf8f4; }
-.day .greeting   { color: #2d1510; }
-.day .greetingSub{ color: #b08870; }
-.day .sectionLabel { color: #c09880; }
+.day .body       { background: #faf7f4; }
+.day .greeting   { color: #1a0a05; }
+.day .memDot     { background: #ea580c; }
+.day .memText    { color: #c06840; }
 
-.day .memBar  { background: rgba(234,88,12,0.06); border-color: rgba(234,88,12,0.15); }
-.day .memDot  { background: #ea580c; }
-.day .memText { color: #9a4020; }
+.day .tpLabel    { color: rgba(0,0,0,0.4); }
 
-/* (chip colour rules removed — chips moved to chat page) */
+.day .utilIcon   { background: rgba(0,0,0,0.05); }
+.day .utilLabel  { color: rgba(0,0,0,0.3); }
 
-.day .ctaBtn         { background: #ea580c; box-shadow: 0 4px 16px rgba(234,88,12,0.28); }
-.day .ctaBtn:hover   { opacity: 1; background: #c94d0a; box-shadow: 0 6px 20px rgba(234,88,12,0.38); }
-.day .bottomLink { color: #c0a090; }
+.day .ctaBtn     { background: #ea580c; box-shadow: 0 4px 16px rgba(234,88,12,0.28); }
+.day .ctaBtn:hover { opacity: 1; background: #c94d0a; box-shadow: 0 6px 20px rgba(234,88,12,0.38); }
 
 /* ── NIGHT ── */
 .night { background: #0d0b18; }
 
-.night .topbar    { background: #100d20; border-bottom: 0.5px solid rgba(124,58,237,0.2); }
-.night .backBtn   { color: rgba(255,255,255,0.3); }
-.night .topName   { color: rgba(255,255,255,0.88); }
-.night .statusDot { background: #4ade80; }
-.night .langPill  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45); }
-.night .modeToggle{ background: rgba(168,85,247,0.1); color: rgba(196,148,255,0.9); }
+.night .topbar     { background: #0d0b18; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+.night .backBtn    { color: rgba(255,255,255,0.28); }
+.night .topName    { color: rgba(255,255,255,0.7); }
+.night .statusDot  { background: #4ade80; }
+.night .langPill   { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+.night .modeToggle { background: rgba(255,255,255,0.07); }
 
 .night .avatarArea { background: linear-gradient(170deg, #1c1230 0%, #0e1428 100%); }
+.night .yourFriend { color: rgba(196,148,255,0.5); }
+.night .nightGlow  { background: radial-gradient(ellipse, rgba(168,85,247,0.28) 0%, transparent 70%); }
 
-.night .body        { background: #0d0b18; }
-.night .greeting    { color: rgba(255,255,255,0.95); }
-.night .greetingSub { color: rgba(255,255,255,0.45); }
-.night .sectionLabel{ color: rgba(255,255,255,0.35); }
+.night .body       { background: #0d0b18; }
+.night .greeting   { color: rgba(255,255,255,0.92); }
+.night .memDot     { background: #a855f7; }
+.night .memText    { color: rgba(196,148,255,0.8); }
 
-.night .memBar  { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.25); }
-.night .memDot  { background: #a855f7; }
-.night .memText { color: rgba(196,148,255,0.9); }
+.night .tpLabel    { color: rgba(255,255,255,0.35); }
 
+.night .utilIcon   { background: rgba(255,255,255,0.07); }
+.night .utilLabel  { color: rgba(255,255,255,0.28); }
 
-.night .ctaBtn         { background: #ea580c; box-shadow: 0 4px 20px rgba(234,88,12,0.35); }
-.night .ctaBtn:hover   { opacity: 1; background: #c94d0a; box-shadow: 0 6px 24px rgba(234,88,12,0.45); }
-.night .bottomLink { color: rgba(255,255,255,0.28); }
+/* night utility icons: override dark fill with light */
+.night .utilIcon svg rect,
+.night .utilIcon svg path,
+.night .utilIcon svg circle {
+  stroke: rgba(255,255,255,0.3);
+  fill: rgba(255,255,255,0.18);
+}
+
+.night .ctaBtn     { background: #ea580c; box-shadow: 0 4px 20px rgba(234,88,12,0.35); }
+.night .ctaBtn:hover { opacity: 1; background: #c94d0a; box-shadow: 0 6px 24px rgba(234,88,12,0.45); }
 
 /* ── SHARED LAYOUT ── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 18px;           /* compact — save vertical space */
+  padding: 16px 20px;
   position: relative;
   z-index: 10;
   flex-shrink: 0;
 }
 .backBtn {
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 400;
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 0;
+  font-family: inherit;
 }
-.topCenter { display: flex; align-items: center; gap: 6px; }
-.statusDot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.topName   { font-size: 14px; font-weight: 500; }
+.topCenter { display: flex; align-items: center; gap: 5px; }
+.statusDot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.topName   { font-size: 13px; font-weight: 500; }
 .topRight  { display: flex; align-items: center; gap: 8px; }
 
 .langPill {
   font-size: 11px;
-  font-weight: 600;
-  padding: 4px 11px;
+  font-weight: 500;
+  padding: 4px 10px;
   border-radius: 20px;
   border: none;
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 0.04em;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity 0.15s;
 }
-.langPill:hover  { opacity: 0.72; }
-.langPill:active { transform: scale(0.95); }
+.langPill:hover  { opacity: 0.7; }
 
 .modeToggle {
-  width: 30px; height: 30px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.15s;
 }
 .modeToggle:hover { opacity: 0.75; }
 
-/* ── avatar area — shorter on mobile ── */
+/* ── avatar zone ── */
 .avatarArea {
-  height: 170px;               /* was 255px — save 85px */
+  height: 220px;
   position: relative;
   overflow: hidden;
   display: flex;
-  justify-content: center;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
   flex-shrink: 0;
 }
-.avatar { position: relative; z-index: 2; }
-.warmGlow {
-  position: absolute; bottom: 8px; left: 50%;
+.yourFriend {
+  position: absolute;
+  top: 18px; left: 50%;
   transform: translateX(-50%);
-  width: 110px; height: 40px;
-  background: radial-gradient(ellipse, rgba(234,88,12,0.18) 0%, transparent 70%);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
 }
-.nightGlow {
-  position: absolute; bottom: 12px; left: 50%;
+.avatar { position: relative; z-index: 2; }
+.warmGlow, .nightGlow {
+  position: absolute;
+  bottom: 0; left: 50%;
   transform: translateX(-50%);
-  width: 100px; height: 50px;
-  background: radial-gradient(ellipse, rgba(168,85,247,0.28) 0%, transparent 70%);
+  width: 180px; height: 80px;
 }
 
-/* ── body — scrollable ── */
+/* ── body ── */
 .body {
   flex: 1;
-  padding: 16px 20px 24px;     /* was 20px top */
+  padding: 20px 20px 28px;
   display: flex;
   flex-direction: column;
-  gap: 13px;                   /* was 16px */
+  gap: 20px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 .body::-webkit-scrollbar { width: 0; }
 
-/* ── greeting — bigger text ── */
-.greetingBlock { display: flex; flex-direction: column; gap: 5px; }
-.greeting      { font-size: 22px; font-weight: 600; line-height: 1.2; }
-.greetingSub   { font-size: 15px; line-height: 1.6; white-space: pre-line; }
-
-/* ── memory bar ── */
-.memBar {
+/* ── greeting ── */
+.greetingBlock {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 9px 13px;
-  border-radius: 12px;
-  border: 0.5px solid;
+  text-align: center;
 }
-.memDot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.memText { font-size: 13px; line-height: 1.45; }
+.greeting { font-size: 22px; font-weight: 500; letter-spacing: -0.3px; }
+.memRow   { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.memDot   { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.memText  { font-size: 12px; }
 
-/* ── AI diff block (replaces chips) ── */
-.diffBlock { display: flex; flex-direction: column; gap: 8px; }
-
-.diffTitle {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin: 0;
+/* ── topic pills ── */
+.topics {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
-.day   .diffTitle { color: #2d1510; }
-.night .diffTitle { color: rgba(255,255,255,0.92); }
+.topicPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 0;
+  width: 52px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  transition: transform 0.15s;
+}
+.topicPill:hover  { transform: translateY(-2px); }
+.topicPill:active { transform: scale(0.93); }
 
-.diffCard {
-  border-radius: 16px;
-  padding: 16px;
+.tpIcon {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tpLabel {
+  font-size: 9px;
+  text-align: center;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: pre-line;
 }
 
-/* ── CTA button — bigger & bolder ── */
+/* ── CTA zone ── */
+.ctaZone { /* just wraps the button */ }
 .ctaBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 8px;
   width: 100%;
-  padding: 17px 0;             /* was 15px */
+  padding: 16px 0;
   border-radius: 50px;
   border: none;
   color: white;
-  font-size: 17px;             /* was 15px */
-  font-weight: 600;            /* was 500 */
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
   font-family: inherit;
+  letter-spacing: -0.1px;
   transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.1s ease;
 }
 .ctaBtn:hover  { transform: translateY(-1px); }
 .ctaBtn:active { transform: scale(0.98); }
 
-/* ── bottom utility links ── */
-.bottomLinks {
+/* ── utility row ── */
+.utilRow {
   display: flex;
   justify-content: center;
-  gap: 24px;
+  gap: 28px;
 }
-.bottomLink {
-  font-size: 12px;
+.utilBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
   background: none;
   border: none;
-  cursor: pointer;
   font-family: inherit;
   transition: opacity 0.15s;
 }
-.bottomLink:hover { opacity: 0.65; }
+.utilBtn:hover { opacity: 0.65; }
 
-/* ── toast notification ── */
+.utilIcon {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.utilLabel {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ── toast ── */
 .toast {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
+  bottom: 24px; left: 50%;
   transform: translateX(-50%);
   z-index: 200;
   max-width: 340px;
@@ -241,220 +290,3 @@
 }
 .toastDay   { background: #1a0a05; color: rgba(255,255,255,0.92); }
 .toastNight { background: #e2e8f0; color: #1a0a05; }
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   ONBOARDING PANEL
-   Full-bleed rounded panel that creates a clear visual boundary between
-   the service interaction area (above) and the descriptive content (below).
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.obPanel {
-  margin: 6px -20px -24px;     /* bleed past body padding on 3 sides */
-  padding: 20px 20px 36px;
-  border-radius: 26px 26px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* DAY panel — clearly warmer/darker than #fdf8f4 main bg */
-.obPanelDay {
-  background: #e6ddd2;
-  border-top: 1px solid rgba(180,130,90,0.18);
-  box-shadow: 0 -6px 24px rgba(120,80,40,0.08);
-}
-
-/* NIGHT panel — clearly purple-tinted vs #0d0b18 main bg */
-.obPanelNight {
-  background: #1d1840;
-  border-top: 1px solid rgba(124,58,237,0.4);
-  box-shadow: 0 -6px 32px rgba(80,30,180,0.25);
-}
-
-/* panel header label */
-.obPanelLabel {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 2px;
-}
-.day   .obPanelLabel { color: #b8a090; }
-.night .obPanelLabel { color: rgba(168,85,247,0.6); }
-
-/* section inside panel */
-.obSection { /* gap handled by parent flex */ }
-
-.obSectionLabel {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-/* ── truth card ── */
-.obCard {
-  border-radius: 16px;
-  padding: 16px;
-}
-
-.obTruthQ {
-  font-size: 12px;
-  font-style: italic;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.obTruthRow {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.obTruthIcon {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
-.obTruthLabel {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-bottom: 3px;
-}
-
-.obBubble {
-  flex: 1;
-  padding: 8px 11px;
-  border-radius: 10px;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-/* ── who cards ── */
-.obWhoList { display: flex; flex-direction: column; gap: 8px; }
-
-.obWhoCard {
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  border-radius: 12px;
-  padding: 11px 12px;
-}
-
-.obWhoIcon {
-  width: 34px; height: 34px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.obWhoTitle { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
-.obWhoDesc  { font-size: 11px; line-height: 1.5; }
-
-/* ── not-for card ── */
-.obNotforCard { border-radius: 12px; padding: 14px; }
-
-.obNotforRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-.obNotforRow:last-child { margin-bottom: 0; }
-
-.obNotforX {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.obNotforText { font-size: 11px; line-height: 1.5; }
-
-/* ── how steps ── */
-.obHowStep {
-  display: flex;
-  gap: 12px;
-  padding: 10px 0;
-  position: relative;
-}
-.obHowStep:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 12px; top: 34px; bottom: 0;
-  width: 1.5px;
-  background: var(--line-color, rgba(234,88,12,0.15));
-}
-
-.obHowNum {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  color: white;
-  font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  position: relative; z-index: 1;
-}
-
-.obHowTitle { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
-.obHowDesc  { font-size: 11px; line-height: 1.5; }
-
-.obHowHighlight {
-  display: inline-block;
-  font-size: 10px; font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-top: 4px;
-}
-
-/* ── promise card ── */
-.obPromiseCard { border-radius: 16px; padding: 18px 18px 14px; }
-
-.obPromiseTitle {
-  font-size: 15px; font-weight: 500;
-  color: white;
-  margin-bottom: 12px;
-  line-height: 1.35;
-}
-
-.obPromiseItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.obPCheck {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.obPromiseText { font-size: 12px; color: rgba(255,255,255,0.88); line-height: 1.45; }
-.obPromiseNote { font-size: 10px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 12px; }
-
-/* ── beta badge ── */
-.obBetaCard { border-radius: 12px; padding: 14px; text-align: center; }
-
-.obBetaTop  { font-size: 11px; margin-bottom: 3px; }
-.obBetaMain { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
-.obBetaSub  { font-size: 11px; line-height: 1.5; white-space: pre-line; }
-
-.obBetaTag {
-  display: inline-block;
-  font-size: 9px; font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-top: 8px;
-  letter-spacing: 0.04em;
-}
