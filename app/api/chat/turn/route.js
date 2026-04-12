@@ -18,7 +18,7 @@ export async function POST(request) {
   // API key comes from server env — never from client
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const { sessionId, turnNumber, userMessage, userText, aiText } = await request.json().catch(() => ({}));
+  const { sessionId, turnNumber, userMessage, userText, aiText, rawAiText } = await request.json().catch(() => ({}));
   if (!sessionId || !userMessage) {
     return Response.json({ ok: true }); // nothing to do
   }
@@ -79,11 +79,25 @@ User message: "${userMessage.substring(0, 300)}"` }]
     }
   }
 
-  // Parse fragment data from AI response if present
-  if (aiText) {
+  // Parse fragment data from AI response
+  // rawAiText = text parts from modelTurn (contains <emma_analysis> block)
+  // aiText    = outputTranscription (speech transcript, usually no analysis block)
+  const analysisSource = rawAiText || aiText || '';
+  const hasAnalysisBlock = analysisSource.includes('<emma_analysis>');
+
+  console.log(`[chat/turn] turn=${turnNumber} rawAiText=${rawAiText?.length || 0}chars aiText=${aiText?.length || 0}chars hasAnalysisBlock=${hasAnalysisBlock}`);
+
+  if (analysisSource) {
     try {
       const { parseEmmaAnalysis, saveFragmentDetection } = require('@/lib/storyPromptBuilder');
-      const { fragment } = parseEmmaAnalysis(aiText);
+      const { cleanResponse, emotion: emmaEmotion, fragment } = parseEmmaAnalysis(analysisSource);
+
+      console.log(`[chat/turn] parseEmmaAnalysis → fragment.detected=${fragment?.detected ?? 'null'} completeness=${fragment?.elements ? Object.values(fragment.elements).filter(v => v !== null && (Array.isArray(v) ? v.length > 0 : true)).length : 0}`);
+
+      if (!hasAnalysisBlock) {
+        console.warn('[chat/turn] ⚠️  No <emma_analysis> block found in Gemini response. Check system prompt includes analysis request.');
+      }
+
       await saveFragmentDetection(db, sessionId, fragment);
     } catch (e) {
       console.error('[chat/turn] fragment detection failed:', e.message);

@@ -502,6 +502,7 @@ export default function EmmaChat({ initialMode }) {
   const sessionIdRef      = useRef(null);
   const currentUserMsgRef = useRef('');
   const currentAiMsgRef   = useRef('');
+  const rawAiTextRef      = useRef(''); // text parts from modelTurn (includes <emma_analysis>)
   const wakeLockRef       = useRef(null);
   const scrollRef         = useRef(null);
   const geminiKeyRef        = useRef('');
@@ -697,17 +698,20 @@ export default function EmmaChat({ initialMode }) {
         }, 14 * 60 * 1000);
       }
 
-      // Audio chunks → play
+      // Audio chunks + text parts from modelTurn
       if (msg.serverContent?.modelTurn?.parts) {
         for (const part of msg.serverContent.modelTurn.parts) {
           if (part.inlineData?.mimeType?.startsWith('audio/')) {
             scheduleChunk(base64ToPcm(part.inlineData.data));
             setIsAiSpeaking(true);
+          } else if (part.text) {
+            // Text parts include <emma_analysis> blocks — capture raw for server
+            rawAiTextRef.current += part.text;
           }
         }
       }
 
-      // AI transcript (streaming)
+      // AI transcript (streaming) — speech transcription (clean, no analysis block)
       const aiTranscript = msg.serverContent?.outputTranscription?.text ?? msg.outputTranscription?.text;
       if (aiTranscript) {
         currentAiMsgRef.current += aiTranscript;
@@ -721,8 +725,9 @@ export default function EmmaChat({ initialMode }) {
       // Turn complete → finalize messages
       if (msg.serverContent?.turnComplete) {
         const turnNum = ++turnsRef.current;
-        const aiMsg   = currentAiMsgRef.current.trim();
-        const userMsg = currentUserMsgRef.current.trim();
+        const aiMsg    = currentAiMsgRef.current.trim();
+        const userMsg  = currentUserMsgRef.current.trim();
+        const rawAiText = rawAiTextRef.current.trim();
 
         const ts = nowStr();
         setMessages(prev => {
@@ -735,6 +740,7 @@ export default function EmmaChat({ initialMode }) {
 
         currentAiMsgRef.current  = '';
         currentUserMsgRef.current = '';
+        rawAiTextRef.current     = '';
         setLiveText('');
         setIsAiSpeaking(false);
 
@@ -749,8 +755,9 @@ export default function EmmaChat({ initialMode }) {
               sessionId: sid,
               turnNumber: turnNum,
               userMessage: userMsg || '(no transcript)',
-              userText: userMsg || null,
-              aiText:   aiMsg  || null,
+              userText:   userMsg  || null,
+              aiText:     aiMsg    || null,
+              rawAiText:  rawAiText || null,  // includes <emma_analysis> block
             }),
           }).catch(() => {});
         }
