@@ -79,25 +79,19 @@ User message: "${userMessage.substring(0, 300)}"` }]
     }
   }
 
-  // Parse fragment data from AI response
-  // rawAiText = text parts from modelTurn (contains <emma_analysis> block)
-  // aiText    = outputTranscription (speech transcript, usually no analysis block)
-  const analysisSource = rawAiText || aiText || '';
+  // Per-turn fragment check (best-effort: only works if Gemini sends text parts)
+  // NOTE: Gemini Live with response_modalities=['AUDIO'] does NOT send text parts,
+  // so rawAiText will usually be empty. Full fragment detection happens in chat/end.
+  const analysisSource = rawAiText || '';
   const hasAnalysisBlock = analysisSource.includes('<emma_analysis>');
 
   console.log(`[chat/turn] turn=${turnNumber} rawAiText=${rawAiText?.length || 0}chars aiText=${aiText?.length || 0}chars hasAnalysisBlock=${hasAnalysisBlock}`);
 
-  if (analysisSource) {
+  if (hasAnalysisBlock) {
     try {
       const { parseEmmaAnalysis, saveFragmentDetection } = require('@/lib/storyPromptBuilder');
-      const { cleanResponse, emotion: emmaEmotion, fragment } = parseEmmaAnalysis(analysisSource);
-
-      console.log(`[chat/turn] parseEmmaAnalysis → fragment.detected=${fragment?.detected ?? 'null'} completeness=${fragment?.elements ? Object.values(fragment.elements).filter(v => v !== null && (Array.isArray(v) ? v.length > 0 : true)).length : 0}`);
-
-      if (!hasAnalysisBlock) {
-        console.warn('[chat/turn] ⚠️  No <emma_analysis> block found in Gemini response. Check system prompt includes analysis request.');
-      }
-
+      const { fragment } = parseEmmaAnalysis(analysisSource);
+      console.log(`[chat/turn] parseEmmaAnalysis → fragment.detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0}`);
       await saveFragmentDetection(db, sessionId, fragment);
     } catch (e) {
       console.error('[chat/turn] fragment detection failed:', e.message);

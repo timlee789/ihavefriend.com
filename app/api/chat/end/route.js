@@ -109,16 +109,91 @@ export async function POST(request) {
     } catch {}
   }
 
-  // Queue fragment generation if session had story-worthy content
-  try {
-    const { queueFragmentGeneration } = require('@/lib/storyPromptBuilder');
-    const jobId = await queueFragmentGeneration(db, user.id, sessionId);
-    if (jobId) {
-      console.log(`[chat/end] Fragment job queued: ${jobId} for session ${sessionId}`);
+  // ── Fragment detection via REST (Gemini Live uses AUDIO-only, no text parts) ──
+  // Analyze the full transcript with Gemini to detect story-worthy moments,
+  // then queue fragment generation if found.
+  let fragmentJobId = null;
+  if (apiKey && history.length >= 2) {
+    try {
+      const conversationText = history
+        .map(m => `${m.role === 'user' ? '사용자' : 'Emma'}: ${m.content}`)
+        .join('\n');
+
+      const analysisPrompt = `Analyze this conversation between a user and Emma (AI friend) for story-worthy moments.
+
+A story-worthy moment has specific WHEN, WHERE, WHO, WHAT, EMOTION, or WHY elements.
+
+Conversation:
+${conversationText.substring(0, 3000)}
+
+Return ONLY valid JSON (no explanation):
+{
+  "fragment": {
+    "detected": false,
+    "elements": {
+      "when": null,
+      "where": null,
+      "who": [],
+      "what": null,
+      "emotion": null,
+      "why": null
+    },
+    "completeness": 0,
+    "deepening_question_asked": false,
+    "deepening_topic": null
+  }
+}
+
+Rules:
+- detected=true only for genuine personal stories/memories (not small talk)
+- completeness = count of non-null/non-empty elements (0-6)
+- "오늘 날씨 좋다" → detected: false
+- "20년 전 아버지와 함께 가게를 열었던 날" → detected: true, completeness: 3+`;
+
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: analysisPrompt }] }],
+            generationConfig: { response_mime_type: 'application/json', temperature: 0.1 },
+          }),
+        }
+      );
+
+      if (geminiRes.ok) {
+        const data = await geminiRes.json();
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const parsed = JSON.parse(raw.trim());
+        const fragment = parsed.fragment;
+
+        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness}`);
+
+        // Save to chat_sessions
+        if (fragment?.detected) {
+          await db.query(
+            `UPDATE chat_sessions
+             SET fragment_candidate = true,
+                 fragment_elements = $1
+             WHERE id = $2`,
+            [JSON.stringify(fragment), sessionId]
+          );
+
+          // Queue generation job if completeness >= 3
+          const { queueFragmentGeneration } = require('@/lib/storyPromptBuilder');
+          fragmentJobId = await queueFragmentGeneration(db, user.id, sessionId);
+          if (fragmentJobId) {
+            console.log(`[chat/end] ✅ Fragment job queued: ${fragmentJobId}`);
+          }
+        } else {
+          console.log(`[chat/end] No story-worthy content detected (completeness=${fragment?.completeness ?? 0})`);
+        }
+      }
+    } catch (e) {
+      console.error('[chat/end] Fragment detection failed:', e.message);
     }
-  } catch (e) {
-    console.error('[chat/end] queueFragmentGeneration failed:', e.message);
   }
 
-  return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0 });
+  return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0, fragmentJobQueued: !!fragmentJobId });
 }
