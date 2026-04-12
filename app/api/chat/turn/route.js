@@ -69,13 +69,24 @@ User message: "${userMessage.substring(0, 300)}"` }]
     }
   }
 
-  // Save emotion turn
+  // Save emotion turn + fragment detection (both come from aiText analysis)
   if (emotion) {
     try {
       const { saveEmotionTurn } = require('@/lib/emotionTracker');
       await saveEmotionTurn(db, user.id, sessionId, turnNumber, userMessage, emotion);
     } catch (e) {
       console.error('[chat/turn] saveEmotionTurn failed:', e.message);
+    }
+  }
+
+  // Parse fragment data from AI response if present
+  if (aiText) {
+    try {
+      const { parseEmmaAnalysis, saveFragmentDetection } = require('@/lib/storyPromptBuilder');
+      const { fragment } = parseEmmaAnalysis(aiText);
+      await saveFragmentDetection(db, sessionId, fragment);
+    } catch (e) {
+      console.error('[chat/turn] fragment detection failed:', e.message);
     }
   }
 

@@ -109,5 +109,16 @@ export async function POST(request) {
     } catch {}
   }
 
+  // Queue fragment generation if session had story-worthy content
+  try {
+    const { queueFragmentGeneration } = require('@/lib/storyPromptBuilder');
+    const jobId = await queueFragmentGeneration(db, user.id, sessionId);
+    if (jobId) {
+      console.log(`[chat/end] Fragment job queued: ${jobId} for session ${sessionId}`);
+    }
+  } catch (e) {
+    console.error('[chat/end] queueFragmentGeneration failed:', e.message);
+  }
+
   return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0 });
 }

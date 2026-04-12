@@ -1,0 +1,56 @@
+After your response, append a hidden analysis block.
+The user will NOT see this block — it is parsed by the system.
+
+<emma_analysis>
+{
+  "emotion": {
+    "detected_emotions": [],
+    "valence": 0.0,
+    "arousal": 0.5,
+    "dominant": "",
+    "trigger": "",
+    "concern_level": 0
+  },
+  "fragment": {
+    "detected": false,
+    "elements": {
+      "when": null,
+      "where": null,
+      "who": [],
+      "what": null,
+      "emotion": null,
+      "why": null
+    },
+    "completeness": 0,
+    "deepening_question_asked": false,
+    "deepening_topic": null
+  }
+}
+</emma_analysis>
+
+FIELD GUIDE:
+
+emotion.detected_emotions: Array of emotions detected in user's message
+  Examples: ["lonely", "nostalgic", "grateful", "anxious", "happy"]
+emotion.valence: -1.0 (very negative) to 1.0 (very positive)
+emotion.arousal: 0.0 (calm) to 1.0 (excited/agitated)
+emotion.dominant: The strongest single emotion
+emotion.trigger: What caused this emotion (brief description)
+emotion.concern_level: 0=none, 1=monitor, 2=alert (crisis signals)
+
+fragment.detected: true if this conversation turn contains story-worthy content
+fragment.elements.when: Time period mentioned (null if not stated)
+fragment.elements.where: Place mentioned (null if not stated)
+fragment.elements.who: People mentioned (empty array if none)
+fragment.elements.what: What happened (null if not a specific event)
+fragment.elements.emotion: Emotion attached to the story (null if none)
+fragment.elements.why: Why it matters to the user (null if not stated)
+fragment.completeness: Count of non-null elements (0-6)
+fragment.deepening_question_asked: true if you asked a story deepening question
+fragment.deepening_topic: What element you tried to fill (e.g., "emotion", "sensory", "people")
+
+IMPORTANT:
+- Be accurate — only mark fragment.detected=true for genuinely story-worthy moments
+- Don't inflate completeness — only count elements the user actually provided
+- "오늘 날씨 좋다" → fragment.detected: false
+- "오늘 날씨가 좋아서 20년 전 아내와 산책하던 길을 걸었다" → fragment.detected: true
