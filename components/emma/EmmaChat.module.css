@@ -296,6 +296,138 @@
 .day   .emptyOr { color: #c0a090; }
 .night .emptyOr { color: rgba(255,255,255,0.25); }
 
+/* ── Welcome banner (Task 3) ─────────────────────────────────────────────── */
+
+.welcomeBanner {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  padding: 14px 18px;
+  text-align: center;
+}
+.welcomeBannerDay {
+  background: rgba(234,88,12,0.07);
+  border: 1px solid rgba(234,88,12,0.15);
+}
+.welcomeBannerNight {
+  background: rgba(168,85,247,0.10);
+  border: 1px solid rgba(168,85,247,0.22);
+}
+
+.welcomeText {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  margin: 0 0 6px;
+}
+.welcomeBannerDay   .welcomeText { color: #6b2f10; }
+.welcomeBannerNight .welcomeText { color: rgba(235,210,255,0.88); }
+
+.ebookLink {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ebookLink:hover   { opacity: 0.82; }
+.ebookLinkDay      { background: #ea580c; color: #fff; }
+.ebookLinkNight    { background: #a855f7; color: #fff; }
+
+/* ── Story Starter Cards (Task 1) ────────────────────────────────────────── */
+
+.storySection {
+  width: 100%;
+  max-width: 420px;
+}
+
+.storySectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+.storySectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.storySectionTitleDay   { color: #c08878; }
+.storySectionTitleNight { color: rgba(255,255,255,0.32); }
+
+.shuffleBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 2px 0;
+  transition: opacity 0.15s;
+}
+.shuffleBtn:hover  { opacity: 0.7; }
+.shuffleBtnDay     { color: #ea580c; }
+.shuffleBtnNight   { color: #a855f7; }
+
+.storyCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.storyCard {
+  text-align: left;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s, opacity 0.12s;
+  width: 100%;
+}
+.storyCard:hover  { opacity: 0.82; }
+.storyCard:active { transform: scale(0.98); }
+
+.storyCardDay {
+  background: rgba(255,255,255,0.80);
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.storyCardNight {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.10);
+}
+
+.storyCardCat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.storyCardCatDay   { color: #ea580c; }
+.storyCardCatNight { color: rgba(168,85,247,0.85); }
+
+.storyCardQ {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  display: block;
+}
+.storyCardQDay   { color: #2d1510; }
+.storyCardQNight { color: rgba(255,255,255,0.82); }
+
 /* ── Feedback modal ────────────────────────────────────────────────────────── */
 .feedbackOverlay {
   position: fixed;

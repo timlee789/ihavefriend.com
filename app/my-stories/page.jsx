@@ -4,6 +4,56 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import s from './page.module.css';
 
+// ── Sample community stories (Task 2) ──────────────────────────────────────
+const SAMPLE_STORIES = [
+  {
+    id      : 'sample-1',
+    title   : '할머니의 된장찌개',
+    subtitle: '맛보다 더 깊은 것들',
+    content : `할머니 집에 가면 항상 그 냄새가 먼저였다. 된장이 부글부글 끓는 소리, 파가 지글거리는 소리. 문을 열기도 전에 배가 고파졌다.
+
+할머니는 된장을 직접 담그셨다. 매년 봄이면 마당 한켠 장독대 앞에 쪼그려 앉아 항아리를 열어보셨는데, 그 모습이 마치 작은 의식 같았다. 나는 그 옆에서 흙장난을 하다 말고 슬금슬금 다가가 냄새를 맡곤 했다. 퀴퀴하면서도 구수한, 뭐라 설명하기 어려운 냄새.
+
+지금 나는 마흔셋이고 할머니는 오래전 돌아가셨다. 된장찌개를 끓일 때마다 그 마당이 생각난다. 흙냄새, 장독의 서늘함, 할머니의 손등에 있던 주름들. 음식은 참 묘하다. 혀가 기억하는 게 아니라, 온몸이 기억한다.
+
+그날 이후로 나는 아이들에게 된장찌개를 가르치고 있다. 언젠가 내가 없어도, 이 냄새만큼은 남아있으면 좋겠다고 생각하면서.`,
+    tags    : ['가족', '추억', '음식', '할머니'],
+    preview : '할머니 집에 가면 항상 그 냄새가 먼저였다. 된장이 부글부글 끓는 소리, 파가 지글거리는 소리.',
+  },
+  {
+    id      : 'sample-2',
+    title   : '첫 출근의 넥타이',
+    subtitle: '아버지가 매주신 매듭',
+    content : `스물두 살 첫 출근 날, 나는 넥타이를 맬 줄 몰랐다.
+
+전날 밤 유튜브를 보며 20번쯤 연습했지만 아침에 거울 앞에 서니 손이 떨렸다. 그때 문이 열리더니 아버지가 들어오셨다. 말없이 내 앞에 서서 넥타이를 잡으셨다. 굵고 거칠었던 손. 공사판에서 30년을 일하신 손.
+
+"반 하프 윈저. 이게 제일 믿음직스러워 보여."
+
+아버지는 내 넥타이를 매주시면서 그 한마디만 하셨다. 그런데 그 말이 내내 마음에 걸렸다. 믿음직스러워 보인다는 게 그날 내게 가장 필요한 말이었으니까.
+
+회사를 그만두고 창업을 했을 때도, 힘든 날 혼자 넥타이를 매면서 그 손의 감촉을 생각했다. 이제는 나도 아버지처럼 아이에게 넥타이 매는 법을 가르쳐 주는 날을 기다리고 있다.`,
+    tags    : ['아버지', '첫 경험', '직장', '성장'],
+    preview : '스물두 살 첫 출근 날, 나는 넥타이를 맬 줄 몰랐다. 전날 밤 유튜브를 보며 20번쯤 연습했지만…',
+  },
+  {
+    id      : 'sample-3',
+    title   : '딸이 처음 걸었던 날',
+    subtitle: '11걸음',
+    content : `딸이 걷기 시작한 건 14개월째 되던 토요일 오후였다.
+
+아내와 나는 거실 양 끝에 앉아 서로를 바라보고 있었다. 딸은 그 사이에서 소파 모서리를 잡고 망설이고 있었다. 우리는 숨을 참았다.
+
+한 걸음. 두 걸음. 세 걸음. 네 걸음에서 엉덩방아를 찧었다가 다시 일어났다. 다섯, 여섯, 일곱… 열한 걸음. 내 품에 와서 쿵 하고 안겼다.
+
+나는 그 순간 울었다. 아내도 울었다. 딸은 영문을 모르고 우리 얼굴을 번갈아 보다가 자기도 따라 울었다. 셋이서 거실 바닥에 앉아 한참을 울었다.
+
+그 열한 걸음이 나한테는 아직도 선명하다. 살면서 그보다 더 극적인 장면을 본 적이 없다. 열한 걸음. 그게 전부였는데. 그게 전부인데도 세상이 달라 보였다.`,
+    tags    : ['자녀', '가족', '행복', '육아'],
+    preview : '딸이 걷기 시작한 건 14개월째 되던 토요일 오후였다. 아내와 나는 거실 양 끝에 앉아 서로를 바라보고 있었다.',
+  },
+];
+
 // ── helpers ────────────────────────────────────────────────────
 function getToken() {
   if (typeof window === 'undefined') return null;
@@ -60,6 +110,80 @@ function Spinner() {
 }
 
 // ── Fragment Detail Modal ────────────────────────────────────────
+// ── Sample Story Modal (Task 2) ─────────────────────────────────────────────
+function SampleStoryModal({ story, onClose }) {
+  return (
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div>
+            <div className={s.modalTitle}>{story.title}</div>
+            {story.subtitle && <div className={s.modalSubtitle}>{story.subtitle}</div>}
+          </div>
+          <button className={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          <div className={s.modalContent}>{story.content}</div>
+          {story.tags?.length > 0 && (
+            <div className={s.modalTagSection}>
+              <div className={s.modalTagLabel}>태그</div>
+              <div className={s.tagRow}>
+                {story.tags.map((t, i) => (
+                  <span key={i} className={`${s.tag} ${s.tagTheme}`}>{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sample Gallery (Task 2) ──────────────────────────────────────────────────
+function SampleGallery({ onStartChat }) {
+  const [selected, setSelected] = useState(null);
+
+  return (
+    <div className={s.sampleSection}>
+      <div className={s.sectionTitle} style={{ paddingTop: 0 }}>다른 분들의 이야기</div>
+      <div className={s.sampleDesc}>
+        엠마와 나눈 대화에서 탄생한 실제 이야기들이에요.
+      </div>
+      <div className={s.cardList}>
+        {SAMPLE_STORIES.map(story => (
+          <div key={story.id} className={`${s.card} ${s.sampleCard}`}
+            onClick={() => setSelected(story)}>
+            <div className={s.cardHeader}>
+              <div className={s.cardTitle}>{story.title}</div>
+              <span className={`${s.statusBadge} ${s.statusConfirmed}`}>샘플</span>
+            </div>
+            {story.subtitle && <div className={s.cardSubtitle}>{story.subtitle}</div>}
+            <div className={s.cardPreview}>{story.preview}</div>
+            <div className={s.cardFooter}>
+              <div className={s.tagRow}>
+                {(story.tags || []).slice(0, 3).map((t, i) => (
+                  <span key={i} className={`${s.tag} ${s.tagTheme}`}>{t}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button className={s.startChatBtn} onClick={onStartChat}>
+        ✏️ 나도 이야기 남기기
+      </button>
+
+      {selected && (
+        <SampleStoryModal story={selected} onClose={() => setSelected(null)} />
+      )}
+    </div>
+  );
+}
+
+// ── Fragment Modal ─────────────────────────────────────────────────────────
 function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
   const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete'
   const [editTitle, setEditTitle] = useState(fragment.title || '');
@@ -490,6 +614,9 @@ export default function MyStoriesPage() {
               </div>
             </div>
           )}
+
+          {/* ── Sample Gallery (Task 2) ── */}
+          <SampleGallery onStartChat={() => router.push('/chat')} />
 
           {/* ── Ebook Section ── */}
           <div className={s.ebookSection}>

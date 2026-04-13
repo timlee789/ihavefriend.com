@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaChat.module.css';
+import { pickStarterCards } from '@/lib/storyStarterQuestions';
 
 // ── Emma character configs per language ──────────────────────────────────────
 const EMMA_CHARS = {
@@ -77,6 +78,40 @@ const LANGS = ['EN', 'KO', 'ES'];
 function getEmma(lang) {
   return EMMA_CHARS[lang] || EMMA_CHARS.KO;
 }
+
+// ── Welcome messages (state-based, Task 3) ───────────────────────────────────
+const WELCOME_MSGS = {
+  KO: {
+    new        : '반갑습니다! 당신의 이야기를 듣고 기록으로 남기는 걸 도와드려요.',
+    few        : (title) => title
+      ? `"${title}" 이야기 기억해요 😊 오늘은 어떤 이야기를 들려주실 건가요?`
+      : '이전 이야기들을 기억하고 있어요 😊 오늘은 어떤 이야기를 들려주실 건가요?',
+    many       : (n) => `지금까지 ${n}개의 이야기를 담았어요 🎉 ebook으로 묶으면 멋진 책이 될 것 같아요!`,
+    ebookCta   : 'ebook 신청하기 →',
+    starterTitle: '오늘의 이야기 주제',
+    shuffleBtn : '다른 질문 보기',
+  },
+  EN: {
+    new        : "Hi! I'm here to listen and help preserve your stories.",
+    few        : (title) => title
+      ? `I remember your story about "${title}" 😊 What would you like to share today?`
+      : 'I remember our past conversations 😊 What would you like to talk about today?',
+    many       : (n) => `You've shared ${n} stories so far 🎉 They'd make a beautiful ebook!`,
+    ebookCta   : 'Request ebook →',
+    starterTitle: "Today's story starters",
+    shuffleBtn : 'Show different topics',
+  },
+  ES: {
+    new        : 'Hola! Estoy aquí para escucharte y ayudarte a conservar tus historias.',
+    few        : (title) => title
+      ? `Recuerdo tu historia sobre "${title}" 😊 ¿Qué te gustaría compartir hoy?`
+      : 'Recuerdo nuestras conversaciones anteriores 😊 ¿De qué te gustaría hablar hoy?',
+    many       : (n) => `¡Has compartido ${n} historias hasta ahora 🎉 Juntas formarían un ebook precioso!`,
+    ebookCta   : 'Solicitar ebook →',
+    starterTitle: 'Temas de historia para hoy',
+    shuffleBtn : 'Ver otros temas',
+  },
+};
 
 // ── topic chips (same set as EmmaHome, day & night per language) ──────────────
 const CHAT_CHIPS = {
@@ -322,6 +357,10 @@ export default function EmmaChat({ initialMode }) {
   const [token, setToken] = useState('');
   const [lang,  setLang]  = useState('KO');
 
+  // ── story fragments + starter cards (Tasks 1 & 3) ────────────────────────
+  const [userFragments, setUserFragments] = useState(null); // null = loading
+  const [starterCards,  setStarterCards]  = useState([]);
+
   useEffect(() => {
     const t = localStorage.getItem('token');
     const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -337,11 +376,39 @@ export default function EmmaChat({ initialMode }) {
     isMutedRef.current = muted;
   }, [router]);
 
+  // Fetch fragment count once token is ready (for welcome message + starter cards)
+  useEffect(() => {
+    if (!token) return;
+    // Derive active lang from localStorage since lang state may be stale here
+    const u = JSON.parse(typeof window !== 'undefined' ? (localStorage.getItem('user') || '{}') : '{}');
+    const activeLang = ((u.lang || (typeof window !== 'undefined' ? localStorage.getItem('lang') : null) || 'ko')).toUpperCase();
+    const lc = LANGS.includes(activeLang) ? activeLang : 'KO';
+
+    fetch('/api/fragments?limit=10&status=draft,confirmed', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : { fragments: [] })
+      .then(d => {
+        setUserFragments(d.fragments || []);
+        setStarterCards(pickStarterCards(lc));
+      })
+      .catch(() => {
+        setUserFragments([]);
+        setStarterCards(pickStarterCards(lc));
+      });
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function cycleLang() {
     if (isConnected) return; // don't switch mid-conversation
     const next = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     setLang(next);
     saveLang(next.toLowerCase(), tokenRef.current);
+    // Re-shuffle starter cards in the new language
+    setStarterCards(pickStarterCards(next));
+  }
+
+  function shuffleStarters() {
+    setStarterCards(pickStarterCards(lang));
   }
 
   function toggleMute() {
@@ -1069,16 +1136,44 @@ export default function EmmaChat({ initialMode }) {
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
 
-        {/* ── empty state: topic chips ── */}
+        {/* ── empty state: welcome + story starters + topic chips ── */}
         {messages.length === 0 && !isConnected && (() => {
-          const cc   = CHAT_CHIPS[lang] || CHAT_CHIPS.KO;
-          const pal  = CHIP_PAL[isDay ? 'day' : 'night'];
+          const cc      = CHAT_CHIPS[lang] || CHAT_CHIPS.KO;
+          const pal     = CHIP_PAL[isDay ? 'day' : 'night'];
           const timeKey = (() => { const h = new Date().getHours(); return h >= 6 && h < 21 ? 'day' : 'night'; })();
-          const chips = cc[timeKey];
+          const chips   = cc[timeKey];
+          const wmsgs   = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
+          const fragCount = userFragments?.length ?? null; // null while loading
+
           return (
             <div className={styles.emptyState}>
+
+              {/* ── Task 3: State-based welcome banner ── */}
+              {fragCount !== null && (
+                <div className={`${styles.welcomeBanner} ${isDay ? styles.welcomeBannerDay : styles.welcomeBannerNight}`}>
+                  {fragCount === 0 && (
+                    <p className={styles.welcomeText}>{wmsgs.new}</p>
+                  )}
+                  {fragCount >= 1 && fragCount <= 5 && (
+                    <p className={styles.welcomeText}>
+                      {wmsgs.few(userFragments[0]?.title || '')}
+                    </p>
+                  )}
+                  {fragCount >= 6 && (
+                    <>
+                      <p className={styles.welcomeText}>{wmsgs.many(fragCount)}</p>
+                      <a href="/my-stories"
+                        className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
+                        {wmsgs.ebookCta}
+                      </a>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* hint text */}
               <p className={styles.emptyHint}>{cc.emptyHint}</p>
+
               {/* chips */}
               <div className={styles.emptyChips}>
                 {chips.map(chip => {
@@ -1096,6 +1191,40 @@ export default function EmmaChat({ initialMode }) {
                   );
                 })}
               </div>
+
+              {/* ── Task 1: Story Starter Cards (show for 0-5 fragments) ── */}
+              {starterCards.length > 0 && fragCount !== null && fragCount < 6 && (
+                <div className={styles.storySection}>
+                  <div className={styles.storySectionHeader}>
+                    <span className={`${styles.storySectionTitle} ${isDay ? styles.storySectionTitleDay : styles.storySectionTitleNight}`}>
+                      {wmsgs.starterTitle}
+                    </span>
+                    <button
+                      className={`${styles.shuffleBtn} ${isDay ? styles.shuffleBtnDay : styles.shuffleBtnNight}`}
+                      onClick={shuffleStarters}
+                    >
+                      ↻ {wmsgs.shuffleBtn}
+                    </button>
+                  </div>
+                  <div className={styles.storyCards}>
+                    {starterCards.map((card, i) => (
+                      <button
+                        key={i}
+                        className={`${styles.storyCard} ${isDay ? styles.storyCardDay : styles.storyCardNight}`}
+                        onClick={() => selectChip({ emoji: card.emoji, label: card.question })}
+                      >
+                        <span className={`${styles.storyCardCat} ${isDay ? styles.storyCardCatDay : styles.storyCardCatNight}`}>
+                          {card.emoji} {card.cat}
+                        </span>
+                        <span className={`${styles.storyCardQ} ${isDay ? styles.storyCardQDay : styles.storyCardQNight}`}>
+                          {card.question}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* or-mic hint */}
               <p className={styles.emptyOr}>{cc.emptyOr}</p>
             </div>
