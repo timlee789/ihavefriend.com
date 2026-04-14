@@ -517,19 +517,19 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  letter-spacing: 0.1px;
+  text-transform: none;
   margin-bottom: 6px;
 }
 .storyCardCatDay   { color: #ea580c; }
 .storyCardCatNight { color: rgba(168,85,247,0.85); }
 
 .storyCardQ {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.5;
   display: block;
 }
 .storyCardQDay   { color: #2d1510; }
