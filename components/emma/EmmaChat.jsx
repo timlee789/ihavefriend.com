@@ -1211,21 +1211,13 @@ export default function EmmaChat({ initialMode }) {
           return (
             <div className={styles.emptyState}>
 
-              {/* ── Welcome banner (fragment-count based) ── */}
-              {fragCount !== null && (
+              {/* ── Welcome banner: 6개 이상일 때만 ebook 안내 표시 ── */}
+              {fragCount !== null && fragCount >= 6 && (
                 <div className={`${styles.welcomeBanner} ${isDay ? styles.welcomeBannerDay : styles.welcomeBannerNight}`}>
-                  {fragCount === 0 && <p className={styles.welcomeText}>{wmsgs.new}</p>}
-                  {fragCount >= 1 && fragCount <= 5 && (
-                    <p className={styles.welcomeText}>{wmsgs.few(userFragments[0]?.title || '')}</p>
-                  )}
-                  {fragCount >= 6 && (
-                    <>
-                      <p className={styles.welcomeText}>{wmsgs.many(fragCount)}</p>
-                      <a href="/my-stories" className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
-                        {wmsgs.ebookCta}
-                      </a>
-                    </>
-                  )}
+                  <p className={styles.welcomeText}>{wmsgs.many(fragCount)}</p>
+                  <a href="/my-stories" className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
+                    {wmsgs.ebookCta}
+                  </a>
                 </div>
               )}
 

@@ -340,11 +340,12 @@
 
 /* ── Two-zone Mode Selector ─────────────────────────────────────────────── */
 
+/* companion zone는 더 크게 — 칩이 여러 줄로 보이도록 */
 .modeZone {
   width: 100%;
   max-width: 420px;
   border-radius: 18px;
-  padding: 16px 16px 14px;
+  padding: 18px 18px 16px;
   border: 1px solid;
 }
 
@@ -392,16 +393,23 @@
 .modeZoneSubDay   { color: #b08070; }
 .modeZoneSubNight { color: rgba(255,255,255,0.35); }
 
-/* companion chips: horizontal scroll */
+/* companion chips: wrap so all chips are visible at once */
 .companionChips {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding-bottom: 2px;
 }
-.companionChips::-webkit-scrollbar { display: none; }
+/* keep horizontal scroll only on very small screens */
+@media (max-width: 320px) {
+  .companionChips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .companionChips::-webkit-scrollbar { display: none; }
+}
 
 /* story action row: shuffle + custom */
 .storyActionRow {
