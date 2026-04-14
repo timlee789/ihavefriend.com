@@ -79,7 +79,7 @@ function getEmma(lang) {
   return EMMA_CHARS[lang] || EMMA_CHARS.KO;
 }
 
-// ── Welcome messages (state-based, Task 3) ───────────────────────────────────
+// ── Welcome / mode UI copy ─────────────────────────────────────────────────
 const WELCOME_MSGS = {
   KO: {
     new        : '반갑습니다! 당신의 이야기를 듣고 기록으로 남기는 걸 도와드려요.',
@@ -88,8 +88,22 @@ const WELCOME_MSGS = {
       : '이전 이야기들을 기억하고 있어요 😊 오늘은 어떤 이야기를 들려주실 건가요?',
     many       : (n) => `지금까지 ${n}개의 이야기를 담았어요 🎉 ebook으로 묶으면 멋진 책이 될 것 같아요!`,
     ebookCta   : 'ebook 신청하기 →',
-    starterTitle: '오늘의 이야기 주제',
-    shuffleBtn : '다른 질문 보기',
+    // companion zone
+    companionTitle : '그냥 이야기하기',
+    companionSub   : '오늘 기분이 어때요?',
+    companionChips : [
+      { label: '외로울 때',          emoji: '💙', c: 'blue'   },
+      { label: '잠이 안 와요',       emoji: '💤', c: 'purple' },
+      { label: '내일이 걱정돼요',    emoji: '🕐', c: 'orange' },
+      { label: '오늘의 작은 기쁨',   emoji: '✨', c: 'yellow' },
+      { label: '그냥 수다',          emoji: '🌙', c: 'teal'   },
+    ],
+    // story zone
+    storyTitle     : '내 이야기 남기기',
+    storySub       : '당신의 이야기를 기록으로 남겨보세요',
+    storyHint      : '대화가 끝나면 Emma가 당신의 이야기를 정리해 드려요',
+    shuffleBtn     : '다른 질문 보기',
+    customTopicBtn : '나만의 주제로 시작',
   },
   EN: {
     new        : "Hi! I'm here to listen and help preserve your stories.",
@@ -98,8 +112,20 @@ const WELCOME_MSGS = {
       : 'I remember our past conversations 😊 What would you like to talk about today?',
     many       : (n) => `You've shared ${n} stories so far 🎉 They'd make a beautiful ebook!`,
     ebookCta   : 'Request ebook →',
-    starterTitle: "Today's story starters",
-    shuffleBtn : 'Show different topics',
+    companionTitle : 'Just talk',
+    companionSub   : 'How are you feeling today?',
+    companionChips : [
+      { label: 'Feeling lonely',        emoji: '💙', c: 'blue'   },
+      { label: "Can't sleep",           emoji: '💤', c: 'purple' },
+      { label: 'Worried about tomorrow',emoji: '🕐', c: 'orange' },
+      { label: "Today's small joys",    emoji: '✨', c: 'yellow' },
+      { label: 'Just want to chat',     emoji: '🌙', c: 'teal'   },
+    ],
+    storyTitle     : 'Record my story',
+    storySub       : 'Let's capture your stories',
+    storyHint      : 'When we finish, Emma will organize your story for you',
+    shuffleBtn     : 'Show different topics',
+    customTopicBtn : 'Start with my own topic',
   },
   ES: {
     new        : 'Hola! Estoy aquí para escucharte y ayudarte a conservar tus historias.',
@@ -108,8 +134,20 @@ const WELCOME_MSGS = {
       : 'Recuerdo nuestras conversaciones anteriores 😊 ¿De qué te gustaría hablar hoy?',
     many       : (n) => `¡Has compartido ${n} historias hasta ahora 🎉 Juntas formarían un ebook precioso!`,
     ebookCta   : 'Solicitar ebook →',
-    starterTitle: 'Temas de historia para hoy',
-    shuffleBtn : 'Ver otros temas',
+    companionTitle : 'Solo charlar',
+    companionSub   : '¿Cómo te sientes hoy?',
+    companionChips : [
+      { label: 'Me siento solo/a',       emoji: '💙', c: 'blue'   },
+      { label: 'No puedo dormir',        emoji: '💤', c: 'purple' },
+      { label: 'Preocupado por mañana',  emoji: '🕐', c: 'orange' },
+      { label: 'Las pequeñas alegrías',  emoji: '✨', c: 'yellow' },
+      { label: 'Solo quiero hablar',     emoji: '🌙', c: 'teal'   },
+    ],
+    storyTitle     : 'Contar mi historia',
+    storySub       : 'Capturemos tus historias',
+    storyHint      : 'Cuando terminemos, Emma organizará tu historia',
+    shuffleBtn     : 'Ver otros temas',
+    customTopicBtn : 'Empezar con mi propio tema',
   },
 };
 
@@ -357,9 +395,12 @@ export default function EmmaChat({ initialMode }) {
   const [token, setToken] = useState('');
   const [lang,  setLang]  = useState('KO');
 
-  // ── story fragments + starter cards (Tasks 1 & 3) ────────────────────────
-  const [userFragments, setUserFragments] = useState(null); // null = loading
-  const [starterCards,  setStarterCards]  = useState([]);
+  // ── story fragments + starter cards ──────────────────────────────────────
+  const [userFragments,    setUserFragments]    = useState(null); // null = loading
+  const [starterCards,     setStarterCards]     = useState([]);
+  // ── conversation mode: 'companion' | 'story' | 'auto' ────────────────────
+  const [conversationMode, setConversationMode] = useState('auto');
+  const convModeRef = useRef('auto');
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -410,6 +451,9 @@ export default function EmmaChat({ initialMode }) {
   function shuffleStarters() {
     setStarterCards(pickStarterCards(lang));
   }
+
+  // keep ref in sync
+  useEffect(() => { convModeRef.current = conversationMode; }, [conversationMode]);
 
   function toggleMute() {
     const next = !isMuted;
@@ -940,7 +984,11 @@ export default function EmmaChat({ initialMode }) {
       const res = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ message: pendingTopicRef.current || '', lang: currentLang.toLowerCase() }),
+        body: JSON.stringify({
+          message          : pendingTopicRef.current || '',
+          lang             : currentLang.toLowerCase(),
+          conversationMode : convModeRef.current,
+        }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -1016,7 +1064,11 @@ export default function EmmaChat({ initialMode }) {
       fetch('/api/chat/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ sessionId: sid, transcript: transcriptRef.current }),
+        body: JSON.stringify({
+          sessionId       : sid,
+          transcript      : transcriptRef.current,
+          conversationMode: convModeRef.current,
+        }),
       }).catch(() => {});
       // Show feedback modal after conversation with enough turns
       feedbackSessionRef.current = sid;
@@ -1062,8 +1114,10 @@ export default function EmmaChat({ initialMode }) {
   }, [micOn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── chip selection from empty state ─────────────────────────────────────────
-  function selectChip(chip) {
+  function selectChip(chip, mode = 'auto') {
     if (isConnected) return;
+    setConversationMode(mode);
+    convModeRef.current = mode;
     pendingTopicRef.current = chip.label;
     // Show chip as user's opening message
     setMessages([{
@@ -1072,6 +1126,18 @@ export default function EmmaChat({ initialMode }) {
       text: `${chip.emoji} ${chip.label}`,
       timestamp: nowStr(),
     }]);
+    setMicOn(true);
+    connect();
+  }
+
+  function selectStoryCard(card) {
+    selectChip({ emoji: card.emoji, label: card.question }, 'story');
+  }
+
+  function startCustomTopic(mode) {
+    if (isConnected) return;
+    setConversationMode(mode);
+    convModeRef.current = mode;
     setMicOn(true);
     connect();
   }
@@ -1136,34 +1202,26 @@ export default function EmmaChat({ initialMode }) {
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
 
-        {/* ── empty state: welcome + story starters + topic chips ── */}
+        {/* ── empty state: two-zone mode selector ── */}
         {messages.length === 0 && !isConnected && (() => {
-          const cc      = CHAT_CHIPS[lang] || CHAT_CHIPS.KO;
-          const pal     = CHIP_PAL[isDay ? 'day' : 'night'];
-          const timeKey = (() => { const h = new Date().getHours(); return h >= 6 && h < 21 ? 'day' : 'night'; })();
-          const chips   = cc[timeKey];
-          const wmsgs   = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
-          const fragCount = userFragments?.length ?? null; // null while loading
+          const pal       = CHIP_PAL[isDay ? 'day' : 'night'];
+          const wmsgs     = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
+          const fragCount = userFragments?.length ?? null;
 
           return (
             <div className={styles.emptyState}>
 
-              {/* ── Task 3: State-based welcome banner ── */}
+              {/* ── Welcome banner (fragment-count based) ── */}
               {fragCount !== null && (
                 <div className={`${styles.welcomeBanner} ${isDay ? styles.welcomeBannerDay : styles.welcomeBannerNight}`}>
-                  {fragCount === 0 && (
-                    <p className={styles.welcomeText}>{wmsgs.new}</p>
-                  )}
+                  {fragCount === 0 && <p className={styles.welcomeText}>{wmsgs.new}</p>}
                   {fragCount >= 1 && fragCount <= 5 && (
-                    <p className={styles.welcomeText}>
-                      {wmsgs.few(userFragments[0]?.title || '')}
-                    </p>
+                    <p className={styles.welcomeText}>{wmsgs.few(userFragments[0]?.title || '')}</p>
                   )}
                   {fragCount >= 6 && (
                     <>
                       <p className={styles.welcomeText}>{wmsgs.many(fragCount)}</p>
-                      <a href="/my-stories"
-                        className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
+                      <a href="/my-stories" className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
                         {wmsgs.ebookCta}
                       </a>
                     </>
@@ -1171,47 +1229,58 @@ export default function EmmaChat({ initialMode }) {
                 </div>
               )}
 
-              {/* hint text */}
-              <p className={styles.emptyHint}>{cc.emptyHint}</p>
-
-              {/* chips */}
-              <div className={styles.emptyChips}>
-                {chips.map(chip => {
-                  const p = pal[chip.c] || pal.orange;
-                  return (
-                    <button
-                      key={chip.label}
-                      className={styles.emptyChip}
-                      style={{ background: p.bg, color: p.color, borderColor: p.border }}
-                      onClick={() => chip.type === 'news' ? fetchNews() : selectChip(chip)}
-                    >
-                      <span style={{ fontSize: 15 }}>{chip.emoji}</span>
-                      {chip.label}
-                    </button>
-                  );
-                })}
+              {/* ═══════════════════════════════════════════
+                  영역 1: 그냥 이야기하기 (companion mode)
+                  ═══════════════════════════════════════════ */}
+              <div className={`${styles.modeZone} ${isDay ? styles.modeZoneDay : styles.modeZoneNight}`}>
+                <div className={styles.modeZoneHeader}>
+                  <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleDay : styles.modeZoneTitleNight}`}>
+                    💬 {wmsgs.companionTitle}
+                  </span>
+                  <span className={`${styles.modeZoneSub} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
+                    {wmsgs.companionSub}
+                  </span>
+                </div>
+                {/* Horizontal scroll chips */}
+                <div className={styles.companionChips}>
+                  {wmsgs.companionChips.map(chip => {
+                    const p = pal[chip.c] || pal.blue;
+                    return (
+                      <button
+                        key={chip.label}
+                        className={styles.emptyChip}
+                        style={{ background: p.bg, color: p.color, borderColor: p.border, flexShrink: 0 }}
+                        onClick={() => selectChip(chip, 'companion')}
+                      >
+                        <span style={{ fontSize: 15 }}>{chip.emoji}</span>
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* ── Task 1: Story Starter Cards (show for 0-5 fragments) ── */}
-              {starterCards.length > 0 && fragCount !== null && fragCount < 6 && (
-                <div className={styles.storySection}>
-                  <div className={styles.storySectionHeader}>
-                    <span className={`${styles.storySectionTitle} ${isDay ? styles.storySectionTitleDay : styles.storySectionTitleNight}`}>
-                      {wmsgs.starterTitle}
-                    </span>
-                    <button
-                      className={`${styles.shuffleBtn} ${isDay ? styles.shuffleBtnDay : styles.shuffleBtnNight}`}
-                      onClick={shuffleStarters}
-                    >
-                      ↻ {wmsgs.shuffleBtn}
-                    </button>
-                  </div>
+              {/* ═══════════════════════════════════════════
+                  영역 2: 내 이야기 남기기 (story mode)
+                  ═══════════════════════════════════════════ */}
+              <div className={`${styles.modeZone} ${styles.modeZoneStory} ${isDay ? styles.modeZoneStoryDay : styles.modeZoneStoryNight}`}>
+                <div className={styles.modeZoneHeader}>
+                  <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleStoryDay : styles.modeZoneTitleStoryNight}`}>
+                    📖 {wmsgs.storyTitle}
+                  </span>
+                  <span className={`${styles.modeZoneSub} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
+                    {wmsgs.storySub}
+                  </span>
+                </div>
+
+                {/* Story Starter Cards */}
+                {starterCards.length > 0 && (
                   <div className={styles.storyCards}>
                     {starterCards.map((card, i) => (
                       <button
                         key={i}
                         className={`${styles.storyCard} ${isDay ? styles.storyCardDay : styles.storyCardNight}`}
-                        onClick={() => selectChip({ emoji: card.emoji, label: card.question })}
+                        onClick={() => selectStoryCard(card)}
                       >
                         <span className={`${styles.storyCardCat} ${isDay ? styles.storyCardCatDay : styles.storyCardCatNight}`}>
                           {card.emoji} {card.cat}
@@ -1222,11 +1291,36 @@ export default function EmmaChat({ initialMode }) {
                       </button>
                     ))}
                   </div>
+                )}
+
+                {/* Shuffle + custom topic row */}
+                <div className={styles.storyActionRow}>
+                  <button
+                    className={`${styles.shuffleBtn} ${isDay ? styles.shuffleBtnDay : styles.shuffleBtnNight}`}
+                    onClick={shuffleStarters}
+                  >
+                    ↻ {wmsgs.shuffleBtn}
+                  </button>
+                  <button
+                    className={`${styles.customTopicBtn} ${isDay ? styles.customTopicBtnDay : styles.customTopicBtnNight}`}
+                    onClick={() => startCustomTopic('story')}
+                  >
+                    {wmsgs.customTopicBtn} →
+                  </button>
                 </div>
-              )}
+
+                {/* Footer hint */}
+                <p className={`${styles.storyHint} ${isDay ? styles.storyHintDay : styles.storyHintNight}`}>
+                  {wmsgs.storyHint}
+                </p>
+              </div>
 
               {/* or-mic hint */}
-              <p className={styles.emptyOr}>{cc.emptyOr}</p>
+              <p className={styles.emptyOr}>
+                {lang === 'KO' ? '또는 마이크를 눌러 바로 시작하세요'
+                  : lang === 'ES' ? 'o toca el micrófono para empezar'
+                  : 'or tap the mic to start'}
+              </p>
             </div>
           );
         })()}

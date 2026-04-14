@@ -338,7 +338,106 @@
 .ebookLinkDay      { background: #ea580c; color: #fff; }
 .ebookLinkNight    { background: #a855f7; color: #fff; }
 
-/* ── Story Starter Cards (Task 1) ────────────────────────────────────────── */
+/* ── Two-zone Mode Selector ─────────────────────────────────────────────── */
+
+.modeZone {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  border: 1px solid;
+}
+
+.modeZoneDay {
+  background: rgba(255,255,255,0.70);
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.modeZoneNight {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.09);
+}
+
+/* story zone gets a subtle warm tint */
+.modeZoneStoryDay {
+  background: rgba(234,88,12,0.04);
+  border-color: rgba(234,88,12,0.14);
+}
+.modeZoneStoryNight {
+  background: rgba(168,85,247,0.07);
+  border-color: rgba(168,85,247,0.18);
+}
+
+.modeZoneHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.modeZoneTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.modeZoneTitleDay        { color: #2d1510; }
+.modeZoneTitleStoryDay   { color: #9a3a08; }
+.modeZoneTitleStoryNight { color: rgba(200,150,255,0.9); }
+
+.modeZoneSub {
+  font-size: 12px;
+  font-weight: 400;
+}
+.modeZoneSubDay   { color: #b08070; }
+.modeZoneSubNight { color: rgba(255,255,255,0.35); }
+
+/* companion chips: horizontal scroll */
+.companionChips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.companionChips::-webkit-scrollbar { display: none; }
+
+/* story action row: shuffle + custom */
+.storyActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.customTopicBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 2px 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.customTopicBtn:hover  { opacity: 0.7; }
+.customTopicBtnDay     { color: #9a3a08; }
+.customTopicBtnNight   { color: rgba(200,150,255,0.85); }
+
+/* story hint footer */
+.storyHint {
+  font-size: 11px;
+  margin: 10px 0 0;
+  line-height: 1.4;
+  text-align: center;
+}
+.storyHintDay   { color: #c0a090; }
+.storyHintNight { color: rgba(255,255,255,0.25); }
+
+/* ── Story Starter Cards ─────────────────────────────────────────────────── */
 
 .storySection {
   width: 100%;

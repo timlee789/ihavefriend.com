@@ -15,7 +15,8 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { message = '', lang = 'en' } = await request.json().catch(() => ({}));
+  const { message = '', lang = 'en', conversationMode = 'auto' } = await request.json().catch(() => ({}));
+  const safeMode = ['companion', 'story', 'auto'].includes(conversationMode) ? conversationMode : 'auto';
 
   const db = createDb();
 
@@ -58,9 +59,9 @@ export async function POST(request) {
   let sessionId;
   try {
     const res = await db.query(
-      `INSERT INTO chat_sessions (user_id, started_at)
-       VALUES ($1, NOW()) RETURNING id`,
-      [user.id]
+      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode)
+       VALUES ($1, NOW(), $2) RETURNING id`,
+      [user.id, safeMode]
     );
     sessionId = res.rows[0]?.id;
   } catch (e) {
@@ -73,7 +74,7 @@ export async function POST(request) {
   let debugInfo = null;
   try {
     const { buildEmmaPrompt } = require('@/lib/recallEngine');
-    const result = await buildEmmaPrompt(db, user.id, user, message, lang);
+    const result = await buildEmmaPrompt(db, user.id, user, message, lang, sessionId, safeMode);
     systemPrompt = result.prompt;
     debugInfo = result.debugInfo;
   } catch (e) {
@@ -88,5 +89,5 @@ export async function POST(request) {
   // The key is never stored in localStorage — only held in React state for the session.
   const geminiKey = process.env.GEMINI_API_KEY || null;
 
-  return Response.json({ sessionId, systemPrompt, debugInfo, geminiKey });
+  return Response.json({ sessionId, systemPrompt, debugInfo, geminiKey, conversationMode: safeMode });
 }

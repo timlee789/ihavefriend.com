@@ -26,7 +26,7 @@ export async function POST(request) {
     body = JSON.parse(text);
   } catch {}
 
-  const { sessionId, transcript: clientTranscript = [], _token } = body;
+  const { sessionId, transcript: clientTranscript = [], _token, conversationMode = 'auto' } = body;
 
   // Auth: prefer Authorization header, fall back to _token in body (for sendBeacon)
   let user = null;
@@ -74,7 +74,19 @@ export async function POST(request) {
     }
   }
 
-  console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey}`);
+  // Resolve conversation_mode: prefer body value, fall back to DB
+  let sessionMode = conversationMode;
+  if (!['companion', 'story', 'auto'].includes(sessionMode)) sessionMode = 'auto';
+  try {
+    const modeRow = await db.query(
+      `SELECT conversation_mode FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+      [sessionId, user.id]
+    );
+    const dbMode = modeRow.rows[0]?.conversation_mode;
+    if (dbMode && dbMode !== 'auto') sessionMode = dbMode; // DB wins if set
+  } catch {}
+
+  console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey} mode=${sessionMode}`);
 
   if (!apiKey) {
     console.warn('[chat/end] GEMINI_API_KEY not set — cannot extract memories');
@@ -168,10 +180,18 @@ Rules:
         const parsed = JSON.parse(raw.trim());
         const fragment = parsed.fragment;
 
-        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness}`);
+        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode}`);
 
-        // Save to chat_sessions
-        if (fragment?.detected) {
+        // Threshold: story mode is more permissive (completeness >= 2),
+        // companion and auto modes require stronger signal (completeness >= 3)
+        const completenessThreshold = sessionMode === 'story' ? 2 : 3;
+
+        // story mode: queue immediately if detected regardless of completeness
+        // companion mode: only queue if Gemini's analysis is confident (detected + threshold met)
+        const shouldQueue = fragment?.detected &&
+          (sessionMode === 'story' || (fragment?.completeness ?? 0) >= completenessThreshold);
+
+        if (shouldQueue) {
           await db.query(
             `UPDATE chat_sessions
              SET fragment_candidate = true,
@@ -180,12 +200,16 @@ Rules:
             [JSON.stringify(fragment), sessionId]
           );
 
-          // Queue generation job if completeness >= 3
+          // story mode → higher priority (2), companion/auto → normal priority (5)
+          const priority         = sessionMode === 'story' ? 2 : 5;
+          const completenessMin  = sessionMode === 'story' ? 2 : 3;
           const { queueFragmentGeneration } = require('@/lib/storyPromptBuilder');
-          fragmentJobId = await queueFragmentGeneration(db, user.id, sessionId);
+          fragmentJobId = await queueFragmentGeneration(db, user.id, sessionId, priority, completenessMin);
           if (fragmentJobId) {
-            console.log(`[chat/end] ✅ Fragment job queued: ${fragmentJobId}`);
+            console.log(`[chat/end] ✅ Fragment job queued (priority=${priority}): ${fragmentJobId}`);
           }
+        } else if (fragment?.detected) {
+          console.log(`[chat/end] Fragment detected but below threshold (completeness=${fragment?.completeness ?? 0} < ${completenessThreshold}) — skipping queue`);
         } else {
           console.log(`[chat/end] No story-worthy content detected (completeness=${fragment?.completeness ?? 0})`);
         }
