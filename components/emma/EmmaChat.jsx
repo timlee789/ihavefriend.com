@@ -122,7 +122,7 @@ const WELCOME_MSGS = {
       { label: 'Just want to chat',     emoji: '🌙', c: 'teal'   },
     ],
     storyTitle     : 'Record my story',
-    storySub       : 'Let's capture your stories',
+    storySub       : "Let's capture your stories",
     storyHint      : 'When we finish, Emma will organize your story for you',
     shuffleBtn     : 'Show different topics',
     customTopicBtn : 'Start with my own topic',
