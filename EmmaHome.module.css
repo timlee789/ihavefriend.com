@@ -1,0 +1,477 @@
+/* ── EmmaHome.module.css ─────────────────────────────────────────────────── */
+
+/* base screen */
+.screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s ease;
+}
+
+/* ── DAY ── */
+.day {
+    background: #fdf8f4;
+}
+
+.day .topbar {
+    background: #fff5ee;
+    border-bottom: 0.5px solid rgba(234, 88, 12, 0.12);
+}
+
+.day .backBtn {
+    color: #b08070;
+}
+
+.day .topName {
+    color: #5a3020;
+}
+
+.day .statusDot {
+    background: #22c55e;
+}
+
+.day .langPill {
+    background: rgba(180, 100, 60, 0.1);
+    color: #b05030;
+}
+
+.day .modeToggle {
+    background: rgba(234, 88, 12, 0.07);
+    color: #b05030;
+}
+
+.day .avatarArea {
+    background: linear-gradient(170deg, #fff5ee 0%, #fde8d4 60%, #fad4b8 100%);
+}
+
+.day .body {
+    background: #fdf8f4;
+}
+
+.day .greeting {
+    color: #2d1510;
+}
+
+.day .greetingSub {
+    color: #b08870;
+}
+
+.day .sectionLabel {
+    color: #c09880;
+}
+
+.day .memBar {
+    background: rgba(234, 88, 12, 0.06);
+    border-color: rgba(234, 88, 12, 0.15);
+}
+
+.day .memDot {
+    background: #ea580c;
+}
+
+.day .memText {
+    color: #9a4020;
+}
+
+/* day chip base */
+.day .chip {
+    border-width: 0.5px;
+    border-style: solid;
+}
+
+.day .chip_orange {
+    background: rgba(234, 88, 12, 0.10);
+    color: #9a3a08;
+    border-color: rgba(234, 88, 12, 0.22);
+}
+
+.day .chip_green {
+    background: rgba(22, 163, 74, 0.08);
+    color: #14532d;
+    border-color: rgba(22, 163, 74, 0.18);
+}
+
+.day .chip_teal {
+    background: rgba(20, 184, 166, 0.08);
+    color: #134e4a;
+    border-color: rgba(20, 184, 166, 0.2);
+}
+
+.day .chip_purple {
+    background: rgba(168, 85, 247, 0.08);
+    color: #4c1d95;
+    border-color: rgba(168, 85, 247, 0.18);
+}
+
+.day .chip_pink {
+    background: rgba(236, 72, 153, 0.08);
+    color: #831843;
+    border-color: rgba(236, 72, 153, 0.18);
+}
+
+.day .ctaBtn {
+    background: #ea580c;
+    box-shadow: 0 4px 16px rgba(234, 88, 12, 0.28);
+}
+
+.day .ctaBtn:hover {
+    opacity: 1;
+    background: #c94d0a;
+    box-shadow: 0 6px 20px rgba(234, 88, 12, 0.38);
+}
+
+.day .bottomLink {
+    color: #c0a090;
+}
+
+/* ── NIGHT ── */
+.night {
+    background: #0d0b18;
+}
+
+.night .topbar {
+    background: #13101f;
+    border-bottom: 0.5px solid rgba(124, 58, 237, 0.15);
+}
+
+.night .backBtn {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.night .topName {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.night .statusDot {
+    background: #4ade80;
+}
+
+.night .langPill {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.night .modeToggle {
+    background: rgba(168, 85, 247, 0.1);
+    color: rgba(196, 148, 255, 0.9);
+}
+
+.night .avatarArea {
+    background: linear-gradient(170deg, #1c1230 0%, #0e1a30 100%);
+}
+
+.night .body {
+    background: #0d0b18;
+}
+
+.night .greeting {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.night .greetingSub {
+    color: rgba(255, 255, 255, 0.32);
+}
+
+.night .sectionLabel {
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.night .memBar {
+    background: rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.night .memDot {
+    background: #a855f7;
+}
+
+.night .memText {
+    color: rgba(196, 148, 255, 0.85);
+}
+
+.night .chip {
+    border-width: 0.5px;
+    border-style: solid;
+}
+
+.night .chip_purple {
+    background: rgba(168, 85, 247, 0.14);
+    color: rgba(196, 148, 255, 0.9);
+    border-color: rgba(168, 85, 247, 0.28);
+}
+
+.night .chip_yellow {
+    background: rgba(251, 191, 36, 0.10);
+    color: rgba(252, 211, 77, 0.9);
+    border-color: rgba(251, 191, 36, 0.20);
+}
+
+.night .chip_blue {
+    background: rgba(96, 165, 250, 0.12);
+    color: rgba(147, 197, 253, 0.9);
+    border-color: rgba(96, 165, 250, 0.25);
+}
+
+.night .chip_orange {
+    background: rgba(251, 146, 60, 0.12);
+    color: rgba(253, 186, 116, 0.9);
+    border-color: rgba(251, 146, 60, 0.22);
+}
+
+.night .chip_teal {
+    background: rgba(45, 212, 191, 0.10);
+    color: rgba(94, 234, 212, 0.9);
+    border-color: rgba(45, 212, 191, 0.20);
+}
+
+.night .ctaBtn {
+    background: #ea580c;
+    box-shadow: 0 4px 20px rgba(234, 88, 12, 0.35);
+}
+
+.night .ctaBtn:hover {
+    opacity: 1;
+    background: #c94d0a;
+    box-shadow: 0 6px 24px rgba(234, 88, 12, 0.45);
+}
+
+.night .bottomLink {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── SHARED LAYOUT ── */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    position: relative;
+    z-index: 10;
+}
+
+.backBtn {
+    font-size: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.topCenter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.statusDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.topName {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.topRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.langPill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.modeToggle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+}
+
+.modeToggle:hover {
+    opacity: 0.75;
+}
+
+/* avatar area */
+.avatarArea {
+    height: 255px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.avatar {
+    position: relative;
+    z-index: 2;
+}
+
+.warmGlow {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 50px;
+    background: radial-gradient(ellipse, rgba(234, 88, 12, 0.15) 0%, transparent 70%);
+}
+
+.nightGlow {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 60px;
+    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+}
+
+/* body */
+.body {
+    flex: 1;
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.greetingBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.greeting {
+    font-size: 17px;
+    font-weight: 500;
+}
+
+.greetingSub {
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* memory bar */
+.memBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 0.5px solid;
+}
+
+.memDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.memText {
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+/* section label */
+.sectionLabel {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+/* chips */
+.chipsWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    padding: 7px 13px;
+    border-radius: 20px;
+    cursor: pointer;
+    background: none;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: inherit;
+}
+
+.chip:hover {
+    opacity: 0.78;
+}
+
+.chip:active {
+    transform: scale(0.97);
+}
+
+/* CTA button */
+.ctaBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    padding: 15px 0;
+    border-radius: 50px;
+    border: none;
+    color: white;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 4px;
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.1s ease;
+}
+
+.ctaBtn:hover {
+    transform: translateY(-1px);
+}
+
+.ctaBtn:active {
+    transform: scale(0.98);
+}
+
+/* bottom links */
+.bottomLinks {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+}
+
+.bottomLink {
+    font-size: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+}
+
+.bottomLink:hover {
+    opacity: 0.65;
+}
