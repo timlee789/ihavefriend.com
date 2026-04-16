@@ -192,6 +192,7 @@ Rules:
           (sessionMode === 'story' || (fragment?.completeness ?? 0) >= completenessThreshold);
 
         if (shouldQueue) {
+          // Step 1: Mark session as fragment candidate
           await db.query(
             `UPDATE chat_sessions
              SET fragment_candidate = true,
@@ -199,14 +200,55 @@ Rules:
              WHERE id = $2`,
             [JSON.stringify(fragment), sessionId]
           );
+          console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
 
-          // story mode → higher priority (2), companion/auto → normal priority (5)
-          const priority         = sessionMode === 'story' ? 2 : 5;
-          const completenessMin  = sessionMode === 'story' ? 2 : 3;
-          const { queueFragmentGeneration } = require('@/lib/storyPromptBuilder');
-          fragmentJobId = await queueFragmentGeneration(db, user.id, sessionId, priority, completenessMin);
-          if (fragmentJobId) {
-            console.log(`[chat/end] ✅ Fragment job queued (priority=${priority}): ${fragmentJobId}`);
+          // Step 2: Queue fragment generation job — inline INSERT (no require dependency)
+          // story mode → priority 2 (urgent), companion/auto → priority 5 (normal)
+          const priority = sessionMode === 'story' ? 2 : 5;
+
+          try {
+            // Optionally gather related memory node IDs.
+            // Wrapped in its own try-catch: narrative_relevance column may not exist on all deployments.
+            let memoryNodeIds = [];
+            try {
+              const memRows = await db.query(
+                `SELECT id FROM memory_nodes
+                 WHERE user_id = $1
+                   AND last_mentioned >= (SELECT started_at FROM chat_sessions WHERE id = $2)
+                   AND narrative_relevance >= 3
+                 ORDER BY narrative_relevance DESC
+                 LIMIT 10`,
+                [user.id, sessionId]
+              );
+              memoryNodeIds = memRows.rows.map(r => r.id);
+              console.log(`[chat/end] memory nodes for fragment: ${memoryNodeIds.length}`);
+            } catch (memErr) {
+              console.warn('[chat/end] Memory node query skipped (column may not exist):', memErr.message);
+            }
+
+            const jobData = {
+              session_ids: [sessionId],
+              memory_node_ids: memoryNodeIds,
+              elements: fragment,
+            };
+
+            console.log(`[chat/end] Inserting fragment job — priority=${priority} completeness=${fragment?.completeness}`);
+            const insertResult = await db.query(
+              `INSERT INTO fragment_generation_queue
+                 (user_id, job_type, input_data, priority)
+               VALUES ($1, 'generate_fragment', $2, $3)
+               RETURNING id`,
+              [user.id, JSON.stringify(jobData), priority]
+            );
+
+            fragmentJobId = insertResult.rows[0]?.id;
+            if (fragmentJobId) {
+              console.log(`[chat/end] ✅ Fragment job queued id=${fragmentJobId} priority=${priority}`);
+            } else {
+              console.warn('[chat/end] Fragment INSERT succeeded but returned no id');
+            }
+          } catch (queueErr) {
+            console.error('[chat/end] ❌ Fragment queue INSERT failed:', queueErr.message, '| code:', queueErr.code);
           }
         } else if (fragment?.detected) {
           console.log(`[chat/end] Fragment detected but below threshold (completeness=${fragment?.completeness ?? 0} < ${completenessThreshold}) — skipping queue`);
