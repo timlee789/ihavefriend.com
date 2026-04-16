@@ -151,6 +151,22 @@ const WELCOME_MSGS = {
   },
 };
 
+// ── Post-session "내 이야기 확인하기" banner copy ─────────────────────────────
+const SESSION_END_MSGS = {
+  KO: {
+    hint : "Emma가 이야기를 정리하고 있어요.\n잠시 후 '내 이야기'에서 확인할 수 있습니다.",
+    cta  : '내 이야기 확인하기 →',
+  },
+  EN: {
+    hint : "Emma is organizing your story.\nCheck 'My Stories' in a moment.",
+    cta  : 'View my stories →',
+  },
+  ES: {
+    hint : "Emma está organizando tu historia.\nPuedes verla en 'Mis historias' en un momento.",
+    cta  : 'Ver mis historias →',
+  },
+};
+
 // ── topic chips (same set as EmmaHome, day & night per language) ──────────────
 const CHAT_CHIPS = {
   EN: {
@@ -401,6 +417,8 @@ export default function EmmaChat({ initialMode }) {
   // ── conversation mode: 'companion' | 'story' | 'auto' ────────────────────
   const [conversationMode, setConversationMode] = useState('auto');
   const convModeRef = useRef('auto');
+  // ── session-ended state: show "내 이야기 확인하기" banner ─────────────────
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -977,6 +995,7 @@ export default function EmmaChat({ initialMode }) {
     sessionStartRef.current = Date.now();
     turnsRef.current = 0;
     nextPlayTimeRef.current = 0;
+    setSessionEnded(false); // clear post-session banner when new conversation starts
 
     let systemPrompt = '', geminiKey = '';
     try {
@@ -1070,6 +1089,8 @@ export default function EmmaChat({ initialMode }) {
           conversationMode: convModeRef.current,
         }),
       }).catch(() => {});
+      // Show "내 이야기 확인하기" banner in chat area
+      setSessionEnded(true);
       // Show feedback modal after conversation with enough turns
       feedbackSessionRef.current = sid;
       setFeedbackRating(0);
@@ -1169,6 +1190,15 @@ export default function EmmaChat({ initialMode }) {
         </div>
 
         <div className={styles.navActions}>
+          {/* 내 이야기 보기 */}
+          <button
+            className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`}
+            onClick={() => { if (isConnected) disconnect(); router.push('/my-stories'); }}
+            aria-label="내 이야기 보기"
+            title={lang === 'KO' ? '내 이야기 보기' : lang === 'ES' ? 'Mis historias' : 'My stories'}
+          >
+            📖
+          </button>
           {/* mute/unmute TTS */}
           <button
             className={`${styles.navIcon} ${isDay ? styles.navIconDay : styles.navIconNight}`}
@@ -1331,6 +1361,24 @@ export default function EmmaChat({ initialMode }) {
             </span>
           </div>
         )}
+
+        {/* ── Post-session: "내 이야기 확인하기" banner ── */}
+        {sessionEnded && !isConnected && !showFeedback && (() => {
+          const m = SESSION_END_MSGS[lang] || SESSION_END_MSGS.KO;
+          return (
+            <div className={`${styles.sessionEndBanner} ${isDay ? styles.sessionEndBannerDay : styles.sessionEndBannerNight}`}>
+              <p className={`${styles.sessionEndHint} ${isDay ? styles.sessionEndHintDay : styles.sessionEndHintNight}`}>
+                {m.hint}
+              </p>
+              <a
+                href="/my-stories"
+                className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
+              >
+                {m.cta}
+              </a>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── voice bottom bar ── */}
@@ -1453,6 +1501,13 @@ export default function EmmaChat({ initialMode }) {
                 <p className={styles.feedbackThanksText}>
                   {lang === 'KO' ? '고마워요! 다음에 또 이야기해요 😊' : lang === 'ES' ? '¡Gracias! Hasta la próxima 😊' : 'Thank you! See you next time 😊'}
                 </p>
+                <a
+                  href="/my-stories"
+                  className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
+                  style={{ marginTop: 4 }}
+                >
+                  {(SESSION_END_MSGS[lang] || SESSION_END_MSGS.KO).cta}
+                </a>
               </div>
             ) : (
               <>

@@ -535,6 +535,51 @@
 .storyCardQDay   { color: #2d1510; }
 .storyCardQNight { color: rgba(255,255,255,0.82); }
 
+/* ── Post-session "내 이야기 확인하기" banner ────────────────────────────── */
+
+.sessionEndBanner {
+  width: 100%;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+.sessionEndBannerDay {
+  background: rgba(234,88,12,0.06);
+  border: 1px solid rgba(234,88,12,0.16);
+}
+.sessionEndBannerNight {
+  background: rgba(168,85,247,0.08);
+  border: 1px solid rgba(168,85,247,0.20);
+}
+
+.sessionEndHint {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-line;
+}
+.sessionEndHintDay   { color: #7a4428; }
+.sessionEndHintNight { color: rgba(220,195,255,0.75); }
+
+.sessionEndCta {
+  display: inline-block;
+  padding: 9px 20px;
+  border-radius: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.sessionEndCta:hover  { opacity: 0.85; }
+.sessionEndCta:active { transform: scale(0.97); }
+.sessionEndCtaDay   { background: #ea580c; color: #fff; }
+.sessionEndCtaNight { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+
 /* ── Feedback modal ────────────────────────────────────────────────────────── */
 .feedbackOverlay {
   position: fixed;
