@@ -4,7 +4,7 @@
  *
  * Twilio setup:
  * Console → Phone Numbers → Your number → Messaging webhook:
- *   https://ihavefriend.com/api/sms/webhook  (POST)
+ *   https://sayandkeep.com/api/sms/webhook  (POST)
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -47,7 +47,7 @@ export async function POST(request) {
     }
 
     // Generate Emma's reply via Gemini
-    let replyText = "Thanks for your message! Open the app to continue our conversation: https://ihavefriend.com/chat";
+    let replyText = "Thanks for your message! Open the app to continue our conversation: https://sayandkeep.com/chat";
 
     if (userId) {
       try {
@@ -69,7 +69,7 @@ export async function POST(request) {
         if (aiReply) {
           const maxLen = 140;
           replyText = (aiReply.length > maxLen ? aiReply.substring(0, maxLen) + '...' : aiReply)
-            + '\nhttps://ihavefriend.com/chat';
+            + '\nhttps://sayandkeep.com/chat';
         }
       } catch (e) {
         console.error('AI reply failed:', e.message);

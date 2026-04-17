@@ -1,5 +1,5 @@
 /**
- * Service Worker for ihavefriend.com PWA
+ * Service Worker for SayAndKeep (sayandkeep.com) PWA
  * 
  * Handles:
  * 1. Static asset caching (app shell)
@@ -152,7 +152,7 @@ self.addEventListener('notificationclick', (event) => {
       .then((windowClients) => {
         // Focus existing window if open
         for (const client of windowClients) {
-          if (client.url.includes('ihavefriend.com') && 'focus' in client) {
+          if (client.url.includes('sayandkeep.com') && 'focus' in client) {
             client.navigate(url);
             return client.focus();
           }

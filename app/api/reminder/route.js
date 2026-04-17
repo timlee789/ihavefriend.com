@@ -105,7 +105,7 @@ Return ONLY valid JSON, no explanation.`,
 }
 
 function buildSmsText(message, time, lang) {
-  const link = 'https://ihavefriend.com/chat';
+  const link = 'https://sayandkeep.com/chat';
   if (lang === 'ko') {
     return time
       ? `[엠마 알림] ${message} — ${time} 💙\n${link}`

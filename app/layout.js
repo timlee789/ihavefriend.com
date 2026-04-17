@@ -2,13 +2,13 @@ import "./globals.css";
 import PWAInit from "@/components/PWAInit";
 
 export const metadata = {
-  title: "I Have a Friend — Emma",
-  description: "Your AI friend who remembers everything about you.",
+  title: "SayAndKeep — Emma",
+  description: "Say it. We keep it. | 말하세요. 간직해드립니다.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Emma",
+    title: "SayAndKeep",
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/emma-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Emma" />
+        <meta name="apple-mobile-web-app-title" content="SayAndKeep" />
       </head>
       <body>
         <PWAInit />

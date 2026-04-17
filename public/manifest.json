@@ -1,7 +1,7 @@
 {
-  "name": "I Have a Friend — Emma",
-  "short_name": "Emma",
-  "description": "Your AI friend who remembers everything about you",
+  "name": "SayAndKeep",
+  "short_name": "SayAndKeep",
+  "description": "말하세요. 간직해드립니다. / Say it. We keep it.",
   "start_url": "/chat",
   "display": "standalone",
   "orientation": "portrait",

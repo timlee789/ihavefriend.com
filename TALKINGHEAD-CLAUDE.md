@@ -1,4 +1,4 @@
-# TalkingHead.js Integration Guide for ihavefriend.com
+# TalkingHead.js Integration Guide for sayandkeep.com
 
 ## Overview
 Replace the current CSS 2D avatar with a full 3D avatar using TalkingHead.js.

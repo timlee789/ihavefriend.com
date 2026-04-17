@@ -1,7 +1,7 @@
-# CLAUDE.md — ihavefriend.com Memory Engine Integration
+# CLAUDE.md — sayandkeep.com Memory Engine Integration
 
 ## Project Overview
-AI friend service at ihavefriend.com. Users talk to Emma (AI friend) who remembers everything about them.
+AI friend service at sayandkeep.com. Users talk to Emma (AI friend) who remembers everything about them.
 Built with Next.js + Neon PostgreSQL + Gemini Live API (WebSocket).
 
 ## Current State (as of April 2026)
