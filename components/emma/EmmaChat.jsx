@@ -596,6 +596,7 @@ export default function EmmaChat({ initialMode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [liveText,  setLiveText]  = useState('');   // streaming AI text
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [isThinking,   setIsThinking]   = useState(false); // user done speaking, Emma processing
   const [statusMsg, setStatusMsg] = useState('');
 
   // ── mute (TTS on/off) ─────────────────────────────────────────────────────
@@ -642,6 +643,13 @@ export default function EmmaChat({ initialMode }) {
   const tokenRef            = useRef('');   // always-current token for closures
   const langRef             = useRef('KO'); // always-current lang for closures
   const pendingTopicRef     = useRef('');   // chip topic selected before connecting
+  // ── Thinking-indicator refs ───────────────────────────────────────────────
+  const lastAudioSentRef    = useRef(0);    // ms timestamp of last PCM chunk we sent
+  const hasSpokenThisTurnRef= useRef(false); // user said something meaningful this turn
+  const isAiSpeakingRef     = useRef(false); // mirror of isAiSpeaking for interval closure
+  const thinkingTimerRef    = useRef(null);  // setInterval handle
+  // ── Turn timing (Task 4 — profiling logs) ─────────────────────────────────
+  const turnStartRef        = useRef(0);     // when user started this speech turn
 
   // keep refs in sync
   useEffect(() => { tokenRef.current  = token;   }, [token]);
@@ -811,6 +819,18 @@ export default function EmmaChat({ initialMode }) {
         isReconnectingRef.current = false;
         acquireWakeLock();
 
+        // ── Start thinking-indicator poller ─────────────────────────────────
+        // Every 250ms: if user has spoken but 1.5s of silence has passed and
+        // Emma hasn't started speaking → show "thinking..." indicator.
+        lastAudioSentRef.current = Date.now();
+        clearInterval(thinkingTimerRef.current);
+        thinkingTimerRef.current = setInterval(() => {
+          const silence = Date.now() - lastAudioSentRef.current;
+          if (hasSpokenThisTurnRef.current && silence > 1500 && !isAiSpeakingRef.current) {
+            setIsThinking(true);
+          }
+        }, 250);
+
         if (!isReconnect) {
           // Send greeting trigger — include topic if user picked a chip
           const topic = pendingTopicRef.current;
@@ -841,8 +861,17 @@ export default function EmmaChat({ initialMode }) {
       if (msg.serverContent?.modelTurn?.parts) {
         for (const part of msg.serverContent.modelTurn.parts) {
           if (part.inlineData?.mimeType?.startsWith('audio/')) {
+            // First audio chunk = Emma starts speaking → clear thinking indicator
+            if (!isAiSpeakingRef.current) {
+              const tFirstToken = Date.now();
+              const tSinceSpeech = turnStartRef.current ? tFirstToken - turnStartRef.current : null;
+              console.log('[Turn] First response token at:', tFirstToken,
+                tSinceSpeech !== null ? `(${tSinceSpeech}ms since user speech start)` : '');
+              isAiSpeakingRef.current = true;
+              setIsAiSpeaking(true);
+              setIsThinking(false);
+            }
             scheduleChunk(base64ToPcm(part.inlineData.data));
-            setIsAiSpeaking(true);
           } else if (part.text) {
             // Text parts include <emma_analysis> blocks — capture raw for server
             rawAiTextRef.current += part.text;
@@ -867,6 +896,12 @@ export default function EmmaChat({ initialMode }) {
         const aiMsg    = currentAiMsgRef.current.trim();
         const userMsg  = currentUserMsgRef.current.trim();
         const rawAiText = rawAiTextRef.current.trim();
+
+        // Reset per-turn thinking state
+        hasSpokenThisTurnRef.current = false;
+        isAiSpeakingRef.current      = false;
+        setIsThinking(false);
+        console.log('[Turn] turnComplete — turn', turnNum);
 
         const ts = nowStr();
         setMessages(prev => {
@@ -948,9 +983,25 @@ export default function EmmaChat({ initialMode }) {
       const input = e.inputBuffer.getChannelData(0);
       const outLen = Math.floor(input.length / ratio);
       const i16 = new Int16Array(outLen);
+
+      // Check if this chunk has meaningful audio (volume > threshold)
+      let maxAmp = 0;
       for (let i = 0; i < outLen; i++) {
-        i16[i] = Math.max(-32768, Math.min(32767, input[Math.floor(i * ratio)] * 32768));
+        const s = input[Math.floor(i * ratio)];
+        i16[i] = Math.max(-32768, Math.min(32767, s * 32768));
+        if (Math.abs(s) > maxAmp) maxAmp = Math.abs(s);
       }
+
+      const now = Date.now();
+      lastAudioSentRef.current = now;
+
+      // Track when user started speaking this turn (for timing log)
+      if (maxAmp > 0.01 && !hasSpokenThisTurnRef.current) {
+        hasSpokenThisTurnRef.current = true;
+        turnStartRef.current = now;
+        console.log('[Turn] User speech started at:', now);
+      }
+
       ws.send(JSON.stringify({
         realtime_input: {
           media_chunks: [{
@@ -979,8 +1030,13 @@ export default function EmmaChat({ initialMode }) {
     try { audioCtxRef.current?.close(); } catch {}
     audioCtxRef.current = null;
 
+    clearInterval(thinkingTimerRef.current);
+    thinkingTimerRef.current = null;
+    hasSpokenThisTurnRef.current = false;
+    isAiSpeakingRef.current      = false;
     setIsConnected(false);
     setIsAiSpeaking(false);
+    setIsThinking(false);
     setLiveText('');
     setStatusMsg(getEmma(langRef.current).status_reconnecting);
 
@@ -1010,6 +1066,8 @@ export default function EmmaChat({ initialMode }) {
     let systemPrompt = '', geminiKey = '';
     try {
       const t = tokenRef.current;
+      const tSetup = Date.now();
+      console.log('[Turn] /api/chat/setup started at:', tSetup);
       const res = await fetch('/api/chat/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
@@ -1025,6 +1083,7 @@ export default function EmmaChat({ initialMode }) {
         geminiKey    = d.geminiKey    || '';
         sessionIdRef.current  = d.sessionId || null;
         geminiKeyRef.current  = geminiKey;
+        console.log('[Turn] /api/chat/setup done in', Date.now() - tSetup, 'ms');
       }
     } catch (e) { console.warn('[EmmaChat] setup error', e.message); }
 
@@ -1068,10 +1127,15 @@ export default function EmmaChat({ initialMode }) {
     audioCtxRef.current = null;
     nextPlayTimeRef.current = 0;
 
+    clearInterval(thinkingTimerRef.current);
+    thinkingTimerRef.current = null;
+    hasSpokenThisTurnRef.current = false;
+    isAiSpeakingRef.current      = false;
     setIsConnected(false);
     setMicOn(false);
     setLiveText('');
     setIsAiSpeaking(false);
+    setIsThinking(false);
     releaseWakeLock();
 
     const t = tokenRef.current;
@@ -1360,7 +1424,7 @@ export default function EmmaChat({ initialMode }) {
         {messages.map(msg => (
           <Bubble key={msg.id} msg={msg} mode={mode} />
         ))}
-        {(isAiSpeaking || liveText) && (
+        {(isAiSpeaking || liveText || isThinking) && (
           <TypingIndicator mode={mode} liveText={liveText} />
         )}
         {/* System status note (shown only when disconnected + status exists) */}
@@ -1428,7 +1492,11 @@ export default function EmmaChat({ initialMode }) {
             </button>
             <span className={`${styles.micLabel} ${isDay ? styles.micLabelDay : styles.micLabelNight}`}>
               {isConnected
-                ? (isAiSpeaking ? emma.micLabel_ai : emma.micLabel_on)
+                ? (isAiSpeaking
+                    ? emma.micLabel_ai
+                    : isThinking
+                      ? (lang === 'KO' ? '생각하는 중...' : lang === 'ES' ? 'Pensando...' : 'Thinking...')
+                      : emma.micLabel_on)
                 : statusMsg || emma.micLabel_idle}
             </span>
           </div>
