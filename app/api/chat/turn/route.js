@@ -33,6 +33,7 @@ export async function POST(request) {
   ;(async () => {
     const db = createDb();
     const tWork = Date.now();
+    console.time(`[Turn] bg-total turn=${turnNumber}`);
 
     // ── 1. Emotion analysis (Gemini generateContent, capped at 10s) ──────────
     let emotion = null;
@@ -42,6 +43,7 @@ export async function POST(request) {
         const timeoutId = setTimeout(() => controller.abort(), 10_000); // 10s hard timeout
 
         const tGemini = Date.now();
+        console.time(`[Turn] emotion-analysis turn=${turnNumber}`);
         const geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
           {
@@ -80,6 +82,7 @@ User message: "${userMessage.substring(0, 300)}"` }]
             topic_sensitivity: parsed.topic_sensitivity || null,
           };
         }
+        console.timeEnd(`[Turn] emotion-analysis turn=${turnNumber}`);
         console.log(`[Turn] emotion analysis done in ${Date.now() - tGemini}ms`);
       } catch (e) {
         if (e.name === 'AbortError') {
@@ -92,17 +95,20 @@ User message: "${userMessage.substring(0, 300)}"` }]
 
     // ── 2. Save emotion turn ──────────────────────────────────────────────────
     if (emotion) {
+      console.time(`[Turn] save-emotion turn=${turnNumber}`);
       try {
         const { saveEmotionTurn } = require('@/lib/emotionTracker');
         await saveEmotionTurn(db, user.id, sessionId, turnNumber, userMessage, emotion);
       } catch (e) {
         console.error('[Turn] saveEmotionTurn failed:', e.message);
       }
+      console.timeEnd(`[Turn] save-emotion turn=${turnNumber}`);
     }
 
     // ── 3. Per-turn fragment detection (text parts only; AUDIO mode = empty) ──
     const analysisSource = rawAiText || '';
     if (analysisSource.includes('<emma_analysis>')) {
+      console.time(`[Turn] fragment-detect turn=${turnNumber}`);
       try {
         const { parseEmmaAnalysis, saveFragmentDetection } = require('@/lib/storyPromptBuilder');
         const { fragment } = parseEmmaAnalysis(analysisSource);
@@ -111,10 +117,12 @@ User message: "${userMessage.substring(0, 300)}"` }]
       } catch (e) {
         console.error('[Turn] fragment detection failed:', e.message);
       }
+      console.timeEnd(`[Turn] fragment-detect turn=${turnNumber}`);
     }
 
     // ── 4. Accumulate transcript in DB (crash-safe) ────────────────────────
     if (userText || aiText) {
+      console.time(`[Turn] transcript-save turn=${turnNumber}`);
       try {
         const newTurns = [];
         if (userText) newTurns.push({ role: 'user',      content: userText });
@@ -127,8 +135,10 @@ User message: "${userMessage.substring(0, 300)}"` }]
       } catch (e) {
         console.error('[Turn] transcript save failed:', e.message);
       }
+      console.timeEnd(`[Turn] transcript-save turn=${turnNumber}`);
     }
 
+    console.timeEnd(`[Turn] bg-total turn=${turnNumber}`);
     console.log(`[Turn] bg work done in ${Date.now() - tWork}ms  total=${Date.now() - t0}ms  turn=${turnNumber}`);
   })().catch(err => console.error('[Turn] bg error:', err?.message));
 

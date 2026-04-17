@@ -340,18 +340,44 @@ function Bubble({ msg, mode }) {
 }
 
 // ── typing / streaming indicator ─────────────────────────────────────────────
-function TypingIndicator({ mode, liveText }) {
+// Renders one of three states:
+//   - liveText: Emma has started speaking → show streaming transcript
+//   - thinkingLevel 0: dots animation (instant feedback on end-of-speech)
+//   - thinkingLevel 1 (≥5s):  "잠시만요, 생각하고 있어요"
+//   - thinkingLevel 2 (≥10s): "조금만 더 기다려 주세요"
+//   - thinkingLevel 3 (≥15s): "죄송해요, 다시 한 번 말씀해 주시겠어요?"
+const THINKING_MSG = {
+  KO: ['', '잠시만요, 생각하고 있어요…', '조금만 더 기다려 주세요…', '죄송해요, 다시 한 번 말씀해 주시겠어요?'],
+  EN: ['', 'One moment, I\'m thinking…', 'Just a little longer…', 'Sorry, could you say that again?'],
+  ES: ['', 'Un momento, estoy pensando…', 'Un poco más, por favor…', 'Perdón, ¿puedes repetirlo?'],
+};
+
+function TypingIndicator({ mode, liveText, thinkingLevel = 0, lang = 'KO' }) {
+  const bubbleClass = `${styles.bubble} ${mode === 'day' ? styles.bubbleEmmaDay : styles.bubbleEmmaNight}`;
+  const msg = THINKING_MSG[lang]?.[thinkingLevel] || '';
+
   return (
     <div className={styles.rowEmma}>
       <div className={`${styles.miniAvatar} ${mode === 'day' ? styles.miniAvatarDay : styles.miniAvatarNight}`}>
         <EmmaAvatar size="sm" mode={mode} />
       </div>
       {liveText ? (
-        <div className={`${styles.bubble} ${mode === 'day' ? styles.bubbleEmmaDay : styles.bubbleEmmaNight}`}>
+        <div className={bubbleClass}>
           <p className={styles.bubbleText}>{liveText}</p>
         </div>
+      ) : msg ? (
+        <div className={bubbleClass}>
+          <p className={styles.bubbleText} style={{ opacity: 0.85 }}>
+            {msg}
+            <span style={{ display: 'inline-block', marginLeft: 8 }}>
+              {[0, 1, 2].map(i => (
+                <span key={i} className={styles.typingDot} style={{ animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </span>
+          </p>
+        </div>
       ) : (
-        <div className={`${styles.bubble} ${mode === 'day' ? styles.bubbleEmmaDay : styles.bubbleEmmaNight} ${styles.typingBubble}`}>
+        <div className={`${bubbleClass} ${styles.typingBubble}`}>
           {[0, 1, 2].map(i => (
             <span key={i} className={styles.typingDot} style={{ animationDelay: `${i * 0.2}s` }} />
           ))}
@@ -597,6 +623,9 @@ export default function EmmaChat({ initialMode }) {
   const [liveText,  setLiveText]  = useState('');   // streaming AI text
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isThinking,   setIsThinking]   = useState(false); // user done speaking, Emma processing
+  // thinkingLevel: 0 = dots only, 1 = "잠시만요, 생각하고 있어요" (≥5s),
+  //                2 = "조금만 더 기다려 주세요" (≥10s), 3 = error fallback (≥15s)
+  const [thinkingLevel, setThinkingLevel] = useState(0);
   const [statusMsg, setStatusMsg] = useState('');
 
   // ── mute (TTS on/off) ─────────────────────────────────────────────────────
@@ -644,12 +673,15 @@ export default function EmmaChat({ initialMode }) {
   const langRef             = useRef('KO'); // always-current lang for closures
   const pendingTopicRef     = useRef('');   // chip topic selected before connecting
   // ── Thinking-indicator refs ───────────────────────────────────────────────
-  const lastAudioSentRef    = useRef(0);    // ms timestamp of last PCM chunk we sent
+  const lastAudioSentRef    = useRef(0);    // ms timestamp of last PCM chunk we sent (any)
+  const lastLoudFrameRef    = useRef(0);    // ms timestamp of last frame with meaningful amp
   const hasSpokenThisTurnRef= useRef(false); // user said something meaningful this turn
+  const speechEndedLoggedRef= useRef(false); // one-shot log flag per turn
   const isAiSpeakingRef     = useRef(false); // mirror of isAiSpeaking for interval closure
   const thinkingTimerRef    = useRef(null);  // setInterval handle
   // ── Turn timing (Task 4 — profiling logs) ─────────────────────────────────
   const turnStartRef        = useRef(0);     // when user started this speech turn
+  const thinkingShownAtRef  = useRef(0);     // ms when "thinking..." indicator first shown
 
   // keep refs in sync
   useEffect(() => { tokenRef.current  = token;   }, [token]);
@@ -820,16 +852,41 @@ export default function EmmaChat({ initialMode }) {
         acquireWakeLock();
 
         // ── Start thinking-indicator poller ─────────────────────────────────
-        // Every 250ms: if user has spoken but 1.5s of silence has passed and
-        // Emma hasn't started speaking → show "thinking..." indicator.
+        // Runs every 150ms. Two responsibilities:
+        //   (a) flip `isThinking` to true as soon as the user goes quiet for
+        //       ~350ms after having spoken (before this it was 1500ms — felt
+        //       laggy; users thought something was broken)
+        //   (b) escalate the thinking message at 5s / 10s / 15s so the user
+        //       never sits in front of a silent UI wondering what's wrong
         lastAudioSentRef.current = Date.now();
+        lastLoudFrameRef.current = Date.now();
         clearInterval(thinkingTimerRef.current);
         thinkingTimerRef.current = setInterval(() => {
-          const silence = Date.now() - lastAudioSentRef.current;
-          if (hasSpokenThisTurnRef.current && silence > 1500 && !isAiSpeakingRef.current) {
+          if (isAiSpeakingRef.current) return; // Emma is already replying
+          if (!hasSpokenThisTurnRef.current) return; // nothing to react to yet
+
+          const now        = Date.now();
+          const silentFor  = now - lastLoudFrameRef.current;
+
+          // (a) Instant feedback once user visibly stops talking (~350ms)
+          if (silentFor > 350 && !speechEndedLoggedRef.current) {
+            speechEndedLoggedRef.current = true;
+            thinkingShownAtRef.current   = now;
+            console.log('[Turn] User speech ended at:', now,
+              turnStartRef.current ? `(spoke for ${now - turnStartRef.current}ms)` : '');
+            console.log('[Turn] Feedback shown at:', now);
             setIsThinking(true);
+            setThinkingLevel(0);
           }
-        }, 250);
+
+          // (b) Escalate the thinking message as time passes
+          if (thinkingShownAtRef.current) {
+            const waited = now - thinkingShownAtRef.current;
+            if (waited >= 15_000)      setThinkingLevel(3); // error fallback
+            else if (waited >= 10_000) setThinkingLevel(2);
+            else if (waited >=  5_000) setThinkingLevel(1);
+          }
+        }, 150);
 
         if (!isReconnect) {
           // Send greeting trigger — include topic if user picked a chip
@@ -870,6 +927,10 @@ export default function EmmaChat({ initialMode }) {
               isAiSpeakingRef.current = true;
               setIsAiSpeaking(true);
               setIsThinking(false);
+              setThinkingLevel(0);
+              thinkingShownAtRef.current = 0;
+              speechEndedLoggedRef.current = false;
+              console.log('[Turn] Gemini first token — clearing feedback indicator');
             }
             scheduleChunk(base64ToPcm(part.inlineData.data));
           } else if (part.text) {
@@ -900,7 +961,10 @@ export default function EmmaChat({ initialMode }) {
         // Reset per-turn thinking state
         hasSpokenThisTurnRef.current = false;
         isAiSpeakingRef.current      = false;
+        speechEndedLoggedRef.current = false;
+        thinkingShownAtRef.current   = 0;
         setIsThinking(false);
+        setThinkingLevel(0);
         console.log('[Turn] turnComplete — turn', turnNum);
 
         const ts = nowStr();
@@ -995,8 +1059,18 @@ export default function EmmaChat({ initialMode }) {
       const now = Date.now();
       lastAudioSentRef.current = now;
 
+      // Only update lastLoudFrameRef when the mic actually heard something.
+      // Otherwise a stream of near-silent chunks would keep us in "still
+      // speaking" mode forever and the thinking indicator would never fire.
+      const LOUD_AMP = 0.015;
+      if (maxAmp > LOUD_AMP) {
+        lastLoudFrameRef.current = now;
+        // Reset the one-shot end-of-speech log so next pause triggers it fresh
+        speechEndedLoggedRef.current = false;
+      }
+
       // Track when user started speaking this turn (for timing log)
-      if (maxAmp > 0.01 && !hasSpokenThisTurnRef.current) {
+      if (maxAmp > LOUD_AMP && !hasSpokenThisTurnRef.current) {
         hasSpokenThisTurnRef.current = true;
         turnStartRef.current = now;
         console.log('[Turn] User speech started at:', now);
@@ -1034,9 +1108,12 @@ export default function EmmaChat({ initialMode }) {
     thinkingTimerRef.current = null;
     hasSpokenThisTurnRef.current = false;
     isAiSpeakingRef.current      = false;
+    speechEndedLoggedRef.current = false;
+    thinkingShownAtRef.current   = 0;
     setIsConnected(false);
     setIsAiSpeaking(false);
     setIsThinking(false);
+    setThinkingLevel(0);
     setLiveText('');
     setStatusMsg(getEmma(langRef.current).status_reconnecting);
 
@@ -1131,11 +1208,14 @@ export default function EmmaChat({ initialMode }) {
     thinkingTimerRef.current = null;
     hasSpokenThisTurnRef.current = false;
     isAiSpeakingRef.current      = false;
+    speechEndedLoggedRef.current = false;
+    thinkingShownAtRef.current   = 0;
     setIsConnected(false);
     setMicOn(false);
     setLiveText('');
     setIsAiSpeaking(false);
     setIsThinking(false);
+    setThinkingLevel(0);
     releaseWakeLock();
 
     const t = tokenRef.current;
@@ -1425,7 +1505,7 @@ export default function EmmaChat({ initialMode }) {
           <Bubble key={msg.id} msg={msg} mode={mode} />
         ))}
         {(isAiSpeaking || liveText || isThinking) && (
-          <TypingIndicator mode={mode} liveText={liveText} />
+          <TypingIndicator mode={mode} liveText={liveText} thinkingLevel={thinkingLevel} lang={lang} />
         )}
         {/* System status note (shown only when disconnected + status exists) */}
         {!isConnected && statusMsg && (
