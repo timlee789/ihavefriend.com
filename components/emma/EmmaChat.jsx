@@ -782,6 +782,16 @@ export default function EmmaChat({ initialMode }) {
             thinking_config: { thinking_budget: 0 },
             speech_config: { voice_config: { prebuilt_voice_config: { voice_name: emma.voice } } },
           },
+          // Let the user pause, think, and finish slowly without Emma cutting in.
+          // LOW end-of-speech sensitivity + longer silence threshold keeps VAD patient.
+          realtime_input_config: {
+            automatic_activity_detection: {
+              start_of_speech_sensitivity: 'START_SENSITIVITY_LOW',
+              end_of_speech_sensitivity: 'END_SENSITIVITY_LOW',
+              prefix_padding_ms: 300,
+              silence_duration_ms: 2500,
+            },
+          },
           tools: [{ googleSearch: {} }],
           output_audio_transcription: {},
           input_audio_transcription: {},
