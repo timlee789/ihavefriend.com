@@ -14,10 +14,17 @@
 import { requireAuth, verifyToken } from '@/lib/auth';
 import { createDb } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
+import { after } from 'next/server';
+
+// Allow the background fragment-generation task (Gemini Flash call + INSERT)
+// enough time to finish on Vercel Hobby before the lambda is frozen.
+export const maxDuration = 60;
 
 export async function POST(request) {
+  const tEnter = Date.now();
   // API key comes from server env — never from client
   const apiKey = process.env.GEMINI_API_KEY;
+  console.log(`[chat/end] POST entered at ${tEnter} — hasApiKey=${!!apiKey} env=${process.env.VERCEL_ENV || 'local'}`);
 
   // Read body first (sendBeacon can't send Authorization header)
   let body = {};
@@ -202,34 +209,49 @@ Rules:
           );
           console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
 
-          // Step 2: Generate fragment directly via Gemini Flash (cloud-based, no local LLM queue).
-          // Fire-and-forget: do NOT await — response returns immediately while generation runs in background.
-          // Any error is logged but cannot affect the /api/chat/end response.
-          fragmentJobId = `cloud-${sessionId}`; // marker indicating cloud-mode generation started
+          // Step 2: Generate fragment via Gemini Flash in the background.
+          // Use Next.js `after()` so Vercel keeps the function alive past the
+          // response — a bare Promise gets killed on Hobby plan when the
+          // lambda freezes. Errors are logged; response cannot be affected.
+          fragmentJobId = `cloud-${sessionId}`;
 
-          const userLang = (user.lang || 'ko').toLowerCase();
-          const bgHistory = history; // captured by closure — [{role, content}]
+          const userLang  = (user.lang || 'ko').toLowerCase();
+          const bgHistory = history;
+          const userId    = user.id;
 
-          // Background task
-          (async () => {
+          console.log(`[chat/end] Fragment generation starting — session=${sessionId} user=${userId} lang=${userLang} hasApiKey=${!!apiKey} transcriptLen=${bgHistory.length}`);
+
+          after(async () => {
+            const bgStart = Date.now();
             try {
               const { generateFragmentCloud } = require('@/lib/generateFragmentCloud');
-              console.log(`[chat/end:bg] Starting cloud fragment generation for session ${sessionId} (lang=${userLang})`);
+
+              const fragmentElements = fragment?.elements || fragment;
+              const userMsgCount = bgHistory.filter(m => m.role === 'user').length;
+              const elementKeys = Object.keys(fragmentElements || {})
+                .filter(k => {
+                  const v = fragmentElements[k];
+                  return v && (Array.isArray(v) ? v.length > 0 : true);
+                })
+                .join(',');
+              console.log(`[chat/end:bg] calling generateFragmentCloud — userId=${userId} session=${sessionId} userMsgs=${userMsgCount} elements=[${elementKeys}] completeness=${fragment?.completeness}`);
 
               const fragmentJson = await generateFragmentCloud({
-                elements:   fragment,
+                elements:   fragmentElements,
                 transcript: bgHistory,
                 lang:       userLang,
                 apiKey,
               });
 
               if (!fragmentJson) {
-                console.warn(`[chat/end:bg] generateFragmentCloud returned null for session ${sessionId}`);
+                console.error(`[chat/end:bg] ❌ generateFragmentCloud returned null — session=${sessionId} elapsed=${Date.now() - bgStart}ms`);
                 return;
               }
 
               const conversationDate = new Date().toISOString().slice(0, 10);
               const wordCount = (fragmentJson.content || '').length;
+
+              console.log(`[chat/end:bg] INSERT story_fragments — session=${sessionId} title="${fragmentJson.title}" subtitleLen=${fragmentJson.subtitle?.length ?? 0} contentLen=${wordCount} tagsTheme=${fragmentJson.tags_theme?.length ?? 0}`);
 
               const insertRes = await db.query(
                 `INSERT INTO story_fragments
@@ -243,7 +265,7 @@ Rules:
                          $13, $14, 'draft', $15)
                  RETURNING id`,
                 [
-                  user.id,
+                  userId,
                   fragmentJson.title,
                   fragmentJson.subtitle,
                   fragmentJson.content,
@@ -262,13 +284,11 @@ Rules:
               );
 
               const newFragmentId = insertRes.rows[0]?.id;
-              console.log(`[chat/end:bg] ✅ Fragment saved to story_fragments id=${newFragmentId} len=${wordCount} title="${fragmentJson.title}"`);
+              console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" bgTotal=${Date.now() - bgStart}ms`);
             } catch (bgErr) {
-              console.error('[chat/end:bg] ❌ Background fragment generation failed:', bgErr.message);
+              console.error(`[chat/end:bg] ❌ Fragment generation threw for session ${sessionId}:`, bgErr?.message);
+              console.error(bgErr?.stack);
             }
-          })().catch(err => {
-            // Safety net — outer catch for any synchronous throws inside the IIFE
-            console.error('[chat/end:bg] ❌ Unhandled background error:', err?.message);
           });
         } else if (fragment?.detected) {
           console.log(`[chat/end] Fragment detected but below threshold (completeness=${fragment?.completeness ?? 0} < ${completenessThreshold}) — skipping queue`);
