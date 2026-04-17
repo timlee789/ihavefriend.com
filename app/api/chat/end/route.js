@@ -202,54 +202,74 @@ Rules:
           );
           console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
 
-          // Step 2: Queue fragment generation job — inline INSERT (no require dependency)
-          // story mode → priority 2 (urgent), companion/auto → priority 5 (normal)
-          const priority = sessionMode === 'story' ? 2 : 5;
+          // Step 2: Generate fragment directly via Gemini Flash (cloud-based, no local LLM queue).
+          // Fire-and-forget: do NOT await — response returns immediately while generation runs in background.
+          // Any error is logged but cannot affect the /api/chat/end response.
+          fragmentJobId = `cloud-${sessionId}`; // marker indicating cloud-mode generation started
 
-          try {
-            // Optionally gather related memory node IDs.
-            // Wrapped in its own try-catch: narrative_relevance column may not exist on all deployments.
-            let memoryNodeIds = [];
+          const userLang = (user.lang || 'ko').toLowerCase();
+          const bgHistory = history; // captured by closure — [{role, content}]
+
+          // Background task
+          (async () => {
             try {
-              const memRows = await db.query(
-                `SELECT id FROM memory_nodes
-                 WHERE user_id = $1
-                   AND last_mentioned >= (SELECT started_at FROM chat_sessions WHERE id = $2)
-                   AND narrative_relevance >= 3
-                 ORDER BY narrative_relevance DESC
-                 LIMIT 10`,
-                [user.id, sessionId]
+              const { generateFragmentCloud } = require('@/lib/generateFragmentCloud');
+              console.log(`[chat/end:bg] Starting cloud fragment generation for session ${sessionId} (lang=${userLang})`);
+
+              const fragmentJson = await generateFragmentCloud({
+                elements:   fragment,
+                transcript: bgHistory,
+                lang:       userLang,
+                apiKey,
+              });
+
+              if (!fragmentJson) {
+                console.warn(`[chat/end:bg] generateFragmentCloud returned null for session ${sessionId}`);
+                return;
+              }
+
+              const conversationDate = new Date().toISOString().slice(0, 10);
+              const wordCount = (fragmentJson.content || '').length;
+
+              const insertRes = await db.query(
+                `INSERT INTO story_fragments
+                   (user_id, title, subtitle, content, content_raw,
+                    source_session_ids, source_conversation_date,
+                    tags_era, tags_people, tags_place, tags_theme, tags_emotion,
+                    word_count, language, status, generated_by)
+                 VALUES ($1, $2, $3, $4, $5,
+                         $6::uuid[], $7,
+                         $8, $9, $10, $11, $12,
+                         $13, $14, 'draft', $15)
+                 RETURNING id`,
+                [
+                  user.id,
+                  fragmentJson.title,
+                  fragmentJson.subtitle,
+                  fragmentJson.content,
+                  fragmentJson.content,              // content_raw = initial LLM draft
+                  [sessionId],
+                  conversationDate,
+                  fragmentJson.tags_era,
+                  fragmentJson.tags_people,
+                  fragmentJson.tags_place,
+                  fragmentJson.tags_theme,
+                  fragmentJson.tags_emotion,
+                  wordCount,
+                  userLang,
+                  'gemini-2.5-flash',
+                ]
               );
-              memoryNodeIds = memRows.rows.map(r => r.id);
-              console.log(`[chat/end] memory nodes for fragment: ${memoryNodeIds.length}`);
-            } catch (memErr) {
-              console.warn('[chat/end] Memory node query skipped (column may not exist):', memErr.message);
+
+              const newFragmentId = insertRes.rows[0]?.id;
+              console.log(`[chat/end:bg] ✅ Fragment saved to story_fragments id=${newFragmentId} len=${wordCount} title="${fragmentJson.title}"`);
+            } catch (bgErr) {
+              console.error('[chat/end:bg] ❌ Background fragment generation failed:', bgErr.message);
             }
-
-            const jobData = {
-              session_ids: [sessionId],
-              memory_node_ids: memoryNodeIds,
-              elements: fragment,
-            };
-
-            console.log(`[chat/end] Inserting fragment job — priority=${priority} completeness=${fragment?.completeness}`);
-            const insertResult = await db.query(
-              `INSERT INTO fragment_generation_queue
-                 (user_id, job_type, input_data, priority)
-               VALUES ($1, 'generate_fragment', $2, $3)
-               RETURNING id`,
-              [user.id, JSON.stringify(jobData), priority]
-            );
-
-            fragmentJobId = insertResult.rows[0]?.id;
-            if (fragmentJobId) {
-              console.log(`[chat/end] ✅ Fragment job queued id=${fragmentJobId} priority=${priority}`);
-            } else {
-              console.warn('[chat/end] Fragment INSERT succeeded but returned no id');
-            }
-          } catch (queueErr) {
-            console.error('[chat/end] ❌ Fragment queue INSERT failed:', queueErr.message, '| code:', queueErr.code);
-          }
+          })().catch(err => {
+            // Safety net — outer catch for any synchronous throws inside the IIFE
+            console.error('[chat/end:bg] ❌ Unhandled background error:', err?.message);
+          });
         } else if (fragment?.detected) {
           console.log(`[chat/end] Fragment detected but below threshold (completeness=${fragment?.completeness ?? 0} < ${completenessThreshold}) — skipping queue`);
         } else {
