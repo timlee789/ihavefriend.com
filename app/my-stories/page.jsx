@@ -185,6 +185,7 @@ function SampleGallery({ onStartChat }) {
 
 // ── Fragment Modal ─────────────────────────────────────────────────────────
 function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
+  const router = useRouter();
   const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete'
   const [editTitle, setEditTitle] = useState(fragment.title || '');
   const [editSubtitle, setEditSub] = useState(fragment.subtitle || '');
@@ -247,6 +248,22 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
           {mode === 'view' && (
             <>
               <div className={s.modalContent}>{fragment.content}</div>
+
+              {fragment.truncated && (
+                <div className={s.truncatedBanner}>
+                  <div className={s.truncatedBannerText}>
+                    이 이야기는 중간에 끊겼어요. Emma와 이어서 이야기해볼까요?
+                  </div>
+                  <button
+                    className={s.regenerateBtn}
+                    onClick={() => {
+                      router.push(`/chat?topic=${encodeURIComponent(fragment.title)}&fromFragment=${fragment.id}`);
+                    }}
+                  >
+                    Emma와 이어서 이야기하기
+                  </button>
+                </div>
+              )}
 
               {allTags.length > 0 && (
                 <div className={s.modalTagSection}>
@@ -683,16 +700,25 @@ export default function MyStoriesPage() {
 
 // ── Fragment Card ────────────────────────────────────────────────
 function FragmentCard({ fragment: f, onClick }) {
+  const router = useRouter();
   const topTags = [
     ...(f.tags_theme   || []).slice(0, 2).map(t => ({ text: t, cls: 'tagTheme' })),
     ...(f.tags_emotion || []).slice(0, 1).map(t => ({ text: t, cls: 'tagEmotion' })),
     ...(f.tags_people  || []).slice(0, 1).map(t => ({ text: t, cls: 'tagPeople' })),
   ].slice(0, 3);
 
+  function handleRegenerate(e) {
+    e.stopPropagation();
+    router.push(`/chat?topic=${encodeURIComponent(f.title)}&fromFragment=${f.id}`);
+  }
+
   return (
     <div className={s.card} onClick={onClick}>
       <div className={s.cardHeader}>
-        <div className={s.cardTitle}>{f.title}</div>
+        <div className={s.cardTitle}>
+          {f.truncated && <span className={s.truncatedIcon} title="이야기가 중간에 끊겼어요">⚠️</span>}
+          {f.title}
+        </div>
         <span className={`${s.statusBadge} ${f.status === 'confirmed' ? s.statusConfirmed : s.statusDraft}`}>
           {f.status === 'confirmed' ? '완성' : '초안'}
         </span>
@@ -712,6 +738,15 @@ function FragmentCard({ fragment: f, onClick }) {
           </div>
         )}
       </div>
+
+      {f.truncated && (
+        <div className={s.truncatedBanner}>
+          <div className={s.truncatedBannerText}>이야기가 중간에 끊겼어요.</div>
+          <button className={s.regenerateBtn} onClick={handleRegenerate}>
+            Emma와 이어서 이야기하기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

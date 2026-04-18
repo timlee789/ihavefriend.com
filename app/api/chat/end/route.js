@@ -251,18 +251,24 @@ Rules:
               const conversationDate = new Date().toISOString().slice(0, 10);
               const wordCount = (fragmentJson.content || '').length;
 
-              console.log(`[chat/end:bg] INSERT story_fragments — session=${sessionId} title="${fragmentJson.title}" subtitleLen=${fragmentJson.subtitle?.length ?? 0} contentLen=${wordCount} tagsTheme=${fragmentJson.tags_theme?.length ?? 0}`);
+              // Propagate the MAX_TOKENS truncation flag from generateFragmentCloud.
+              // `?? false` is a belt-and-suspenders fallback: generateFragmentCloud
+              // always returns an explicit boolean, but older cached builds or
+              // future refactors could theoretically omit the field.
+              const truncatedFlag = fragmentJson.truncated ?? false;
+
+              console.log(`[chat/end:bg] INSERT story_fragments — session=${sessionId} title="${fragmentJson.title}" subtitleLen=${fragmentJson.subtitle?.length ?? 0} contentLen=${wordCount} tagsTheme=${fragmentJson.tags_theme?.length ?? 0} truncated=${truncatedFlag}`);
 
               const insertRes = await db.query(
                 `INSERT INTO story_fragments
                    (user_id, title, subtitle, content, content_raw,
                     source_session_ids, source_conversation_date,
                     tags_era, tags_people, tags_place, tags_theme, tags_emotion,
-                    word_count, language, status, generated_by)
+                    word_count, language, status, generated_by, truncated)
                  VALUES ($1, $2, $3, $4, $5,
                          $6::uuid[], $7,
                          $8, $9, $10, $11, $12,
-                         $13, $14, 'draft', $15)
+                         $13, $14, 'draft', $15, $16)
                  RETURNING id`,
                 [
                   userId,
@@ -280,11 +286,12 @@ Rules:
                   wordCount,
                   userLang,
                   'gemini-2.5-flash',
+                  truncatedFlag,
                 ]
               );
 
               const newFragmentId = insertRes.rows[0]?.id;
-              console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" bgTotal=${Date.now() - bgStart}ms`);
+              console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" truncated=${truncatedFlag} bgTotal=${Date.now() - bgStart}ms`);
             } catch (bgErr) {
               console.error(`[chat/end:bg] ❌ Fragment generation threw for session ${sessionId}:`, bgErr?.message);
               console.error(bgErr?.stack);

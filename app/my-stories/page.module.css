@@ -728,3 +728,44 @@
     max-height: 88dvh;
   }
 }
+
+/* ── Truncated fragment UI ────────────────────────── */
+.truncatedIcon {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+.truncatedBanner {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.truncatedBannerText {
+  font-size: 14px;
+  color: #6d5311;
+  line-height: 1.5;
+}
+
+.regenerateBtn {
+  min-height: 44px;
+  padding: 12px 20px;
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  align-self: stretch;
+}
+.regenerateBtn:hover  { background: #c2410c; }
+.regenerateBtn:active { background: #9a3412; transform: scale(0.99); }
