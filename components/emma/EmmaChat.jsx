@@ -836,6 +836,17 @@ export default function EmmaChat({ initialMode }) {
           output_audio_transcription: {},
           input_audio_transcription: {},
           system_instruction: { parts: [{ text: prompt }] },
+          // Prevent silent drop of older turns once the rolling audio context
+          // approaches the model's window. Without this, native-audio models
+          // quietly evict early turns around the 5-10 minute mark, which is
+          // why Emma was forgetting things said earlier in the same session.
+          context_window_compression: {
+            sliding_window: {},
+          },
+          // Ask the server to issue resumable handles so a transient network
+          // hiccup or GFE load-balance doesn't wipe our conversation state.
+          // The 14-min preemptive reconnect stays as a second defense layer.
+          session_resumption: {},
         }
       }));
     };
@@ -843,6 +854,22 @@ export default function EmmaChat({ initialMode }) {
     ws.onmessage = async (evt) => {
       const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
       const msg = JSON.parse(raw);
+
+      // ── Server-side lifecycle signals (context drop / resume diagnostics) ──
+      if (msg.goAway) {
+        console.warn('[Gemini] goAway received:', {
+          timeLeft: msg.goAway.timeLeft,
+          timestamp: Date.now(),
+        });
+      }
+      if (msg.sessionResumptionUpdate) {
+        const handle = msg.sessionResumptionUpdate.newHandle || '';
+        console.log('[Gemini] sessionResumption update:', {
+          resumable: msg.sessionResumptionUpdate.resumable,
+          newHandle: handle ? handle.slice(0, 20) + '...' : null,
+          timestamp: Date.now(),
+        });
+      }
 
       if (msg.setupComplete) {
         setIsConnected(true);
@@ -965,7 +992,10 @@ export default function EmmaChat({ initialMode }) {
         thinkingShownAtRef.current   = 0;
         setIsThinking(false);
         setThinkingLevel(0);
-        console.log('[Turn] turnComplete — turn', turnNum);
+        const elapsedS = sessionStartRef.current
+          ? Math.round((Date.now() - sessionStartRef.current) / 1000)
+          : null;
+        console.log(`[Turn] turnComplete — turn ${turnNum}, elapsed ${elapsedS}s`);
 
         const ts = nowStr();
         setMessages(prev => {
