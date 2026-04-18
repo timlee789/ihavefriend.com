@@ -345,11 +345,32 @@ function Bubble({ msg, mode }) {
 //   - thinkingLevel 0: dots animation (instant feedback on end-of-speech)
 //   - thinkingLevel 1 (≥5s):  "잠시만요, 생각하고 있어요"
 //   - thinkingLevel 2 (≥10s): "조금만 더 기다려 주세요"
-//   - thinkingLevel 3 (≥15s): "죄송해요, 다시 한 번 말씀해 주시겠어요?"
+//   - thinkingLevel 3 (≥15s): "천천히 생각하고 있어요"
+//   - thinkingLevel 4 (≥30s): "조금 더 기다려주세요. 곧 답해드릴게요."
+//     (Never blame the user — always frame as Emma taking time.
+//      Seniors easily self-blame at "please say again" prompts.)
 const THINKING_MSG = {
-  KO: ['', '잠시만요, 생각하고 있어요…', '조금만 더 기다려 주세요…', '죄송해요, 다시 한 번 말씀해 주시겠어요?'],
-  EN: ['', 'One moment, I\'m thinking…', 'Just a little longer…', 'Sorry, could you say that again?'],
-  ES: ['', 'Un momento, estoy pensando…', 'Un poco más, por favor…', 'Perdón, ¿puedes repetirlo?'],
+  KO: [
+    '',
+    '잠시만요, 생각하고 있어요…',
+    '조금만 더 기다려 주세요…',
+    '천천히 생각하고 있어요…',
+    '조금 더 기다려주세요. 곧 답해드릴게요.',
+  ],
+  EN: [
+    '',
+    "One moment, I'm thinking…",
+    'Just a little longer…',
+    "I'm still thinking…",
+    'Still here. Almost ready.',
+  ],
+  ES: [
+    '',
+    'Un momento, estoy pensando…',
+    'Un poco más, por favor…',
+    'Sigo pensando…',
+    'Aquí sigo. Casi listo.',
+  ],
 };
 
 function TypingIndicator({ mode, liveText, thinkingLevel = 0, lang = 'KO' }) {
@@ -832,27 +853,16 @@ export default function EmmaChat({ initialMode }) {
               start_of_speech_sensitivity: 'START_SENSITIVITY_LOW',
               end_of_speech_sensitivity: 'END_SENSITIVITY_LOW',
               prefix_padding_ms: 300,
-              // 1200ms: balance between tolerating senior-speech pauses and
-              // preventing long uninterrupted monologues that delay Emma's
-              // response. Previous 2500ms caused 60-80s single turns.
-              silence_duration_ms: 1200,
+              // 1800ms: middle ground between senior-friendly pause tolerance
+              // and responsive dialogue. 1200ms caused VAD to fragment sentences
+              // mid-speech; 2500ms caused 60-80s uninterrupted monologues.
+              silence_duration_ms: 1800,
             },
           },
           tools: [{ googleSearch: {} }],
           output_audio_transcription: {},
           input_audio_transcription: {},
           system_instruction: { parts: [{ text: prompt }] },
-          // Prevent silent drop of older turns once the rolling audio context
-          // approaches the model's window. Without this, native-audio models
-          // quietly evict early turns around the 5-10 minute mark, which is
-          // why Emma was forgetting things said earlier in the same session.
-          context_window_compression: {
-            sliding_window: {},
-          },
-          // Ask the server to issue resumable handles so a transient network
-          // hiccup or GFE load-balance doesn't wipe our conversation state.
-          // The 14-min preemptive reconnect stays as a second defense layer.
-          session_resumption: {},
         }
       }));
     };
@@ -956,7 +966,8 @@ export default function EmmaChat({ initialMode }) {
           // (b) Escalate the thinking message as time passes
           if (thinkingShownAtRef.current) {
             const waited = now - thinkingShownAtRef.current;
-            if (waited >= 15_000)      setThinkingLevel(3); // error fallback
+            if      (waited >= 30_000) setThinkingLevel(4);
+            else if (waited >= 15_000) setThinkingLevel(3);
             else if (waited >= 10_000) setThinkingLevel(2);
             else if (waited >=  5_000) setThinkingLevel(1);
           }
