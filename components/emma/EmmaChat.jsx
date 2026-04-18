@@ -832,7 +832,10 @@ export default function EmmaChat({ initialMode }) {
               start_of_speech_sensitivity: 'START_SENSITIVITY_LOW',
               end_of_speech_sensitivity: 'END_SENSITIVITY_LOW',
               prefix_padding_ms: 300,
-              silence_duration_ms: 2500,
+              // 1200ms: balance between tolerating senior-speech pauses and
+              // preventing long uninterrupted monologues that delay Emma's
+              // response. Previous 2500ms caused 60-80s single turns.
+              silence_duration_ms: 1200,
             },
           },
           tools: [{ googleSearch: {} }],
@@ -881,12 +884,19 @@ export default function EmmaChat({ initialMode }) {
         firstServerMsgRef.current === null
       ) {
         const now = Date.now();
-        const kind = msg.serverContent?.modelTurn           ? 'modelTurn'
-                   : msg.serverContent?.outputTranscription ? 'outputTranscription'
-                   : msg.serverContent?.inputTranscription  ? 'inputTranscription'
-                   : msg.serverContent?.turnComplete        ? 'turnComplete'
-                   : msg.serverContent                      ? 'serverContent(other)'
-                   : 'other';
+        const kind =
+            msg.serverContent?.modelTurn?.parts     ? 'modelTurn'
+          : msg.serverContent?.outputTranscription  ? 'outputTranscription'
+          : msg.serverContent?.inputTranscription   ? 'inputTranscription'
+          : msg.serverContent?.turnComplete         ? 'turnComplete'
+          : msg.serverContent?.interrupted          ? 'interrupted'
+          : msg.serverContent?.generationComplete   ? 'generationComplete'
+          : msg.serverContent                       ? 'serverContent(other)'
+          : msg.setupComplete                       ? 'setupComplete'
+          : msg.toolCall                            ? 'toolCall'
+          : msg.sessionResumptionUpdate             ? 'sessionResumptionUpdate'
+          : msg.goAway                              ? 'goAway'
+          : Object.keys(msg).join(',') || '(empty)';
         const sinceLastLoud = lastLoudFrameRef.current
           ? now - lastLoudFrameRef.current
           : null;
@@ -1073,6 +1083,15 @@ export default function EmmaChat({ initialMode }) {
     };
 
     ws.onclose = (evt) => {
+      console.warn('[WS] closed:', {
+        code: evt.code,
+        reason: evt.reason,
+        wasClean: evt.wasClean,
+        timestamp: Date.now(),
+        elapsedFromSessionStart: sessionStartRef.current
+          ? Math.round((Date.now() - sessionStartRef.current) / 1000) + 's'
+          : null,
+      });
       clearTimeout(reconnectTimerRef.current);
       setIsAiSpeaking(false);
       setLiveText('');
