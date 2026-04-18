@@ -662,6 +662,9 @@ export default function EmmaChat({ initialMode }) {
   const currentUserMsgRef = useRef('');
   const currentAiMsgRef   = useRef('');
   const rawAiTextRef      = useRef(''); // text parts from modelTurn (includes <emma_analysis>)
+  // Phase 3 latency diagnostics — first server msg received after user speech this turn.
+  // Shape: { at: number, kind: string } | null. Reset on turnComplete.
+  const firstServerMsgRef = useRef(null);
   const wakeLockRef       = useRef(null);
   const scrollRef         = useRef(null);
   const geminiKeyRef        = useRef('');
@@ -871,6 +874,29 @@ export default function EmmaChat({ initialMode }) {
         });
       }
 
+      // ── Phase 3: First server message after user speech (latency breakdown) ──
+      if (
+        hasSpokenThisTurnRef.current &&
+        !isAiSpeakingRef.current &&
+        firstServerMsgRef.current === null
+      ) {
+        const now = Date.now();
+        const kind = msg.serverContent?.modelTurn           ? 'modelTurn'
+                   : msg.serverContent?.outputTranscription ? 'outputTranscription'
+                   : msg.serverContent?.inputTranscription  ? 'inputTranscription'
+                   : msg.serverContent?.turnComplete        ? 'turnComplete'
+                   : msg.serverContent                      ? 'serverContent(other)'
+                   : 'other';
+        const sinceLastLoud = lastLoudFrameRef.current
+          ? now - lastLoudFrameRef.current
+          : null;
+        firstServerMsgRef.current = { at: now, kind };
+        console.log('[Latency] First server msg after speech:', {
+          kind,
+          sinceLastLoudMs: sinceLastLoud, // ≈ VAD wait + Gemini processing + RTT
+        });
+      }
+
       if (msg.setupComplete) {
         setIsConnected(true);
         setMicOn(true);
@@ -949,8 +975,18 @@ export default function EmmaChat({ initialMode }) {
             if (!isAiSpeakingRef.current) {
               const tFirstToken = Date.now();
               const tSinceSpeech = turnStartRef.current ? tFirstToken - turnStartRef.current : null;
-              console.log('[Turn] First response token at:', tFirstToken,
-                tSinceSpeech !== null ? `(${tSinceSpeech}ms since user speech start)` : '');
+              const sinceLastLoud = lastLoudFrameRef.current
+                ? tFirstToken - lastLoudFrameRef.current
+                : null;
+              const sinceFirstServerMsg = firstServerMsgRef.current
+                ? tFirstToken - firstServerMsgRef.current.at
+                : null;
+              console.log('[Turn] First response token at:', tFirstToken, {
+                sinceUserSpeechStartMs: tSinceSpeech,
+                sinceLastLoudMs: sinceLastLoud,              // full "user-silent-to-audio" gap
+                sinceFirstServerMsgMs: sinceFirstServerMsg,  // server-internal: response→audio
+                firstServerMsgKind: firstServerMsgRef.current?.kind ?? null,
+              });
               isAiSpeakingRef.current = true;
               setIsAiSpeaking(true);
               setIsThinking(false);
@@ -990,6 +1026,7 @@ export default function EmmaChat({ initialMode }) {
         isAiSpeakingRef.current      = false;
         speechEndedLoggedRef.current = false;
         thinkingShownAtRef.current   = 0;
+        firstServerMsgRef.current    = null;
         setIsThinking(false);
         setThinkingLevel(0);
         const elapsedS = sessionStartRef.current
