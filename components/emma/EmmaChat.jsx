@@ -883,28 +883,39 @@ export default function EmmaChat({ initialMode }) {
         !isAiSpeakingRef.current &&
         firstServerMsgRef.current === null
       ) {
-        const now = Date.now();
-        const kind =
-            msg.serverContent?.modelTurn?.parts     ? 'modelTurn'
-          : msg.serverContent?.outputTranscription  ? 'outputTranscription'
-          : msg.serverContent?.inputTranscription   ? 'inputTranscription'
-          : msg.serverContent?.turnComplete         ? 'turnComplete'
-          : msg.serverContent?.interrupted          ? 'interrupted'
-          : msg.serverContent?.generationComplete   ? 'generationComplete'
-          : msg.serverContent                       ? 'serverContent(other)'
-          : msg.setupComplete                       ? 'setupComplete'
-          : msg.toolCall                            ? 'toolCall'
-          : msg.sessionResumptionUpdate             ? 'sessionResumptionUpdate'
-          : msg.goAway                              ? 'goAway'
-          : Object.keys(msg).join(',') || '(empty)';
-        const sinceLastLoud = lastLoudFrameRef.current
-          ? now - lastLoudFrameRef.current
-          : null;
-        firstServerMsgRef.current = { at: now, kind };
-        console.log('[Latency] First server msg after speech:', {
-          kind,
-          sinceLastLoudMs: sinceLastLoud, // ≈ VAD wait + Gemini processing + RTT
-        });
+        // Session-lifecycle signals don't count as response start
+        const isLifecycleOnly =
+          msg.sessionResumptionUpdate || msg.goAway || msg.setupComplete;
+
+        // User-side transcription alone doesn't count either — it's Gemini
+        // echoing the user's speech back, not Emma's response starting.
+        // If modelTurn or outputTranscription is also present, it IS the
+        // real response start, so we don't skip those.
+        const isUserTranscriptOnly =
+          msg.serverContent?.inputTranscription &&
+          !msg.serverContent?.modelTurn &&
+          !msg.serverContent?.outputTranscription;
+
+        if (!isLifecycleOnly && !isUserTranscriptOnly) {
+          const now = Date.now();
+          const kind =
+              msg.serverContent?.modelTurn?.parts     ? 'modelTurn'
+            : msg.serverContent?.outputTranscription  ? 'outputTranscription'
+            : msg.serverContent?.turnComplete         ? 'turnComplete'
+            : msg.serverContent?.interrupted          ? 'interrupted'
+            : msg.serverContent?.generationComplete   ? 'generationComplete'
+            : msg.serverContent                       ? 'serverContent(other)'
+            : msg.toolCall                            ? 'toolCall'
+            : Object.keys(msg).join(',') || '(empty)';
+          const sinceLastLoud = lastLoudFrameRef.current
+            ? now - lastLoudFrameRef.current
+            : null;
+          firstServerMsgRef.current = { at: now, kind };
+          console.log('[Latency] First response msg:', {
+            kind,
+            sinceLastLoudMs: sinceLastLoud, // ≈ VAD wait + Gemini processing + RTT
+          });
+        }
       }
 
       if (msg.setupComplete) {
@@ -1151,8 +1162,6 @@ export default function EmmaChat({ initialMode }) {
       const LOUD_AMP = 0.015;
       if (maxAmp > LOUD_AMP) {
         lastLoudFrameRef.current = now;
-        // Reset the one-shot end-of-speech log so next pause triggers it fresh
-        speechEndedLoggedRef.current = false;
       }
 
       // Track when user started speaking this turn (for timing log)
