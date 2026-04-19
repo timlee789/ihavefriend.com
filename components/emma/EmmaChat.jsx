@@ -90,6 +90,7 @@ const WELCOME_MSGS = {
     ebookCta   : 'ebook 신청하기 →',
     // companion zone
     companionTitle : '그냥 이야기하기',
+    companionDesc  : '오늘의 기분이나 생각을 편하게 나눠요',
     companionSub   : '오늘 기분이 어때요?',
     companionChips : [
       { label: '외로울 때',          emoji: '💙', c: 'blue'   },
@@ -100,6 +101,8 @@ const WELCOME_MSGS = {
     ],
     // story zone
     storyTitle     : '내 이야기 남기기',
+    storyDesc      : '당신이 남기고 싶은 이야기를 해주세요 끝나면 Emma가 글로 정리해드려요',
+    storyBookHint  : '위쪽 📖 아이콘에서 지금까지 남긴 이야기를 확인하고 수정할 수 있어요.',
     storySub       : '당신의 이야기를 기록으로 남겨보세요',
     storyHint      : '대화가 끝나면 Emma가 당신의 이야기를 정리해 드려요',
     shuffleBtn     : '다른 질문 보기',
@@ -113,6 +116,7 @@ const WELCOME_MSGS = {
     many       : (n) => `You've shared ${n} stories so far 🎉 They'd make a beautiful ebook!`,
     ebookCta   : 'Request ebook →',
     companionTitle : 'Just talk',
+    companionDesc  : "Share how you're feeling, casually. Nothing is saved.",
     companionSub   : 'How are you feeling today?',
     companionChips : [
       { label: 'Feeling lonely',        emoji: '💙', c: 'blue'   },
@@ -122,6 +126,8 @@ const WELCOME_MSGS = {
       { label: 'Just want to chat',     emoji: '🌙', c: 'teal'   },
     ],
     storyTitle     : 'Record my story',
+    storyDesc      : 'Share a life story — Emma will organize it for you afterward.',
+    storyBookHint  : 'Tap the 📖 icon above to view or edit saved stories.',
     storySub       : "Let's capture your stories",
     storyHint      : 'When we finish, Emma will organize your story for you',
     shuffleBtn     : 'Show different topics',
@@ -135,6 +141,7 @@ const WELCOME_MSGS = {
     many       : (n) => `¡Has compartido ${n} historias hasta ahora 🎉 Juntas formarían un ebook precioso!`,
     ebookCta   : 'Solicitar ebook →',
     companionTitle : 'Solo charlar',
+    companionDesc  : 'Comparte cómo te sientes, sin guardar nada.',
     companionSub   : '¿Cómo te sientes hoy?',
     companionChips : [
       { label: 'Me siento solo/a',       emoji: '💙', c: 'blue'   },
@@ -144,6 +151,8 @@ const WELCOME_MSGS = {
       { label: 'Solo quiero hablar',     emoji: '🌙', c: 'teal'   },
     ],
     storyTitle     : 'Contar mi historia',
+    storyDesc      : 'Comparte una historia de tu vida — Emma la organizará después.',
+    storyBookHint  : 'Toca el icono 📖 arriba para ver o editar tus historias guardadas.',
     storySub       : 'Capturemos tus historias',
     storyHint      : 'Cuando terminemos, Emma organizará tu historia',
     shuffleBtn     : 'Ver otros temas',
@@ -1494,7 +1503,6 @@ export default function EmmaChat({ initialMode }) {
 
         {/* ── empty state: two-zone mode selector ── */}
         {messages.length === 0 && !isConnected && (() => {
-          const pal       = CHIP_PAL[isDay ? 'day' : 'night'];
           const wmsgs     = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
           const fragCount = userFragments?.length ?? null;
 
@@ -1513,88 +1521,47 @@ export default function EmmaChat({ initialMode }) {
 
               {/* ═══════════════════════════════════════════
                   영역 1: 그냥 이야기하기 (companion mode)
+                  섹션 전체가 버튼 — 탭하면 바로 대화 시작
                   ═══════════════════════════════════════════ */}
-              <div className={`${styles.modeZone} ${isDay ? styles.modeZoneDay : styles.modeZoneNight}`}>
+              <button
+                type="button"
+                className={`${styles.modeZone} ${styles.modeZoneBtn} ${isDay ? styles.modeZoneDay : styles.modeZoneNight}`}
+                onClick={() => startCustomTopic('companion')}
+                disabled={isConnected}
+              >
                 <div className={styles.modeZoneHeader}>
                   <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleDay : styles.modeZoneTitleNight}`}>
                     💬 {wmsgs.companionTitle}
                   </span>
-                  <span className={`${styles.modeZoneSub} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
-                    {wmsgs.companionSub}
-                  </span>
                 </div>
-                {/* Horizontal scroll chips */}
-                <div className={styles.companionChips}>
-                  {wmsgs.companionChips.map(chip => {
-                    const p = pal[chip.c] || pal.blue;
-                    return (
-                      <button
-                        key={chip.label}
-                        className={styles.emptyChip}
-                        style={{ background: p.bg, color: p.color, borderColor: p.border, flexShrink: 0 }}
-                        onClick={() => selectChip(chip, 'companion')}
-                      >
-                        <span style={{ fontSize: 15 }}>{chip.emoji}</span>
-                        {chip.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                <p className={`${styles.modeZoneDesc} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
+                  {wmsgs.companionDesc}
+                </p>
+              </button>
 
               {/* ═══════════════════════════════════════════
                   영역 2: 내 이야기 남기기 (story mode)
+                  섹션 전체가 버튼 + 상단 📖 안내
                   ═══════════════════════════════════════════ */}
               <div className={`${styles.modeZone} ${styles.modeZoneStory} ${isDay ? styles.modeZoneStoryDay : styles.modeZoneStoryNight}`}>
-                <div className={styles.modeZoneHeader}>
-                  <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleStoryDay : styles.modeZoneTitleStoryNight}`}>
-                    📖 {wmsgs.storyTitle}
-                  </span>
-                  <span className={`${styles.modeZoneSub} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
-                    {wmsgs.storySub}
-                  </span>
-                </div>
-
-                {/* Story Starter Cards */}
-                {starterCards.length > 0 && (
-                  <div className={styles.storyCards}>
-                    {starterCards.map((card, i) => (
-                      <button
-                        key={i}
-                        className={`${styles.storyCard} ${isDay ? styles.storyCardDay : styles.storyCardNight}`}
-                        onClick={() => selectStoryCard(card)}
-                      >
-                        <span className={`${styles.storyCardCat} ${isDay ? styles.storyCardCatDay : styles.storyCardCatNight}`}>
-                          {card.emoji} {card.cat}
-                        </span>
-                        <span className={`${styles.storyCardQ} ${isDay ? styles.storyCardQDay : styles.storyCardQNight}`}>
-                          {card.question}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Shuffle + custom topic row */}
-                <div className={styles.storyActionRow}>
-                  <button
-                    className={`${styles.shuffleBtn} ${isDay ? styles.shuffleBtnDay : styles.shuffleBtnNight}`}
-                    onClick={shuffleStarters}
-                  >
-                    ↻ {wmsgs.shuffleBtn}
-                  </button>
-                  <button
-                    className={`${styles.customTopicBtn} ${isDay ? styles.customTopicBtnDay : styles.customTopicBtnNight}`}
-                    onClick={() => startCustomTopic('story')}
-                  >
-                    {wmsgs.customTopicBtn} →
-                  </button>
-                </div>
-
-                {/* Footer hint */}
-                <p className={`${styles.storyHint} ${isDay ? styles.storyHintDay : styles.storyHintNight}`}>
-                  {wmsgs.storyHint}
+                <p className={`${styles.storyBookHint} ${isDay ? styles.storyHintDay : styles.storyHintNight}`}>
+                  {wmsgs.storyBookHint}
                 </p>
+                <button
+                  type="button"
+                  className={`${styles.modeZoneBtn} ${styles.modeZoneBtnStory}`}
+                  onClick={() => startCustomTopic('story')}
+                  disabled={isConnected}
+                >
+                  <div className={styles.modeZoneHeader}>
+                    <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleStoryDay : styles.modeZoneTitleStoryNight}`}>
+                      📖 {wmsgs.storyTitle}
+                    </span>
+                  </div>
+                  <p className={`${styles.modeZoneDesc} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
+                    {wmsgs.storyDesc}
+                  </p>
+                </button>
               </div>
 
               {/* or-mic hint */}
