@@ -4,6 +4,71 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import s from './page.module.css';
 
+// ── Visibility (Private/Public) 다국어 카피 ────────────────────────────────
+const VIS_MSGS = {
+  KO: {
+    privateBadge     : '🔒 Private',
+    publicBadge      : '🌐 Public',
+    toggleToPublic   : '🌐 Public으로 변경',
+    toggleToPrivate  : '🔒 Private으로 되돌리기',
+    confirmTitleToPub: 'Public으로 바꾸시겠어요?',
+    confirmTitleToPri: 'Private으로 되돌리시겠어요?',
+    confirmIntroToPub: '이 이야기를 Public으로 변경하면:',
+    confirmIntroToPri: '이 이야기를 Private으로 변경하면:',
+    bulletsToPub     : ['가족과 공유할 수 있게 됩니다', '책으로 만들 수 있게 됩니다', '언제든 다시 Private으로 되돌릴 수 있습니다'],
+    bulletsToPri     : ['공유된 책에서 제외됩니다', '누구에게도 다시 보이지 않게 됩니다'],
+    cancelBtn        : '취소',
+    confirmToPubBtn  : 'Public으로 변경',
+    confirmToPriBtn  : 'Private으로 변경',
+    saving           : '변경 중…',
+    errMsg           : '변경에 실패했습니다. 다시 시도해주세요.',
+  },
+  EN: {
+    privateBadge     : '🔒 Private',
+    publicBadge      : '🌐 Public',
+    toggleToPublic   : '🌐 Make Public',
+    toggleToPrivate  : '🔒 Make Private again',
+    confirmTitleToPub: 'Make this story Public?',
+    confirmTitleToPri: 'Return this story to Private?',
+    confirmIntroToPub: 'If you make this Public:',
+    confirmIntroToPri: 'If you make this Private:',
+    bulletsToPub     : ['You can share it with family', 'It can be included in a book', 'You can switch it back to Private anytime'],
+    bulletsToPri     : ['It will be removed from shared books', 'No one else will be able to see it'],
+    cancelBtn        : 'Cancel',
+    confirmToPubBtn  : 'Make Public',
+    confirmToPriBtn  : 'Make Private',
+    saving           : 'Updating…',
+    errMsg           : 'Could not update. Please try again.',
+  },
+  ES: {
+    privateBadge     : '🔒 Privado',
+    publicBadge      : '🌐 Público',
+    toggleToPublic   : '🌐 Hacer público',
+    toggleToPrivate  : '🔒 Volver a privado',
+    confirmTitleToPub: '¿Hacer pública esta historia?',
+    confirmTitleToPri: '¿Volver a privada esta historia?',
+    confirmIntroToPub: 'Si la haces pública:',
+    confirmIntroToPri: 'Si la haces privada:',
+    bulletsToPub     : ['Podrás compartirla con tu familia', 'Podrá incluirse en un libro', 'Puedes volver a privada cuando quieras'],
+    bulletsToPri     : ['Se retirará de los libros compartidos', 'Nadie más podrá verla'],
+    cancelBtn        : 'Cancelar',
+    confirmToPubBtn  : 'Hacer pública',
+    confirmToPriBtn  : 'Hacer privada',
+    saving           : 'Actualizando…',
+    errMsg           : 'No se pudo actualizar. Inténtalo de nuevo.',
+  },
+};
+
+function useLang() {
+  const [lang, setLang] = useState('KO');
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = (localStorage.getItem('lang') || 'ko').toUpperCase();
+    if (['KO', 'EN', 'ES'].includes(stored)) setLang(stored);
+  }, []);
+  return lang;
+}
+
 // ── Sample community stories (Task 2) ──────────────────────────────────────
 const SAMPLE_STORIES = [
   {
@@ -184,13 +249,15 @@ function SampleGallery({ onStartChat }) {
 }
 
 // ── Fragment Modal ─────────────────────────────────────────────────────────
-function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
+function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' }) {
   const router = useRouter();
-  const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete'
+  const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete' | 'confirmVisibility'
   const [editTitle, setEditTitle] = useState(fragment.title || '');
   const [editSubtitle, setEditSub] = useState(fragment.subtitle || '');
   const [editContent, setEditCont] = useState(fragment.content || '');
   const [saving, setSaving]       = useState(false);
+  const [currentVis, setCurrentVis] = useState(fragment.visibility || 'private');
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
   const allTags = [
     ...(fragment.tags_theme   || []).map(t => ({ text: t, cls: s.tagTheme })),
@@ -225,6 +292,29 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
     }
   }
 
+  async function handleToggleVisibility() {
+    const newVis = currentVis === 'public' ? 'private' : 'public';
+    setSaving(true);
+    try {
+      const res = await authFetch(`/api/fragments/${fragment.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ visibility: newVis }),
+      });
+      const data = await res.json();
+      if (data.fragment) {
+        setCurrentVis(data.fragment.visibility);
+        onUpdated(data.fragment);
+        setMode('view');
+      } else {
+        alert(vm.errMsg);
+      }
+    } catch {
+      alert(vm.errMsg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
@@ -247,6 +337,12 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
           {/* ── VIEW MODE ── */}
           {mode === 'view' && (
             <>
+              <div className={s.modalVisibilityRow}>
+                <span className={(currentVis === 'public') ? s.visibilityBadgePublicLg : s.visibilityBadgePrivateLg}>
+                  {(currentVis === 'public') ? vm.publicBadge : vm.privateBadge}
+                </span>
+              </div>
+
               <div className={s.modalContent}>{fragment.content}</div>
 
               {fragment.truncated && (
@@ -278,10 +374,43 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted }) {
 
               <div className={s.modalActions}>
                 <button className={s.editBtn} onClick={() => setMode('edit')}>편집</button>
+                <button className={s.visibilityBtn} onClick={() => setMode('confirmVisibility')}>
+                  {currentVis === 'private' ? vm.toggleToPublic : vm.toggleToPrivate}
+                </button>
                 <button className={s.deleteBtn} onClick={() => setMode('confirmDelete')}>삭제</button>
               </div>
             </>
           )}
+
+          {/* ── CONFIRM VISIBILITY CHANGE ── */}
+          {mode === 'confirmVisibility' && (() => {
+            const toPublic = currentVis === 'private';
+            const bullets  = toPublic ? vm.bulletsToPub : vm.bulletsToPri;
+            return (
+              <>
+                <div className={s.confirmTitle}>
+                  {toPublic ? vm.confirmTitleToPub : vm.confirmTitleToPri}
+                </div>
+                <div className={s.confirmBody}>
+                  {toPublic ? vm.confirmIntroToPub : vm.confirmIntroToPri}
+                  <ul className={s.confirmList}>
+                    {bullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
+                </div>
+                <div className={s.confirmRow}>
+                  <button className={s.cancelBtn} onClick={() => setMode('view')}>{vm.cancelBtn}</button>
+                  <button
+                    className={s.visibilityBtn}
+                    onClick={handleToggleVisibility}
+                    disabled={saving}
+                    style={{ flex: 1 }}
+                  >
+                    {saving ? vm.saving : (toPublic ? vm.confirmToPubBtn : vm.confirmToPriBtn)}
+                  </button>
+                </div>
+              </>
+            );
+          })()}
 
           {/* ── CONFIRM DELETE ── */}
           {mode === 'confirmDelete' && (
@@ -488,6 +617,7 @@ function EbookModal({ fragments, onClose, onSuccess }) {
 // ── Main Page ────────────────────────────────────────────────────
 export default function MyStoriesPage() {
   const router = useRouter();
+  const lang   = useLang();
 
   const [fragments, setFragments]   = useState([]);
   const [books, setBooks]           = useState([]);
@@ -603,7 +733,7 @@ export default function MyStoriesPage() {
               <div className={s.sectionTitle}>완성된 이야기</div>
               <div className={s.cardList}>
                 {confirmedFragments.map(f => (
-                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} />
+                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
                 ))}
               </div>
             </>
@@ -615,7 +745,7 @@ export default function MyStoriesPage() {
               <div className={s.sectionTitle}>초안</div>
               <div className={s.cardList}>
                 {draftFragments.map(f => (
-                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} />
+                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
                 ))}
               </div>
             </>
@@ -680,6 +810,7 @@ export default function MyStoriesPage() {
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
           onDeleted={handleDeleted}
+          lang={lang}
         />
       )}
 
@@ -699,8 +830,9 @@ export default function MyStoriesPage() {
 }
 
 // ── Fragment Card ────────────────────────────────────────────────
-function FragmentCard({ fragment: f, onClick }) {
+function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
   const router = useRouter();
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
   const topTags = [
     ...(f.tags_theme   || []).slice(0, 2).map(t => ({ text: t, cls: 'tagTheme' })),
     ...(f.tags_emotion || []).slice(0, 1).map(t => ({ text: t, cls: 'tagEmotion' })),
@@ -719,9 +851,14 @@ function FragmentCard({ fragment: f, onClick }) {
           {f.truncated && <span className={s.truncatedIcon} title="이야기가 중간에 끊겼어요">⚠️</span>}
           {f.title}
         </div>
-        <span className={`${s.statusBadge} ${f.status === 'confirmed' ? s.statusConfirmed : s.statusDraft}`}>
-          {f.status === 'confirmed' ? '완성' : '초안'}
-        </span>
+        <div className={s.cardHeaderBadges}>
+          <span className={(f.visibility === 'public') ? s.visibilityBadgePublic : s.visibilityBadgePrivate}>
+            {(f.visibility === 'public') ? vm.publicBadge : vm.privateBadge}
+          </span>
+          <span className={`${s.statusBadge} ${f.status === 'confirmed' ? s.statusConfirmed : s.statusDraft}`}>
+            {f.status === 'confirmed' ? '완성' : '초안'}
+          </span>
+        </div>
       </div>
 
       {f.subtitle && <div className={s.cardSubtitle}>{f.subtitle}</div>}

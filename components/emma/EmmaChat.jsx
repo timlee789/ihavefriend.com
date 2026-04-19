@@ -160,6 +160,22 @@ const WELCOME_MSGS = {
   },
 };
 
+// ── Private Mode banner copy ──────────────────────────────────────────────
+const PRIVATE_BANNER_MSGS = {
+  KO: {
+    title: '🔒 Private Mode',
+    desc : '내용이 누구에게도 공개되지 않습니다',
+  },
+  EN: {
+    title: '🔒 Private Mode',
+    desc : 'Your words stay between you and Emma',
+  },
+  ES: {
+    title: '🔒 Modo Privado',
+    desc : 'Tus palabras quedan entre tú y Emma',
+  },
+};
+
 // ── Post-session "내 이야기 확인하기" banner copy ─────────────────────────────
 const SESSION_END_MSGS = {
   KO: {
@@ -1500,6 +1516,12 @@ export default function EmmaChat({ initialMode }) {
 
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
+
+        {/* ── Private Mode 사인 (우측 상단, 박스 없이 작은 텍스트) ── */}
+        <div className={`${styles.privateTag} ${isDay ? styles.privateTagDay : styles.privateTagNight}`}>
+          {(PRIVATE_BANNER_MSGS[lang] || PRIVATE_BANNER_MSGS.KO).title}
+        </div>
+
 
         {/* ── empty state: two-zone mode selector ── */}
         {messages.length === 0 && !isConnected && (() => {

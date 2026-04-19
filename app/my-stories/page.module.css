@@ -769,3 +769,93 @@
 }
 .regenerateBtn:hover  { background: #c2410c; }
 .regenerateBtn:active { background: #9a3412; transform: scale(0.99); }
+
+/* ── Visibility Badges ─────────────────────────────────────────────────── */
+.cardHeaderBadges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.visibilityBadgePrivate {
+  background: #f5f5f5;
+  color: #555;
+  border: 1px solid #ddd;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.visibilityBadgePublic {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Modal용 — 카드보다 조금 더 크게 */
+.modalVisibilityRow {
+  display: flex;
+  margin-bottom: 12px;
+}
+.visibilityBadgePrivateLg {
+  background: #f5f5f5;
+  color: #555;
+  border: 1px solid #ddd;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.visibilityBadgePublicLg {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Visibility toggle button & confirm dialog ─────────────────────────── */
+.visibilityBtn {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.visibilityBtn:hover:not(:disabled)  { background: #bbdefb; }
+.visibilityBtn:disabled              { opacity: 0.5; cursor: default; }
+
+.confirmTitle {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #2d1510;
+}
+.confirmBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 18px;
+}
+.confirmList {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.confirmList li {
+  margin: 3px 0;
+}
