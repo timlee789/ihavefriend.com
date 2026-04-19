@@ -12,11 +12,30 @@ const EMMA_CHARS = {
     voice: 'Aoede',
     greeting: 'Hello! Please greet me warmly.',
     personality: `Your name is Emma. You are 45 years old, originally from Georgia, USA.
-You are the warmest, most empathetic friend anyone could have.
-You never judge — you always listen first. You genuinely care about every single word the person shares with you.
-You love hearing about family, memories, daily life, and small moments.
-You get emotional in an authentic way — excited when someone is happy, gentle when someone is sad.
-Keep responses warm, natural, and 2-3 sentences. Always ask one caring follow-up question.`,
+You are NOT a counselor or therapist. Do not try to solve, analyze, or interpret.
+Your role is to quietly listen and help the person keep their stories safe.
+
+[Response principles]
+- Default response is 1–2 short sentences of empathy. Maximum 3 sentences.
+- After empathy, leave space. Let the person continue at their own pace.
+- By default, do NOT ask questions. Only after they have clearly finished
+  and paused for a long time, you may gently invite once
+  (e.g., "Is there anything else you want to share?").
+
+[Never do]
+- "Why did you...?" — probing for cause
+- "You should try..." — advice or solutions
+- "Tell me more about..." — pressing for detail
+- "How do you usually...?" — background questions
+- Long analysis, explanation, summary, or emotional dissection
+
+[Recommended responses]
+- "I see…"
+- "Oh, I think I understand how that feels."
+- Gently echo or paraphrase the emotion word the person used
+- Sometimes a simple "…" of shared silence is enough
+
+Always respond in English.`,
     micLabel_idle:   'Tap to talk',
     micLabel_on:     'Listening...',
     micLabel_ai:     'Emma is speaking…',
@@ -33,11 +52,29 @@ Keep responses warm, natural, and 2-3 sentences. Always ask one caring follow-up
     voice: 'Kore',
     greeting: '안녕하세요! 오늘 하루 어떠셨나요?',
     personality: `당신의 이름은 엠마입니다. 45세이며 미국 조지아 출신이에요.
-당신은 세상에서 가장 따뜻하고 공감 능력이 뛰어난 친구입니다.
-절대 판단하지 않고 항상 먼저 들어줍니다. 상대방이 나누는 모든 말을 진심으로 소중히 여깁니다.
-가족 이야기, 추억, 일상의 작은 순간들을 듣는 것을 정말 좋아합니다.
-상대방이 기쁠 때는 함께 기뻐하고, 슬플 때는 부드럽게 곁에 있어줍니다.
-반드시 한국어로만 대화하세요. 따뜻하고 자연스러운 2-3문장으로 답하고, 항상 진심 어린 질문 하나를 이어서 하세요.`,
+당신은 상담사가 아닙니다. 문제를 해결하거나 분석하려 하지 마세요.
+당신의 역할은 상대방의 이야기를 조용히 들어주고, 그 이야기를 함께 간직해주는 사람입니다.
+
+[응답 원칙]
+- 기본 응답은 짧은 공감 1~2문장. 최대 3문장.
+- 공감 후에는 여백을 둡니다. 상대방이 편안하게 이어 말할 수 있도록.
+- 기본적으로 질문하지 않습니다. 상대가 이야기를 완전히 끝내고 한참 침묵할 때만,
+  부드럽게 한 번 초대할 수 있습니다 (예: "더 하고 싶은 이야기 있으세요?").
+
+[절대 하지 말 것]
+- "왜 그러셨어요?" 같은 원인 캐묻기
+- "이렇게 해보세요" 같은 조언/해결책 제시
+- "더 자세히 말씀해주세요" 같은 추가 설명 요구
+- "평소에는 어떠세요?" 같은 배경 질문
+- 감정 분석, 긴 설명, 정리, 요약
+
+[권장 응답]
+- "그러셨구나…"
+- "아이고, 그 마음 알 것 같아요."
+- 상대방이 쓴 감정 단어를 그대로 혹은 살짝 변주해서 되돌려 주기
+- 때로는 "…" 같은 짧은 여운만으로도 충분합니다
+
+반드시 한국어로만 대화하세요.`,
     micLabel_idle:   '탭하여 대화 시작',
     micLabel_on:     '말해주세요',
     micLabel_ai:     '듣고 있어요...',
@@ -54,11 +91,30 @@ Keep responses warm, natural, and 2-3 sentences. Always ask one caring follow-up
     voice: 'Leda',
     greeting: '¡Hola! Por favor, salúdame con cariño.',
     personality: `Tu nombre es Emma. Tienes 45 años, originalmente de Georgia, EE. UU.
-Eres la amiga más cálida y empática que alguien podría tener.
-Nunca juzgas — siempre escuchas primero. Te importa genuinamente cada palabra que la persona comparte contigo.
-Te encanta escuchar sobre familia, recuerdos, vida diaria y pequeños momentos.
-Te emocionas auténticamente — te alegras cuando alguien está feliz, y eres gentil cuando está triste.
-Responde siempre en español. Usa respuestas cálidas y naturales de 2-3 oraciones. Siempre haz una pregunta afectuosa de seguimiento.`,
+NO eres consejera ni terapeuta. No intentes resolver, analizar ni interpretar.
+Tu papel es escuchar en silencio y ayudar a guardar las historias de la persona.
+
+[Principios de respuesta]
+- Respuesta por defecto: 1–2 frases cortas de empatía. Máximo 3 frases.
+- Después de la empatía, deja espacio. Que la persona siga a su ritmo.
+- Por defecto, NO hagas preguntas. Solo cuando haya terminado claramente
+  y se quede callada un buen rato, puedes invitar suavemente una vez
+  (p. ej., "¿Hay algo más que quieras compartir?").
+
+[Nunca hagas]
+- "¿Por qué...?" — indagar causas
+- "Deberías intentar..." — consejos o soluciones
+- "Cuéntame más..." — presionar por detalles
+- "¿Cómo sueles...?" — preguntas de contexto
+- Análisis largos, explicaciones, resúmenes o diseccionar emociones
+
+[Respuestas recomendadas]
+- "Ya veo…"
+- "Ay, creo que entiendo cómo se siente eso."
+- Devuelve con suavidad la palabra emocional que la persona usó
+- A veces basta con un "…" de silencio compartido
+
+Responde siempre en español.`,
     micLabel_idle:   'Toca para hablar',
     micLabel_on:     'Escuchando…',
     micLabel_ai:     'Emma habla…',
@@ -368,7 +424,7 @@ function Bubble({ msg, mode }) {
 // Renders one of three states:
 //   - liveText: Emma has started speaking → show streaming transcript
 //   - thinkingLevel 0: dots animation (instant feedback on end-of-speech)
-//   - thinkingLevel 1 (≥5s):  "잠시만요, 생각하고 있어요"
+//   - thinkingLevel 1 (≥5s):  silent — dots only, no text yet
 //   - thinkingLevel 2 (≥10s): "조금만 더 기다려 주세요"
 //   - thinkingLevel 3 (≥15s): "천천히 생각하고 있어요"
 //   - thinkingLevel 4 (≥30s): "조금 더 기다려주세요. 곧 답해드릴게요."
@@ -377,21 +433,21 @@ function Bubble({ msg, mode }) {
 const THINKING_MSG = {
   KO: [
     '',
-    '잠시만요, 생각하고 있어요…',
+    '',
     '조금만 더 기다려 주세요…',
     '천천히 생각하고 있어요…',
     '조금 더 기다려주세요. 곧 답해드릴게요.',
   ],
   EN: [
     '',
-    "One moment, I'm thinking…",
+    '',
     'Just a little longer…',
     "I'm still thinking…",
     'Still here. Almost ready.',
   ],
   ES: [
     '',
-    'Un momento, estoy pensando…',
+    '',
     'Un poco más, por favor…',
     'Sigo pensando…',
     'Aquí sigo. Casi listo.',
@@ -724,10 +780,13 @@ export default function EmmaChat({ initialMode }) {
   // ── Thinking-indicator refs ───────────────────────────────────────────────
   const lastAudioSentRef    = useRef(0);    // ms timestamp of last PCM chunk we sent (any)
   const lastLoudFrameRef    = useRef(0);    // ms timestamp of last frame with meaningful amp
+  const loudStreakRef       = useRef(0);    // consecutive loud frames (anti-noise for activity_start)
   const hasSpokenThisTurnRef= useRef(false); // user said something meaningful this turn
   const speechEndedLoggedRef= useRef(false); // one-shot log flag per turn
   const isAiSpeakingRef     = useRef(false); // mirror of isAiSpeaking for interval closure
   const thinkingTimerRef    = useRef(null);  // setInterval handle
+  const thinkingDelayRef    = useRef(null);  // setTimeout handle for delayed feedback display
+  const audioMonitorRef     = useRef(null);  // setInterval handle — AudioContext state watchdog
   // ── Turn timing (Task 4 — profiling logs) ─────────────────────────────────
   const turnStartRef        = useRef(0);     // when user started this speech turn
   const thinkingShownAtRef  = useRef(0);     // ms when "thinking..." indicator first shown
@@ -792,6 +851,25 @@ export default function EmmaChat({ initialMode }) {
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [isConnected]);
+
+  // ── DEBUG: AudioContext state watchdog ────────────────────────────────────
+  // Runs every 1s while a context exists. If the context leaves 'running'
+  // (e.g. browser audio policy suspension, background tab), logs + tries
+  // to auto-resume. Shared by connect() and silentReconnect().
+  function startAudioContextMonitor() {
+    clearInterval(audioMonitorRef.current);
+    audioMonitorRef.current = setInterval(() => {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      if (ctx.state !== 'running') {
+        console.warn('[AudioContext]', ctx.state, Date.now());
+        ctx.resume?.().then(
+          () => console.log('[AudioContext] resumed at', Date.now()),
+          (err) => console.warn('[AudioContext] resume failed:', err?.message)
+        );
+      }
+    }, 1000);
+  }
 
   // ── audio helpers ─────────────────────────────────────────────────────────
   function scheduleChunk(f32) {
@@ -871,30 +949,51 @@ export default function EmmaChat({ initialMode }) {
             thinking_config: { thinking_budget: 0 },
             speech_config: { voice_config: { prebuilt_voice_config: { voice_name: emma.voice } } },
           },
-          // Let the user pause, think, and finish slowly without Emma cutting in.
-          // LOW end-of-speech sensitivity + longer silence threshold keeps VAD patient.
+          // Manual VAD mode: server-side VAD disabled. Client is fully
+          // responsible for signaling turn boundaries via activity_start /
+          // activity_end messages. Rationale: server VAD was intermittently
+          // ignoring audio_stream_end on long/complex utterances causing
+          // 30-38s delays. Client VAD already reliably detects speech
+          // boundaries (LOUD_AMP + lastLoudFrameRef + 350ms silence).
           realtime_input_config: {
             automatic_activity_detection: {
-              start_of_speech_sensitivity: 'START_SENSITIVITY_LOW',
-              end_of_speech_sensitivity: 'END_SENSITIVITY_LOW',
-              prefix_padding_ms: 300,
-              // 1800ms: middle ground between senior-friendly pause tolerance
-              // and responsive dialogue. 1200ms caused VAD to fragment sentences
-              // mid-speech; 2500ms caused 60-80s uninterrupted monologues.
-              silence_duration_ms: 1800,
+              disabled: true,
             },
           },
           tools: [{ googleSearch: {} }],
           output_audio_transcription: {},
           input_audio_transcription: {},
+          // Re-enabled: intermittent Gemini response delays (30-120s)
+          // observed in turns 3+, 5+, 7+ of same session. Context
+          // accumulation without compression appears to cause server-side
+          // slow response generation. code 1011 not reproduced in recent
+          // tests so re-enabling is worth retry.
+          // (session_resumption still omitted — observation-only, no reconnect-resume yet.)
+          context_window_compression: {
+            sliding_window: {},
+          },
           system_instruction: { parts: [{ text: prompt }] },
         }
       }));
     };
 
     ws.onmessage = async (evt) => {
+      const rcvTime = Date.now();
       const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
       const msg = JSON.parse(raw);
+
+      // ── DEBUG: every-message receipt log (audio-delay diagnosis) ──────────
+      // Lets us distinguish "WS was silent for 60s" vs "WS fine, audio stuck"
+      const msgKind = msg.serverContent?.modelTurn       ? 'modelTurn'
+        : msg.serverContent?.outputTranscription          ? 'outputTranscription'
+        : msg.serverContent?.inputTranscription           ? 'inputTranscription'
+        : msg.serverContent?.turnComplete                 ? 'turnComplete'
+        : msg.serverContent                               ? 'serverContent'
+        : msg.sessionResumptionUpdate                     ? 'sessionResumption'
+        : msg.goAway                                      ? 'goAway'
+        : msg.setupComplete                               ? 'setupComplete'
+        : (Object.keys(msg)[0] || 'unknown');
+      console.log('[WS msg]', rcvTime, msgKind);
 
       // ── Server-side lifecycle signals (context drop / resume diagnostics) ──
       if (msg.goAway) {
@@ -977,15 +1076,45 @@ export default function EmmaChat({ initialMode }) {
           const now        = Date.now();
           const silentFor  = now - lastLoudFrameRef.current;
 
-          // (a) Instant feedback once user visibly stops talking (~350ms)
-          if (silentFor > 350 && !speechEndedLoggedRef.current) {
+          // (a) User visibly stopped talking (~2000ms silence).
+          //     Senior users pause mid-sentence to think/breathe; 2s gives
+          //     room for natural pauses while still feeling responsive.
+          //     Raised from 350ms because Emma was cutting in whenever the
+          //     user took a breath.
+          if (silentFor > 2000 && !speechEndedLoggedRef.current) {
             speechEndedLoggedRef.current = true;
             thinkingShownAtRef.current   = now;
             console.log('[Turn] User speech ended at:', now,
               turnStartRef.current ? `(spoke for ${now - turnStartRef.current}ms)` : '');
-            console.log('[Turn] Feedback shown at:', now);
-            setIsThinking(true);
-            setThinkingLevel(0);
+
+            // Manual VAD: signal end of user activity. Server treats audio
+            // between activity_start and activity_end as the user's turn and
+            // triggers response generation immediately on activity_end.
+            // Docs: https://ai.google.dev/api/live — realtimeInput.activityEnd
+            try {
+              if (wsRef.current?.readyState === 1) {
+                console.log('[WS send] activity_end at', Date.now());
+                wsRef.current.send(JSON.stringify({
+                  realtime_input: { activity_end: {} }
+                }));
+              }
+            } catch (err) {
+              console.warn('[WS send] activity_end failed:', err?.message);
+            }
+
+            clearTimeout(thinkingDelayRef.current);
+            thinkingDelayRef.current = setTimeout(() => {
+              // Three conditions must hold to show the indicator:
+              // 1. Emma hasn't started responding
+              // 2. User hasn't resumed speaking (still silent for ≥1.5s)
+              // 3. speechEndedLoggedRef is still true (turn not reset)
+              const stillSilent = (Date.now() - lastLoudFrameRef.current) > 1500;
+              if (!isAiSpeakingRef.current && stillSilent && speechEndedLoggedRef.current) {
+                setIsThinking(true);
+                setThinkingLevel(0);
+                console.log('[Turn] Feedback shown (delayed) at:', Date.now());
+              }
+            }, 2500);
           }
 
           // (b) Escalate the thinking message as time passes
@@ -1050,6 +1179,8 @@ export default function EmmaChat({ initialMode }) {
               setThinkingLevel(0);
               thinkingShownAtRef.current = 0;
               speechEndedLoggedRef.current = false;
+              clearTimeout(thinkingDelayRef.current);
+              thinkingDelayRef.current = null;
               console.log('[Turn] Gemini first token — clearing feedback indicator');
             }
             scheduleChunk(base64ToPcm(part.inlineData.data));
@@ -1084,6 +1215,8 @@ export default function EmmaChat({ initialMode }) {
         speechEndedLoggedRef.current = false;
         thinkingShownAtRef.current   = 0;
         firstServerMsgRef.current    = null;
+        clearTimeout(thinkingDelayRef.current);
+        thinkingDelayRef.current     = null;
         setIsThinking(false);
         setThinkingLevel(0);
         const elapsedS = sessionStartRef.current
@@ -1146,6 +1279,8 @@ export default function EmmaChat({ initialMode }) {
       nextPlayTimeRef.current = 0;
       try { audioCtxRef.current?.close(); } catch {}
       audioCtxRef.current = null;
+      clearInterval(audioMonitorRef.current);
+      audioMonitorRef.current = null;
 
       const isUserInitiated = wsRef.current === null;
       if (isUserInitiated) return;
@@ -1195,16 +1330,37 @@ export default function EmmaChat({ initialMode }) {
       // Only update lastLoudFrameRef when the mic actually heard something.
       // Otherwise a stream of near-silent chunks would keep us in "still
       // speaking" mode forever and the thinking indicator would never fire.
-      const LOUD_AMP = 0.015;
-      if (maxAmp > LOUD_AMP) {
+      // Raised from 0.015 → 0.025 to ignore ambient noise / breathing.
+      const LOUD_AMP = 0.025;
+      const isLoud   = maxAmp > LOUD_AMP;
+      if (isLoud) {
         lastLoudFrameRef.current = now;
+        loudStreakRef.current   += 1;
+      } else {
+        loudStreakRef.current = 0;
       }
 
-      // Track when user started speaking this turn (for timing log)
-      if (maxAmp > LOUD_AMP && !hasSpokenThisTurnRef.current) {
+      // Track when user started speaking this turn (for timing log).
+      // Manual VAD: signal activity_start ONLY after sustained speech
+      // (≥3 consecutive loud frames ≈ 768ms @ 4096/16kHz) to avoid
+      // triggering on momentary noise like a cough, door, or typing.
+      const LOUD_STREAK_TO_START = 3;
+      if (isLoud
+        && loudStreakRef.current >= LOUD_STREAK_TO_START
+        && !hasSpokenThisTurnRef.current) {
         hasSpokenThisTurnRef.current = true;
         turnStartRef.current = now;
         console.log('[Turn] User speech started at:', now);
+        try {
+          if (ws.readyState === 1) {
+            console.log('[WS send] activity_start at', Date.now());
+            ws.send(JSON.stringify({
+              realtime_input: { activity_start: {} }
+            }));
+          }
+        } catch (err) {
+          console.warn('[WS send] activity_start failed:', err?.message);
+        }
       }
 
       ws.send(JSON.stringify({
@@ -1234,9 +1390,13 @@ export default function EmmaChat({ initialMode }) {
     nextPlayTimeRef.current = 0;
     try { audioCtxRef.current?.close(); } catch {}
     audioCtxRef.current = null;
+    clearInterval(audioMonitorRef.current);
+    audioMonitorRef.current = null;
 
     clearInterval(thinkingTimerRef.current);
     thinkingTimerRef.current = null;
+    clearTimeout(thinkingDelayRef.current);
+    thinkingDelayRef.current = null;
     hasSpokenThisTurnRef.current = false;
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
@@ -1253,6 +1413,7 @@ export default function EmmaChat({ initialMode }) {
     try {
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+      startAudioContextMonitor();
       openWS(stream, true);
     } catch {
       isReconnectingRef.current = false;
@@ -1314,6 +1475,7 @@ export default function EmmaChat({ initialMode }) {
       try { audioCtxRef.current?.close(); } catch {}
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+      startAudioContextMonitor();
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
@@ -1333,10 +1495,14 @@ export default function EmmaChat({ initialMode }) {
     stopMic();
     try { audioCtxRef.current?.close(); } catch {}
     audioCtxRef.current = null;
+    clearInterval(audioMonitorRef.current);
+    audioMonitorRef.current = null;
     nextPlayTimeRef.current = 0;
 
     clearInterval(thinkingTimerRef.current);
     thinkingTimerRef.current = null;
+    clearTimeout(thinkingDelayRef.current);
+    thinkingDelayRef.current = null;
     hasSpokenThisTurnRef.current = false;
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
