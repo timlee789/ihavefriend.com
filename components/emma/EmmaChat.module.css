@@ -342,9 +342,13 @@
 
 /* 섹션 전체를 버튼으로 — 탭하면 바로 대화 시작 */
 .modeZoneBtn {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
   max-width: 420px;
+  min-height: 120px;
   text-align: left;
   font-family: inherit;
   cursor: pointer;
@@ -361,6 +365,7 @@
   border: none;
   padding: 0;
   margin-top: 4px;
+  min-height: 0;            /* 내부 버튼은 외곽 박스가 크기를 결정 */
 }
 
 .modeZoneDesc {
@@ -416,11 +421,12 @@
 }
 
 .modeZoneTitle {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.2px;
 }
 .modeZoneTitleDay        { color: #2d1510; }
+.modeZoneTitleNight      { color: rgba(255,255,255,0.92); }
 .modeZoneTitleStoryDay   { color: #9a3a08; }
 .modeZoneTitleStoryNight { color: rgba(200,150,255,0.9); }
 
