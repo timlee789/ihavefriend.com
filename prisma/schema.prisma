@@ -1,35 +1,196 @@
+// ═══════════════════════════════════════════════════════════════
+// SayAndKeep — schema.prisma v2
+// Generated: 2026-04-23
+// Reset basis: D-1 (complete reset, only User-related tables preserved via Prisma)
+// Integration: All 21+ domain tables now under Prisma Migrate
+// ═══════════════════════════════════════════════════════════════
+
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector, uuidOssp(map: "uuid-ossp")]
 }
 
-model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  passwordHash  String
-  name          String    @default("")
-  role          String    @default("user")
-  lang          String    @default("en")
-  phone         String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
+// ═══════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════
 
-  limits        UserLimit?
-  memories      UserMemory[]
-  usageLogs     UsageLog[]
+enum MemoryCategory {
+  // 실제 사용 중 14개 (증거 기반, 빈도순)
+  EMOTION
+  WORK_CAREER
+  SOCIAL_LIFE
+  ROUTINE
+  IDENTITY
+  PREFERENCES
+  GOALS
+  LIFE_STORY
+  UPCOMING
+  HEALTH
+  HOBBIES
+  PEOPLE
+  LIVING_SITUATION
+  FINANCE
+
+  // 신규 추가 3개 (기존과 구분되는 개념)
+  TURNING_POINT
+  VALUE
+  OTHER
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RecallPriority {
+  ALWAYS
+  CONTEXTUAL
+  PROACTIVE
+  BACKGROUND
+}
+
+enum AlertSeverity {
+  MONITOR
+  WARNING
+  URGENT
+}
+
+enum EmotionalArc {
+  IMPROVING
+  DECLINING
+  STABLE
+  VOLATILE
+}
+
+enum FragmentStatus {
+  DRAFT
+  CONFIRMED
+  ARCHIVED
+  DELETED
+}
+
+enum Visibility {
+  PRIVATE
+  PRIVATE_TO_PERSON // 특정 user에게만 (N4 확장)
+  FAMILY
+  CLOSE_FRIENDS
+  PUBLIC
+}
+
+enum VoiceStyle {
+  CONVERSATIONAL
+  NARRATIVE
+  LETTER
+}
+
+enum BookStatus {
+  DRAFT
+  PENDING
+  GENERATING
+  REVIEW
+  COMPLETED
+  PUBLISHED
+}
+
+enum BookFormat {
+  WEB
+  PDF
+  PRINT
+}
+
+enum PipelineVersion {
+  A
+  B
+}
+
+enum VerificationVerdict {
+  PASS
+  REVISE
+  REJECT
+}
+
+enum IntendedAudience {
+  MYSELF
+  SPOUSE
+  CHILDREN
+  DAUGHTER
+  SON
+  FUTURE_GRANDCHILDREN
+  FRIENDS
+  PUBLIC_READERS
+}
+
+enum StoryRelationshipType {
+  FOLLOWS // A 다음에 B
+  CONTRASTS // A와 B는 대비
+  EXPANDS // A를 B가 확장
+  ECHOES // A를 B가 다른 각도로 반복
+  CAUSED_BY // B는 A의 결과
+}
+
+enum ConversationMode {
+  AUTO
+  COMPANION
+  STORY
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 계정 그룹 (기존 유지)
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("")
+  role         String   @default("user")
+  lang         String   @default("en")
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // 기존 relations
+  limits    UserLimit?
+  memories  UserMemory[]
+  usageLogs UsageLog[]
+
+  // v2 신규 relations
+  chatSessions     ChatSession[]
+  memoryNodes      MemoryNode[]
+  memoryEdges      MemoryEdge[]
+  memoryEmbeddings MemoryEmbedding[]
+  memoryArchives   MemoryArchive[]
+  emmaReflections  EmmaReflection[]
+  emotionTurns     EmotionTurn[]
+  emotionSessions  EmotionSession[]
+  emotionAlerts    EmotionAlert[]
+  storyFragments   StoryFragment[]
+  stories          Story[]
+  userCollections  UserCollection[]
+  books            Book[]
+  voiceProfile     UserVoiceProfile?
+  generationQueues FragmentGenerationQueue[]
+  experimentRuns   ExperimentRun[]
+  outreachLogs     OutreachLog[]
+  pushSubscription PushSubscription?
+  smsInbound       SmsInbound[]
+  sessionFeedbacks SessionFeedback[]
 }
 
 model UserLimit {
-  userId          Int     @id
-  dailyMinutes    Int     @default(30)
-  monthlyMinutes  Int     @default(300)
-  memoryKb        Int     @default(512)
+  userId         Int @id
+  dailyMinutes   Int @default(30)
+  monthlyMinutes Int @default(300)
+  memoryKb       Int @default(512)
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserMemory {
@@ -41,19 +202,606 @@ model UserMemory {
   transcriptJson String   @default("[]")
   updatedAt      DateTime @updatedAt
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, characterId])
 }
 
 model UsageLog {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  sessionDate  String
-  minutesUsed  Float    @default(0)
-  turnsCount   Int      @default(0)
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  sessionDate String
+  minutesUsed Float  @default(0)
+  turnsCount  Int    @default(0)
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sessionDate])
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 대화 그룹
+// ═══════════════════════════════════════════════════════════════
+
+model ChatSession {
+  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId            Int              @map("user_id")
+  characterId       String           @default("emma") @map("character_id") @db.VarChar(20)
+  startedAt         DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
+  endedAt           DateTime?        @map("ended_at") @db.Timestamptz(6)
+  totalTurns        Int              @default(0) @map("total_turns")
+  memoriesExtracted Boolean          @default(false) @map("memories_extracted")
+  extractionCount   Int              @default(0) @map("extraction_count")
+  transcriptData    Json             @default("[]") @map("transcript_data")
+  fragmentCandidate Boolean          @default(false) @map("fragment_candidate")
+  fragmentElements  Json             @default("{}") @map("fragment_elements")
+  conversationMode  ConversationMode @default(AUTO) @map("conversation_mode")
+  oneWordSummary    String?          @map("one_word_summary") @db.VarChar(50) // N2 🆕
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emotionTurns     EmotionTurn[]
+  emotionSessions  EmotionSession[]
+  sessionFeedbacks SessionFeedback[]
+
+  @@index([userId])
+  @@index([userId, startedAt(sort: Desc)])
+  @@map("chat_sessions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 메모리 엔진 (4-Layer)
+// ═══════════════════════════════════════════════════════════════
+
+model MemoryNode {
+  id                  String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId              Int            @map("user_id")
+  nodeType            String         @map("node_type") @db.VarChar(20)
+  label               String         @db.VarChar(100)
+  data                Json           @default("{}")
+  primaryCategory     MemoryCategory @map("primary_category") // H Enum 🆕
+  secondaryCategories String[]       @default([]) @map("secondary_categories")
+  emotionalWeight     Int            @default(1) @map("emotional_weight")
+  mentionCount        Int            @default(1) @map("mention_count")
+  confidence          Confidence     @default(MEDIUM) // G Enum 🆕
+  recallPriority      RecallPriority @default(CONTEXTUAL) @map("recall_priority") // G Enum 🆕
+  firstMentioned      DateTime       @default(now()) @map("first_mentioned") @db.Timestamptz(6)
+  lastMentioned       DateTime       @default(now()) @map("last_mentioned") @db.Timestamptz(6)
+  isActive            Boolean        @default(true) @map("is_active")
+  storyFragmentId     String?        @map("story_fragment_id") @db.Uuid // F: FK로 강화
+  narrativeRelevance  Int            @default(0) @map("narrative_relevance")
+  timesDiscussed      Int            @default(0) @map("times_discussed")
+  discussionDepth     Int            @default(0) @map("discussion_depth")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyFragment StoryFragment?    @relation(fields: [storyFragmentId], references: [id], onDelete: SetNull) // F 🆕
+  edgesAsSource MemoryEdge[]      @relation("edge_source")
+  edgesAsTarget MemoryEdge[]      @relation("edge_target")
+  embeddings    MemoryEmbedding[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([userId, nodeType])
+  @@index([userId, recallPriority])
+  @@index([userId, emotionalWeight(sort: Desc)])
+  @@index([userId, narrativeRelevance(sort: Desc)], map: "idx_memory_nodes_narrative") // 참고: partial WHERE는 raw SQL로 별도 추가
+  @@index([storyFragmentId], map: "idx_memory_nodes_fragment")
+  @@map("memory_nodes")
+}
+
+model MemoryEdge {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         Int      @map("user_id")
+  sourceNode     String   @map("source_node") @db.Uuid
+  targetNode     String   @map("target_node") @db.Uuid
+  relationship   String   @db.VarChar(30)
+  weight         Decimal  @default(0.50) @db.Decimal(4, 2) // C 🆕
+  coOccurrence   Int      @default(1) @map("co_occurrence")
+  bidirectional  Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastReinforced DateTime @default(now()) @map("last_reinforced") @db.Timestamptz(6)
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source MemoryNode @relation("edge_source", fields: [sourceNode], references: [id], onDelete: Cascade)
+  target MemoryNode @relation("edge_target", fields: [targetNode], references: [id], onDelete: Cascade)
+
+  @@unique([sourceNode, targetNode, relationship])
+  @@index([sourceNode])
+  @@index([targetNode])
+  @@index([userId])
+  @@index([userId, weight(sort: Desc)])
+  @@map("memory_edges")
+}
+
+model MemoryEmbedding {
+  id          String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId      Int                        @map("user_id")
+  memoryId    String                     @map("memory_id") @db.Uuid
+  contentText String                     @map("content_text") @db.Text
+  embedding   Unsupported("vector(768)") // pgvector, Prisma v5 미지원 타입
+  createdAt   DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memory MemoryNode @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+  @@index([userId])
+  // IVFFlat 인덱스는 migration.sql에서 raw SQL로 추가 (Prisma로 표현 불가)
+  @@map("memory_embeddings")
+}
+
+model MemoryArchive {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  originalId String   @map("original_id") @db.Uuid // loose reference (의도적 FK 없음)
+  userId     Int      @map("user_id")
+  nodeType   String?  @map("node_type") @db.VarChar(20)
+  label      String?  @db.VarChar(100)
+  data       Json?
+  reason     String?  @default("updated") @db.VarChar(50)
+  archivedAt DateTime @default(now()) @map("archived_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, archivedAt(sort: Desc)], map: "idx_memory_archive_user_time") // 신규 추가 (현재 없음)
+  @@map("memory_archive")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Emma 관찰자 레이어 🆕 (N5)
+// ═══════════════════════════════════════════════════════════════
+
+model EmmaReflection {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        Int        @map("user_id")
+  reflection    String     @db.Text // Emma의 주관적 관찰
+  confidence    Confidence @default(MEDIUM) // 얼마나 확신하는가
+  triggerType   String     @map("trigger_type") @db.VarChar(30) // 'session_end', 'weekly', 'milestone' 등
+  sessionId     String?    @map("session_id") @db.Uuid // 연관 세션 (옵션)
+  visibleToUser Boolean    @default(false) @map("visible_to_user") // 기본: 숨김. 유저가 "Emma 눈의 나" 요청 시 공개
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, visibleToUser])
+  @@map("emma_reflections")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 감정 엔진
+// ═══════════════════════════════════════════════════════════════
+
+model EmotionTurn {
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId             Int      @map("user_id")
+  sessionId          String   @map("session_id") @db.Uuid
+  turnNumber         Int      @map("turn_number")
+  userMessagePreview String?  @map("user_message_preview") @db.Text
+  valence            Decimal? @db.Decimal(4, 3) // C 🆕: -1.000 ~ 1.000
+  arousal            Decimal? @db.Decimal(4, 3) // C 🆕: 0.000 ~ 1.000
+  emotions           String[] @default([])
+  dominantEmotion    String?  @map("dominant_emotion") @db.VarChar(30)
+  triggerTopic       String?  @map("trigger_topic") @db.VarChar(100)
+  concernLevel       Int      @default(0) @map("concern_level")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, turnNumber]) // E 🆕: 중복 방지
+  @@index([sessionId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("emotion_turns")
+}
+
+model EmotionSession {
+  id                 String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId             Int           @map("user_id")
+  sessionId          String        @unique @map("session_id") @db.Uuid // E 🆕: 세션당 하나
+  sessionDate        DateTime      @default(dbgenerated("CURRENT_DATE")) @map("session_date") @db.Date
+  avgValence         Decimal?      @map("avg_valence") @db.Decimal(4, 3)
+  minValence         Decimal?      @map("min_valence") @db.Decimal(4, 3)
+  maxValence         Decimal?      @map("max_valence") @db.Decimal(4, 3)
+  avgArousal         Decimal?      @map("avg_arousal") @db.Decimal(4, 3)
+  emotionCounts      Json          @default("{}") @map("emotion_counts")
+  dominantEmotion    String?       @map("dominant_emotion") @db.VarChar(30)
+  emotionalArc       EmotionalArc? @map("emotional_arc") // G Enum 🆕
+  keyTriggers        String[]      @default([]) @map("key_triggers")
+  positiveMoments    String[]      @default([]) @map("positive_moments")
+  concernEvents      String[]      @default([]) @map("concern_events")
+  totalTurns         Int           @default(0) @map("total_turns")
+  sessionDurationMin Int?          @map("session_duration_min")
+  maxConcernLevel    Int           @default(0) @map("max_concern_level")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionDate(sort: Desc)])
+  @@index([userId, maxConcernLevel(sort: Desc)])
+  @@map("emotion_sessions")
+}
+
+model EmotionAlert {
+  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         Int           @map("user_id")
+  alertType      String        @map("alert_type") @db.VarChar(30)
+  severity       AlertSeverity // G Enum 🆕
+  message        String        @db.Text
+  data           Json          @default("{}")
+  familyNotified Boolean       @default(false) @map("family_notified")
+  notifiedAt     DateTime?     @map("notified_at") @db.Timestamptz(6)
+  resolved       Boolean       @default(false)
+  resolvedAt     DateTime?     @map("resolved_at") @db.Timestamptz(6)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  // partial index (resolved=false)는 migration.sql에서 raw SQL 추가
+  @@map("emotion_alerts")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 이야기 & 책
+// ═══════════════════════════════════════════════════════════════
+
+model StoryFragment {
+  id                     String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                 Int       @map("user_id")
+  title                  String    @db.VarChar(200)
+  subtitle               String?   @db.VarChar(300)
+  content                String    @db.Text
+  contentRaw             String?   @map("content_raw") @db.Text
+  sourceSessionIds       String[]  @default([]) @map("source_session_ids") @db.Uuid
+  sourceMemoryNodeIds    String[]  @default([]) @map("source_memory_node_ids") @db.Uuid
+  sourceConversationDate DateTime? @map("source_conversation_date") @db.Date
+
+  // 5차원 태그 (기존 보존)
+  tagsEra     String[] @default([]) @map("tags_era")
+  tagsPeople  String[] @default([]) @map("tags_people")
+  tagsPlace   String[] @default([]) @map("tags_place")
+  tagsTheme   String[] @default([]) @map("tags_theme")
+  tagsEmotion String[] @default([]) @map("tags_emotion")
+
+  wordCount            Int                @default(0) @map("word_count")
+  language             String             @default("ko") @db.VarChar(5)
+  voiceStyle           VoiceStyle         @default(CONVERSATIONAL) @map("voice_style") // G Enum 🆕
+  status               FragmentStatus     @default(DRAFT) // G Enum 🆕
+  visibility           Visibility         @default(PRIVATE) // G + N4 🆕
+  intendedAudience     IntendedAudience[] @default([]) @map("intended_audience") // N1 🆕
+  mediaAttachments     Json               @default("[]") @map("media_attachments")
+  storyId              String?            @map("story_id") @db.Uuid
+  storyOrder           Int?               @map("story_order")
+  userEdited           Boolean            @default(false) @map("user_edited")
+  userEditedAt         DateTime?          @map("user_edited_at") @db.Timestamptz(6)
+  editCount            Int                @default(0) @map("edit_count")
+  generatedBy          String?            @map("generated_by") @db.VarChar(50)
+  generationPromptHash String?            @map("generation_prompt_hash") @db.VarChar(64)
+  generationVersion    Int                @default(1) @map("generation_version")
+  truncated            Boolean            @default(false)
+
+  // ─── B 파이프라인 필드 12개 🆕 ───
+  pipelineVersion      PipelineVersion      @default(A) @map("pipeline_version")
+  rawExtract           Json?                @map("raw_extract")
+  structuredDraft      Json?                @map("structured_draft")
+  sourceUtterances     Json?                @map("source_utterances")
+  verificationScore    Decimal?             @map("verification_score") @db.Decimal(4, 3)
+  verificationVerdict  VerificationVerdict? @map("verification_verdict")
+  interpretiveLeaps    Json?                @map("interpretive_leaps")
+  attributionBlocks    Json?                @map("attribution_blocks")
+  signaturePhrasesUsed String[]             @default([]) @map("signature_phrases_used")
+  generationCostUsd    Decimal?             @map("generation_cost_usd") @db.Decimal(10, 6)
+  generationDurationMs Int?                 @map("generation_duration_ms")
+  generationRetries    Int                  @default(0) @map("generation_retries") @db.SmallInt
+  // ─── B 파이프라인 필드 끝 ───
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story               Story?               @relation(fields: [storyId], references: [id], onDelete: SetNull)
+  memoryNodes         MemoryNode[]
+  collectionFragments CollectionFragment[]
+  relationshipsFrom   StoryRelationship[]  @relation("rel_from")
+  relationshipsTo     StoryRelationship[]  @relation("rel_to")
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)], map: "idx_fragments_date")
+  @@index([userId, status], map: "idx_fragments_status")
+  @@index([storyId, storyOrder], map: "idx_fragments_story")
+  @@index([tagsEra], type: Gin, map: "idx_fragments_tags_era")
+  @@index([tagsPeople], type: Gin, map: "idx_fragments_tags_people")
+  @@index([tagsPlace], type: Gin, map: "idx_fragments_tags_place")
+  @@index([tagsTheme], type: Gin, map: "idx_fragments_tags_theme")
+  @@index([userId, truncated], map: "idx_fragments_truncated")
+  @@index([userId, pipelineVersion], map: "idx_fragments_pipeline") // B 실험용 🆕
+  @@map("story_fragments")
+}
+
+model Story {
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId               Int      @map("user_id")
+  title                String   @db.VarChar(200)
+  description          String?  @db.Text
+  coverImageUrl        String?  @map("cover_image_url") @db.Text
+  chapterType          String   @default("thematic") @map("chapter_type") @db.VarChar(20)
+  narrativeTransitions Json     @default("[]") @map("narrative_transitions")
+  tagsTheme            String[] @default([]) @map("tags_theme")
+  tagsEra              String[] @default([]) @map("tags_era")
+  status               String   @default("draft") @db.VarChar(20)
+  fragmentCount        Int      @default(0) @map("fragment_count")
+  totalWordCount       Int      @default(0) @map("total_word_count")
+  bookId               String?  @map("book_id") @db.Uuid
+  bookOrder            Int?     @map("book_order")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book?           @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  fragments StoryFragment[]
+
+  @@index([userId])
+  @@map("stories")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 신규 모델: Story 간 관계 (N3)
+// ═══════════════════════════════════════════════════════════════
+
+model StoryRelationship {
+  id           String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       Int                   @map("user_id")
+  fromStoryId  String                @map("from_story_id") @db.Uuid
+  toStoryId    String                @map("to_story_id") @db.Uuid
+  relationship StoryRelationshipType
+  note         String?               @db.Text
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  fromStory StoryFragment @relation("rel_from", fields: [fromStoryId], references: [id], onDelete: Cascade)
+  toStory   StoryFragment @relation("rel_to", fields: [toStoryId], references: [id], onDelete: Cascade)
+
+  @@unique([fromStoryId, toStoryId, relationship])
+  @@index([userId])
+  @@map("story_relationships")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 신규 모델: 유저 큐레이션 (O — Tim의 아이디어)
+// ═══════════════════════════════════════════════════════════════
+
+model UserCollection {
+  id     String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId Int    @map("user_id")
+
+  // ─── 이름 체계 (2단계) ────────────────────────────────────────
+  // name: 관리용 이름 (AI가 자동 생성하는 기본값, 유저 수정 가능)
+  //   예: "가족 이야기", "20대 시절", "신앙에 대하여"
+  //   → 앱 UI에서 서랍 목록에 표시되는 짧은 라벨
+  name String @db.VarChar(200)
+
+  // bookChapterTitle: 책에 인쇄될 장 제목 (유저가 원하면 별도 지정)
+  //   예: "나의 소중한 Lucia에게", "그 시절 나는 방황했고"
+  //   → NULL이면 name을 그대로 사용
+  bookChapterTitle String? @map("book_chapter_title") @db.VarChar(300)
+
+  // nameGeneratedBy: 'ai' | 'user' — name이 AI 제안인지 유저 확정인지 추적
+  //   → "유저가 한 번도 건드리지 않은 AI 이름"을 구분해 나중에 자동 재학습 가능
+  nameGeneratedBy String @default("ai") @map("name_generated_by") @db.VarChar(10)
+
+  // ─── 설명 및 시각적 식별 ──────────────────────────────────────
+  description String? @db.Text
+  coverColor  String? @map("cover_color") @db.VarChar(20) // 유저가 색으로 구분
+  coverEmoji  String? @map("cover_emoji") @db.VarChar(10) // 이모지로 구분
+
+  // ─── 순서 및 상태 ────────────────────────────────────────────
+  displayOrder Int     @default(0) @map("display_order") // 유저가 컬렉션 자체의 순서도 정함
+  isBookReady  Boolean @default(false) @map("is_book_ready") // "이 컬렉션은 책으로 만들 준비됨" 플래그
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fragments CollectionFragment[]
+
+  @@index([userId, displayOrder])
+  @@map("user_collections")
+}
+
+model CollectionFragment {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  collectionId String   @map("collection_id") @db.Uuid
+  fragmentId   String   @map("fragment_id") @db.Uuid
+  userOrder    Int      @map("user_order") // 유저가 정한 순서
+  userNote     String?  @map("user_note") @db.Text // 유저가 달 수 있는 주석 (왜 여기 넣었는지)
+  addedAt      DateTime @default(now()) @map("added_at") @db.Timestamptz(6)
+
+  collection UserCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  fragment   StoryFragment  @relation(fields: [fragmentId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, fragmentId]) // 한 컬렉션 안에 같은 Fragment 중복 방지
+  @@index([collectionId, userOrder])
+  @@index([fragmentId])
+  @@map("collection_fragments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 책
+// ═══════════════════════════════════════════════════════════════
+
+model Book {
+  id             String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         Int        @map("user_id")
+  title          String     @db.VarChar(300)
+  authorName     String?    @map("author_name") @db.VarChar(100)
+  dedication     String?    @db.Text
+  preface        String?    @db.Text
+  epilogue       String?    @db.Text
+  format         BookFormat @default(WEB) // G Enum 🆕
+  outputUrl      String?    @map("output_url") @db.Text
+  status         BookStatus @default(DRAFT) // G Enum 🆕
+  storyCount     Int        @default(0) @map("story_count")
+  totalWordCount Int        @default(0) @map("total_word_count")
+  coverImageUrl  String?    @map("cover_image_url") @db.Text
+  designTemplate String     @default("classic") @map("design_template") @db.VarChar(50)
+  outputData     String?    @map("output_data") @db.Text
+  fragmentIds    Json       @default("[]") @map("fragment_ids")
+  autoPreface    Boolean    @default(true) @map("auto_preface")
+  autoEpilogue   Boolean    @default(true) @map("auto_epilogue")
+
+  // 🆕 B 파이프라인 실험용
+  pipelineVersion PipelineVersion? @map("pipeline_version")
+  experimentLabel String?          @map("experiment_label") @db.VarChar(100)
+
+  // 🆕 N6: 유료 전환 준비
+  priceUsd        Decimal? @map("price_usd") @db.Decimal(10, 2)
+  stripeProductId String?  @map("stripe_product_id") @db.VarChar(100)
+  purchaseCount   Int      @default(0) @map("purchase_count")
+  isForSale       Boolean  @default(false) @map("is_for_sale")
+
+  // 🆕 O: 유저 컬렉션 기반 책 만들기
+  sourceType         String  @default("auto_story") @map("source_type") @db.VarChar(20) // 'auto_story' | 'user_collection'
+  sourceCollectionId String? @map("source_collection_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stories Story[]
+
+  @@index([userId])
+  @@map("books")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// User Voice Profile (기존 스키마 유지)
+// ═══════════════════════════════════════════════════════════════
+
+model UserVoiceProfile {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId              Int       @unique @map("user_id")
+  avgSentenceLength   Decimal?  @map("avg_sentence_length") @db.Decimal(5, 2)
+  frequentExpressions String[]  @default([]) @map("frequent_expressions") // B 파이프라인이 signature_phrases로 사용
+  emotionStyle        String    @default("direct") @map("emotion_style") @db.VarChar(20)
+  humorFrequency      String    @default("medium") @map("humor_frequency") @db.VarChar(20)
+  languageMix         Json      @default("{}") @map("language_mix")
+  preferredVoice      String    @default("conversational") @map("preferred_voice") @db.VarChar(30)
+  sessionsAnalyzed    Int       @default(0) @map("sessions_analyzed")
+  lastAnalyzedAt      DateTime? @map("last_analyzed_at") @db.Timestamptz(6)
+  voicePromptSummary  String?   @map("voice_prompt_summary") @db.Text // B 파이프라인이 voice_profile로 사용
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_voice_profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 운영 인프라
+// ═══════════════════════════════════════════════════════════════
+
+model FragmentGenerationQueue {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           Int              @map("user_id")
+  jobType          String           @map("job_type") @db.VarChar(30)
+  inputData        Json             @map("input_data")
+  status           String           @default("pending") @db.VarChar(20)
+  priority         Int              @default(5)
+  outputData       Json?            @map("output_data")
+  errorMessage     String?          @map("error_message") @db.Text
+  startedAt        DateTime?        @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime?        @map("completed_at") @db.Timestamptz(6)
+  processingTimeMs Int?             @map("processing_time_ms")
+  modelUsed        String?          @map("model_used") @db.VarChar(50)
+  pipelineVersion  PipelineVersion? @map("pipeline_version") // 실험용 🆕
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority(sort: Desc)])
+  @@index([userId])
+  @@map("fragment_generation_queue")
+}
+
+model ExperimentRun {
+  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId          Int             @map("user_id")
+  label           String          @db.VarChar(100)
+  pipelineVersion PipelineVersion @map("pipeline_version")
+  fragmentIds     String[]        @default([]) @map("fragment_ids") @db.Uuid
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("experiment_runs")
+}
+
+model OutreachLog {
+  id          Int       @id @default(autoincrement()) // B: serial int 유지
+  userId      Int       @map("user_id")
+  messageType String    @map("message_type") @db.VarChar(20)
+  messageText String    @map("message_text") @db.Text
+  channel     String    @default("sms") @db.VarChar(10)
+  sent        Boolean   @default(false)
+  userReplied Boolean   @default(false) @map("user_replied")
+  repliedAt   DateTime? @map("replied_at") @db.Timestamptz(6)
+  sentDate    DateTime  @default(dbgenerated("CURRENT_DATE")) @map("sent_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentDate])
+  @@index([sentDate])
+  @@map("outreach_log")
+}
+
+model PushSubscription {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  endpoint   String   @db.Text
+  keysP256dh String   @map("keys_p256dh") @db.Text
+  keysAuth   String   @map("keys_auth") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model SmsInbound {
+  id        Int      @id @default(autoincrement())
+  fromPhone String   @map("from_phone") @db.VarChar(20)
+  userId    Int?     @map("user_id")
+  body      String   @db.Text
+  twilioSid String?  @unique @map("twilio_sid") @db.VarChar(50) // E 🆕: UNIQUE
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  @@index([userId])
+  // partial index (processed=false)는 migration.sql raw SQL로 추가
+  @@map("sms_inbound")
+}
+
+model SessionFeedback {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid // A: 통일
+  userId    Int      @map("user_id")
+  sessionId String?  @map("session_id") @db.Uuid
+  rating    Int      @db.SmallInt
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("session_feedback")
 }
