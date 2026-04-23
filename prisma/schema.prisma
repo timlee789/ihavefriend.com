@@ -182,6 +182,8 @@ model User {
   pushSubscription PushSubscription?
   smsInbound       SmsInbound[]
   sessionFeedbacks SessionFeedback[]
+  userSetting      UserSetting?
+  apiUsageLogs     ApiUsageLog[]
 }
 
 model UserLimit {
@@ -217,6 +219,64 @@ model UsageLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sessionDate])
+}
+
+// ═══════════════════════════════════════════════════════════════
+// User Settings — 유저별 설정 (API 키 등)
+// 2026-04-23 추가: app/api/user/apikey/route.js 가 런타임에
+// CREATE TABLE IF NOT EXISTS로 만들던 테이블을 Prisma 관리로 편입.
+// ═══════════════════════════════════════════════════════════════
+
+model UserSetting {
+  userId       Int      @id @map("user_id")
+  geminiApiKey String?  @map("gemini_api_key") @db.Text
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API Usage Tracking — 유료화 기반 인프라
+// 2026-04-23 추가: 모든 LLM API 호출을 유저별로 기록
+// - Provider/Model 다양화 대비 (Gemini, Claude, OpenAI)
+// - Operation별 비용 분석 (chat vs fragment_gen vs embedding)
+// - Fire-and-forget 로깅: DB 쓰기 실패해도 유저 경험 영향 없음
+// ═══════════════════════════════════════════════════════════════
+
+model ApiUsageLog {
+  id           BigInt   @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  sessionId    String?  @map("session_id") @db.Uuid
+
+  // Provider info
+  provider     String   @db.VarChar(20)
+  model        String   @db.VarChar(50)
+  operation    String   @db.VarChar(40)
+
+  // Token counts
+  inputTokens  Int      @default(0) @map("input_tokens")
+  outputTokens Int      @default(0) @map("output_tokens")
+  totalTokens  Int      @default(0) @map("total_tokens")
+
+  // Cost — 저장 시점 단가로 계산해 고정 (나중에 단가 변경돼도 과거 기록 불변)
+  costUsd      Decimal  @default(0) @map("cost_usd") @db.Decimal(10, 8)
+
+  // Context
+  success      Boolean  @default(true)
+  errorCode    String?  @map("error_code") @db.VarChar(50)
+  latencyMs    Int?     @map("latency_ms")
+
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, createdAt], map: "idx_usage_user_month")
+  @@index([createdAt(sort: Desc)], map: "idx_usage_recent")
+  @@index([userId, operation], map: "idx_usage_op")
+  @@map("api_usage_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════

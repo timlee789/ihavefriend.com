@@ -10,11 +10,17 @@
  *
  * Body: { sessionId, transcript: [{role, text}] }
  * Returns: { ok: true, memoriesExtracted: number }
+ *
+ * 2026-04-23 v2 schema migration:
+ *  - Fragment INSERT: status 'draft' → fragmentStatusToDb('draft') = 'DRAFT'
+ *  - conversation_mode read: DB returns uppercase enum, compared after toLowerCase()
+ *  - This is THE critical path: Emma conversation → Fragment → Book
  */
 import { requireAuth, verifyToken } from '@/lib/auth';
 import { createDb } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
 import { after } from 'next/server';
+import { fragmentStatusToDb } from '@/lib/enumMappers';
 
 // Allow the background fragment-generation task (Gemini Flash call + INSERT)
 // enough time to finish on Vercel Hobby before the lambda is frozen.
@@ -90,7 +96,10 @@ export async function POST(request) {
       [sessionId, user.id]
     );
     const dbMode = modeRow.rows[0]?.conversation_mode;
-    if (dbMode && dbMode !== 'auto') sessionMode = dbMode; // DB wins if set
+    // v2: conversation_mode is now ConversationMode enum → DB returns UPPERCASE.
+    // Convert to lowercase for case-insensitive biz-logic comparison.
+    const dbModeLower = dbMode?.toLowerCase();
+    if (dbModeLower && dbModeLower !== 'auto') sessionMode = dbModeLower; // DB wins if set
   } catch {}
 
   console.log(`[chat/end] user=${user.id} session=${sessionId} transcriptLen=${transcript.length} hasApiKey=${!!apiKey} mode=${sessionMode}`);
@@ -169,6 +178,7 @@ Rules:
 - "오늘 날씨 좋다" → detected: false
 - "20년 전 아버지와 함께 가게를 열었던 날" → detected: true, completeness: 3+`;
 
+      const tDetect = Date.now();
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
@@ -180,6 +190,34 @@ Rules:
           }),
         }
       );
+
+      // 🆕 Log fragment-detection API usage (fire-and-forget)
+      try {
+        const { logApiUsage } = require('@/lib/apiUsage');
+        if (geminiRes.ok) {
+          const clone = geminiRes.clone();
+          const peek = await clone.json().catch(() => ({}));
+          await logApiUsage(db, {
+            userId: user.id, sessionId,
+            provider: 'gemini',
+            model: 'gemini-2.5-flash',
+            operation: 'fragment_detect',
+            usageMetadata: peek.usageMetadata,
+            latencyMs: Date.now() - tDetect,
+            success: true,
+          });
+        } else {
+          await logApiUsage(db, {
+            userId: user.id, sessionId,
+            provider: 'gemini',
+            model: 'gemini-2.5-flash',
+            operation: 'fragment_detect',
+            latencyMs: Date.now() - tDetect,
+            success: false,
+            errorCode: `http_${geminiRes.status}`,
+          });
+        }
+      } catch {}
 
       if (geminiRes.ok) {
         const data = await geminiRes.json();
@@ -241,6 +279,9 @@ Rules:
                 transcript: bgHistory,
                 lang:       userLang,
                 apiKey,
+                db,                 // 🆕 usage logging
+                userId,
+                sessionId,
               });
 
               if (!fragmentJson) {
@@ -268,7 +309,7 @@ Rules:
                  VALUES ($1, $2, $3, $4, $5,
                          $6::uuid[], $7,
                          $8, $9, $10, $11, $12,
-                         $13, $14, 'draft', $15, $16)
+                         $13, $14, $15, $16, $17)
                  RETURNING id`,
                 [
                   userId,
@@ -285,8 +326,9 @@ Rules:
                   fragmentJson.tags_emotion,
                   wordCount,
                   userLang,
-                  'gemini-2.5-flash',
-                  truncatedFlag,
+                  fragmentStatusToDb('draft'),       // $15 — 'DRAFT' (v2 enum)
+                  'gemini-2.5-flash',                // $16
+                  truncatedFlag,                     // $17
                 ]
               );
 

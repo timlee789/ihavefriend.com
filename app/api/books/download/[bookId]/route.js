@@ -2,9 +2,15 @@
  * GET /api/books/download/:bookId
  * Returns the PDF as an attachment.
  * Only allowed when status = 'completed' and output_data is present.
+ *
+ * 2026-04-23 v2 schema migration:
+ *  - books.status now returns uppercase enum from DB
+ *  - Converted to lowercase before comparison (biz-logic stays the same)
+ *  - CRITICAL: without this fix, NO downloads would work (status comparison always fails)
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { bookStatusFromDb } from '@/lib/enumMappers';
 
 export async function GET(request, { params }) {
   const { user, error } = await requireAuth(request);
@@ -24,6 +30,10 @@ export async function GET(request, { params }) {
     `, [bookId, user.id]);
 
     const book = res.rows[0];
+    if (book) {
+      // v2: DB returns 'COMPLETED' (uppercase enum) — convert for comparison
+      book.status = bookStatusFromDb(book.status);
+    }
 
     if (!book) {
       return Response.json({ error: '존재하지 않는 ebook입니다.' }, { status: 404 });

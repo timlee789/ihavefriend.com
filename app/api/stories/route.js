@@ -3,6 +3,11 @@
  *
  * Body: { title, description?, fragmentIds: [uuid, ...], chapterType? }
  * Returns: { story }
+ *
+ * 2026-04-23 v2 schema migration:
+ *  - stories.status is VARCHAR(20), NOT enum — no mapper needed
+ *  - createStory() in fragmentManager was updated in Batch 2 (removed db.connect())
+ *  - This file requires no code changes
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';

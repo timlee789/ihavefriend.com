@@ -10,7 +10,12 @@
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { conversationModeToDb } from '@/lib/enumMappers';
 import { after } from 'next/server';
+
+// 2026-04-23 v2 schema migration:
+//  - conversation_mode is now ConversationMode enum (AUTO/COMPANION/STORY)
+//  - safeMode stays lowercase in JS, converted to enum via mapper at INSERT
 
 // Allow background abandoned-session recovery enough headroom
 export const maxDuration = 60;
@@ -69,9 +74,9 @@ export async function POST(request) {
   console.time('[chat/setup] insert-session');
   try {
     const res = await db.query(
-      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode)
-       VALUES ($1, NOW(), $2) RETURNING id`,
-      [user.id, safeMode]
+      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode, created_at, updated_at)
+       VALUES ($1, NOW(), $2, NOW(), NOW()) RETURNING id`,
+      [user.id, conversationModeToDb(safeMode)]
     );
     sessionId = res.rows[0]?.id;
   } catch (e) {
