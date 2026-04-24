@@ -851,3 +851,168 @@
 }
 .feedbackDay .feedbackThanksText   { color: #2d1510; }
 .feedbackNight .feedbackThanksText { color: rgba(255,255,255,0.88); }
+
+/* ═══════════════════════════════════════════════════════════
+   New Welcome Screen (2026-04-24)
+   Layout: 2 fixed cards on top + 1 scrollable card below
+   ═══════════════════════════════════════════════════════════ */
+
+.welcomeV2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  flex: 1;
+  min-height: 0;  /* allow child scroll */
+}
+
+/* Common card style */
+.welcomeCard,
+.fragmentListCard {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 18px 20px;
+  border-radius: 16px;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.welcomeCard:active,
+.fragmentListCard:active {
+  transform: scale(0.98);
+}
+
+.cardDay {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  color: #1a1a1a;
+}
+
+.cardNight {
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  color: rgba(255,255,255,0.92);
+}
+
+/* Card 1 & 2: Fixed height cards */
+.companionCard,
+.storyCard {
+  min-height: 96px;  /* generous touch target */
+  flex-shrink: 0;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardMicIcon {
+  color: #ea580c;  /* orange accent */
+  flex-shrink: 0;
+}
+
+.cardNight .cardMicIcon {
+  color: #a855f7;  /* purple accent for night mode */
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.privateLabel {
+  font-size: 12px;
+  opacity: 0.65;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.cardMeta {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 6px;
+  margin-left: 32px;  /* align with title (mic icon width + gap) */
+}
+
+.cardSpacer {
+  flex: 1;
+  min-height: 18px;
+}
+
+/* Card 3: Fragment list (scrollable) */
+.fragmentListCard {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 20px 12px;
+  overflow: hidden;  /* outer card doesn't scroll; inner list does */
+  display: flex;
+  flex-direction: column;
+}
+
+.fragmentListHeader {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.fragmentListDivider {
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.cardNight .fragmentListDivider {
+  background: rgba(255,255,255,0.1);
+}
+
+.fragmentListScroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+.fragmentListItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-size: 15px;
+}
+
+.cardNight .fragmentListItem {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.fragmentListItem:last-child {
+  border-bottom: none;
+}
+
+.fragmentIcon {
+  font-size: 14px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.fragmentTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fragmentListEmpty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.5;
+}

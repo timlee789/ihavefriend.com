@@ -177,7 +177,8 @@
       "Bash(npx --yes --package=@babel/parser@latest -- node -e \"const p=require\\('@babel/parser'\\);const fs=require\\('fs'\\);p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf8'\\),{sourceType:'module',plugins:['jsx']}\\);console.log\\('✅ my-stories/page.jsx'\\);\")",
       "Bash(node -e \"require\\('./lib/topicExtractor.js'\\); console.log\\('OK'\\);\")",
       "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('OK'\\);\")",
-      "Bash(node -e \"require\\('./lib/generateFragmentCloud.js'\\); console.log\\('OK'\\);\")"
+      "Bash(node -e \"require\\('./lib/generateFragmentCloud.js'\\); console.log\\('OK'\\);\")",
+      "Bash(npx --yes -p @babel/core@7 -p @babel/preset-react@7 babel --presets @babel/preset-react components/emma/EmmaChat.jsx -o /tmp/_emmachat_check.js)"
     ]
   }
 }

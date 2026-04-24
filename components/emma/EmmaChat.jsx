@@ -163,6 +163,16 @@ const WELCOME_MSGS = {
     storyHint      : '대화가 끝나면 Emma가 당신의 이야기를 정리해 드려요',
     shuffleBtn     : '다른 질문 보기',
     customTopicBtn : '나만의 주제로 시작',
+    // 🆕 2026-04-24: New welcome screen
+    newWelcome: {
+      companionTitle   : '그냥 이야기하기',
+      privateLabel     : '🔒 Private Mode',
+      storyTitle       : '내 이야기 남기기',
+      storyCountLabel  : (n) => `현재 ${n}개`,
+      storyCountEmpty  : '아직 이야기가 없어요',
+      fragmentListHead : '나의 이야기들',
+      fragmentListEmpty: '첫 번째 이야기를 남겨보세요',
+    },
   },
   EN: {
     new        : "Hi! I'm here to listen and help preserve your stories.",
@@ -188,6 +198,16 @@ const WELCOME_MSGS = {
     storyHint      : 'When we finish, Emma will organize your story for you',
     shuffleBtn     : 'Show different topics',
     customTopicBtn : 'Start with my own topic',
+    // 🆕 2026-04-24: New welcome screen
+    newWelcome: {
+      companionTitle   : 'Just talk',
+      privateLabel     : '🔒 Private Mode',
+      storyTitle       : 'Record my story',
+      storyCountLabel  : (n) => `${n} stor${n === 1 ? 'y' : 'ies'} so far`,
+      storyCountEmpty  : 'No stories yet',
+      fragmentListHead : 'My Stories',
+      fragmentListEmpty: 'Record your first story',
+    },
   },
   ES: {
     new        : 'Hola! Estoy aquí para escucharte y ayudarte a conservar tus historias.',
@@ -213,6 +233,16 @@ const WELCOME_MSGS = {
     storyHint      : 'Cuando terminemos, Emma organizará tu historia',
     shuffleBtn     : 'Ver otros temas',
     customTopicBtn : 'Empezar con mi propio tema',
+    // 🆕 2026-04-24: New welcome screen
+    newWelcome: {
+      companionTitle   : 'Solo charlar',
+      privateLabel     : '🔒 Modo Privado',
+      storyTitle       : 'Grabar mi historia',
+      storyCountLabel  : (n) => `${n} historia${n === 1 ? '' : 's'} hasta ahora`,
+      storyCountEmpty  : 'Sin historias aún',
+      fragmentListHead : 'Mis historias',
+      fragmentListEmpty: 'Graba tu primera historia',
+    },
   },
 };
 
@@ -571,7 +601,7 @@ export default function EmmaChat({ initialMode }) {
     const activeLang = ((u.lang || (typeof window !== 'undefined' ? localStorage.getItem('lang') : null) || 'ko')).toUpperCase();
     const lc = LANGS.includes(activeLang) ? activeLang : 'KO';
 
-    fetch('/api/fragments?limit=10&status=draft,confirmed', {
+    fetch('/api/fragments?limit=100&status=draft,confirmed', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : { fragments: [] })
@@ -1683,81 +1713,73 @@ export default function EmmaChat({ initialMode }) {
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
 
-        {/* ── Private Mode 사인 (우측 상단, 박스 없이 작은 텍스트) ── */}
-        <div className={`${styles.privateTag} ${isDay ? styles.privateTagDay : styles.privateTagNight}`}>
-          {(PRIVATE_BANNER_MSGS[lang] || PRIVATE_BANNER_MSGS.KO).title}
-        </div>
-
-
-        {/* ── empty state: two-zone mode selector ── */}
+        {/* ── New Welcome Screen (2026-04-24): 2 fixed cards + scrollable fragment list ── */}
         {messages.length === 0 && !isConnected && (() => {
-          const wmsgs     = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
-          const fragCount = userFragments?.length ?? null;
+          const wmsgs    = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
+          const nw       = wmsgs.newWelcome;
+          const frags    = Array.isArray(userFragments) ? userFragments : [];
+          const loading  = userFragments === null;
+          const fragCount = frags.length;
 
           return (
-            <div className={styles.emptyState}>
+            <div className={`${styles.welcomeV2} ${isDay ? styles.welcomeDay : styles.welcomeNight}`}>
 
-              {/* ── Welcome banner: 6개 이상일 때만 ebook 안내 표시 ── */}
-              {fragCount !== null && fragCount >= 6 && (
-                <div className={`${styles.welcomeBanner} ${isDay ? styles.welcomeBannerDay : styles.welcomeBannerNight}`}>
-                  <p className={styles.welcomeText}>{wmsgs.many(fragCount)}</p>
-                  <a href="/my-stories" className={`${styles.ebookLink} ${isDay ? styles.ebookLinkDay : styles.ebookLinkNight}`}>
-                    {wmsgs.ebookCta}
-                  </a>
-                </div>
-              )}
-
-              {/* ═══════════════════════════════════════════
-                  영역 1: 그냥 이야기하기 (companion mode)
-                  섹션 전체가 버튼 — 탭하면 바로 대화 시작
-                  ═══════════════════════════════════════════ */}
+              {/* Card 1: Just talk (companion mode) */}
               <button
                 type="button"
-                className={`${styles.modeZone} ${styles.modeZoneBtn} ${isDay ? styles.modeZoneDay : styles.modeZoneNight}`}
+                className={`${styles.welcomeCard} ${styles.companionCard} ${isDay ? styles.cardDay : styles.cardNight}`}
                 onClick={() => startCustomTopic('companion')}
                 disabled={isConnected}
               >
-                <div className={styles.modeZoneHeader}>
-                  <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleDay : styles.modeZoneTitleNight}`}>
-                    💬 {wmsgs.companionTitle}
-                  </span>
+                <div className={styles.cardHeader}>
+                  <MicSvgSmall />
+                  <span className={styles.cardTitle}>{nw.companionTitle}</span>
+                  <span className={styles.privateLabel}>{nw.privateLabel}</span>
                 </div>
-                <p className={`${styles.modeZoneDesc} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
-                  {wmsgs.companionDesc}
-                </p>
+                <div className={styles.cardSpacer} />
               </button>
 
-              {/* ═══════════════════════════════════════════
-                  영역 2: 내 이야기 남기기 (story mode)
-                  섹션 전체가 버튼 + 상단 📖 안내
-                  ═══════════════════════════════════════════ */}
-              <div className={`${styles.modeZone} ${styles.modeZoneStory} ${isDay ? styles.modeZoneStoryDay : styles.modeZoneStoryNight}`}>
-                <p className={`${styles.storyBookHint} ${isDay ? styles.storyHintDay : styles.storyHintNight}`}>
-                  {wmsgs.storyBookHint}
-                </p>
-                <button
-                  type="button"
-                  className={`${styles.modeZoneBtn} ${styles.modeZoneBtnStory}`}
-                  onClick={() => startCustomTopic('story')}
-                  disabled={isConnected}
-                >
-                  <div className={styles.modeZoneHeader}>
-                    <span className={`${styles.modeZoneTitle} ${isDay ? styles.modeZoneTitleStoryDay : styles.modeZoneTitleStoryNight}`}>
-                      📖 {wmsgs.storyTitle}
-                    </span>
-                  </div>
-                  <p className={`${styles.modeZoneDesc} ${isDay ? styles.modeZoneSubDay : styles.modeZoneSubNight}`}>
-                    {wmsgs.storyDesc}
-                  </p>
-                </button>
-              </div>
+              {/* Card 2: Record my story (story mode) */}
+              <button
+                type="button"
+                className={`${styles.welcomeCard} ${styles.storyCard} ${isDay ? styles.cardDay : styles.cardNight}`}
+                onClick={() => startCustomTopic('story')}
+                disabled={isConnected}
+              >
+                <div className={styles.cardHeader}>
+                  <MicSvgSmall />
+                  <span className={styles.cardTitle}>{nw.storyTitle}</span>
+                </div>
+                <div className={styles.cardMeta}>
+                  {fragCount > 0 ? nw.storyCountLabel(fragCount) : nw.storyCountEmpty}
+                </div>
+                <div className={styles.cardSpacer} />
+              </button>
 
-              {/* or-mic hint */}
-              <p className={styles.emptyOr}>
-                {lang === 'KO' ? '또는 마이크를 눌러 바로 시작하세요'
-                  : lang === 'ES' ? 'o toca el micrófono para empezar'
-                  : 'or tap the mic to start'}
-              </p>
+              {/* Card 3: Fragment list (scrollable) — entire section links to /my-stories */}
+              <button
+                type="button"
+                className={`${styles.fragmentListCard} ${isDay ? styles.cardDay : styles.cardNight}`}
+                onClick={() => { disconnect(); router.push('/my-stories'); }}
+              >
+                <div className={styles.fragmentListHeader}>{nw.fragmentListHead}</div>
+                <div className={styles.fragmentListDivider} />
+                <div className={styles.fragmentListScroll}>
+                  {loading ? (
+                    <div className={styles.fragmentListEmpty}>…</div>
+                  ) : fragCount === 0 ? (
+                    <div className={styles.fragmentListEmpty}>{nw.fragmentListEmpty}</div>
+                  ) : (
+                    frags.map((f) => (
+                      <div key={f.id} className={styles.fragmentListItem}>
+                        <span className={styles.fragmentIcon}>📄</span>
+                        <span className={styles.fragmentTitle}>{f.title}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </button>
+
             </div>
           );
         })()}
@@ -1796,7 +1818,8 @@ export default function EmmaChat({ initialMode }) {
         })()}
       </div>
 
-      {/* ── voice bottom bar ── */}
+      {/* ── voice bottom bar (hidden on welcome; shown during/after a session) ── */}
+      {(isConnected || messages.length > 0) && (
       <div className={`${styles.voiceBar} ${isDay ? styles.voiceBarDay : styles.voiceBarNight}`}>
 
         {/* waveform */}
@@ -1852,6 +1875,7 @@ export default function EmmaChat({ initialMode }) {
           </button>
         </div>
       </div>
+      )}
 
       {/* ── Phone number modal (for SMS reminders) ── */}
       {showPhoneModal && (
@@ -2000,6 +2024,16 @@ export default function EmmaChat({ initialMode }) {
 }
 
 // ── small SVG icons ───────────────────────────────────────────────────────────
+function MicSvgSmall() {
+  return (
+    <svg width="20" height="22" viewBox="0 0 20 22" fill="none" aria-hidden="true"
+         className={styles.cardMicIcon}>
+      <rect x="7" y="2" width="6" height="10" rx="3" fill="currentColor"/>
+      <path d="M4 10c0 3.31 2.69 6 6 6s6-2.69 6-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      <line x1="10" y1="16" x2="10" y2="20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
 function MicSvg() {
   return (
     <svg width="20" height="24" viewBox="0 0 20 24" fill="none" aria-hidden="true">
