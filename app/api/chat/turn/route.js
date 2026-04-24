@@ -70,6 +70,19 @@ User message: "${userMessage.substring(0, 300)}"` }]
 
         if (geminiRes.ok) {
           const data = await geminiRes.json();
+          // 🆕 Log emotion analysis API usage (fire-and-forget)
+          try {
+            const { logApiUsage } = require('@/lib/apiUsage');
+            await logApiUsage(db, {
+              userId: user.id, sessionId,
+              provider: 'gemini',
+              model: 'gemini-2.5-flash',
+              operation: 'emotion_analysis',
+              usageMetadata: data.usageMetadata,
+              latencyMs: Date.now() - tGemini,
+              success: true,
+            });
+          } catch {}
           const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
           const parsed = JSON.parse(raw.trim());
           emotion = {
@@ -90,6 +103,19 @@ User message: "${userMessage.substring(0, 300)}"` }]
         } else {
           console.error('[Turn] emotion analysis failed:', e.message);
         }
+        // 🆕 Log failure (fire-and-forget)
+        try {
+          const { logApiUsage } = require('@/lib/apiUsage');
+          await logApiUsage(db, {
+            userId: user.id, sessionId,
+            provider: 'gemini',
+            model: 'gemini-2.5-flash',
+            operation: 'emotion_analysis',
+            latencyMs: Date.now() - tGemini,
+            success: false,
+            errorCode: e.name === 'AbortError' ? 'timeout' : 'exception',
+          });
+        } catch {}
       }
     }
 

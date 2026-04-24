@@ -298,7 +298,7 @@ model ChatSession {
   conversationMode  ConversationMode @default(AUTO) @map("conversation_mode")
   oneWordSummary    String?          @map("one_word_summary") @db.VarChar(50) // N2 🆕
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   emotionTurns     EmotionTurn[]
@@ -334,7 +334,7 @@ model MemoryNode {
   timesDiscussed      Int            @default(0) @map("times_discussed")
   discussionDepth     Int            @default(0) @map("discussion_depth")
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt           DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   storyFragment StoryFragment?    @relation(fields: [storyFragmentId], references: [id], onDelete: SetNull) // F 🆕
@@ -560,7 +560,7 @@ model StoryFragment {
   // ─── B 파이프라인 필드 끝 ───
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   story               Story?               @relation(fields: [storyId], references: [id], onDelete: SetNull)
@@ -598,7 +598,7 @@ model Story {
   bookId               String?  @map("book_id") @db.Uuid
   bookOrder            Int?     @map("book_order")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   book      Book?           @relation(fields: [bookId], references: [id], onDelete: SetNull)
@@ -662,7 +662,7 @@ model UserCollection {
   isBookReady  Boolean @default(false) @map("is_book_ready") // "이 컬렉션은 책으로 만들 준비됨" 플래그
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   fragments CollectionFragment[]
@@ -727,7 +727,7 @@ model Book {
   sourceCollectionId String? @map("source_collection_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   stories Story[]
@@ -753,7 +753,7 @@ model UserVoiceProfile {
   lastAnalyzedAt      DateTime? @map("last_analyzed_at") @db.Timestamptz(6)
   voicePromptSummary  String?   @map("voice_prompt_summary") @db.Text // B 파이프라인이 voice_profile로 사용
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

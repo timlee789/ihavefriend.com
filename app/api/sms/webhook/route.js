@@ -14,6 +14,28 @@ function getDb() {
   return neon(process.env.DATABASE_URL);
 }
 
+// 🆕 Fire-and-forget usage logger (Neon sql template; same pattern as dailyOutreach)
+async function logSmsReplyUsage(sql, userId, usageMetadata, latencyMs, success = true, errorCode = null) {
+  try {
+    if (!userId) return;
+    const input  = usageMetadata?.promptTokenCount     || 0;
+    const output = usageMetadata?.candidatesTokenCount || 0;
+    const total  = usageMetadata?.totalTokenCount      || (input + output);
+    const cost   = (input * 0.075 / 1e6) + (output * 0.30 / 1e6);
+    await sql`
+      INSERT INTO api_usage_logs
+        (user_id, provider, model, operation,
+         input_tokens, output_tokens, total_tokens, cost_usd,
+         success, error_code, latency_ms)
+      VALUES (${userId}, 'gemini', 'gemini-2.5-flash', 'sms_reply',
+              ${input}, ${output}, ${total}, ${cost.toFixed(8)},
+              ${success}, ${errorCode}, ${latencyMs})
+    `;
+  } catch (e) {
+    console.warn('[sms/webhook] usage log failed:', e.message);
+  }
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -50,6 +72,7 @@ export async function POST(request) {
     let replyText = "Thanks for your message! Open the app to continue our conversation: https://sayandkeep.com/chat";
 
     if (userId) {
+      const tReply = Date.now();
       try {
         const { prompt } = await buildEmmaPrompt(sql, userId, body);
         const res = await fetch(
@@ -65,6 +88,11 @@ export async function POST(request) {
           }
         );
         const data = await res.json();
+        // 🆕 Log usage (fire-and-forget)
+        await logSmsReplyUsage(
+          sql, userId, data.usageMetadata, Date.now() - tReply,
+          res.ok, res.ok ? null : `http_${res.status}`
+        );
         const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (aiReply) {
           const maxLen = 140;
@@ -73,6 +101,7 @@ export async function POST(request) {
         }
       } catch (e) {
         console.error('AI reply failed:', e.message);
+        await logSmsReplyUsage(sql, userId, null, Date.now() - tReply, false, 'exception');
       }
     }
 

@@ -24,6 +24,15 @@ export async function POST(request) {
     data: { email: email.toLowerCase(), passwordHash: hash, name: name.trim() },
   });
   await prisma.userLimit.create({ data: { userId: user.id } });
+  // Seed default UserMemory row so Emma conversations start cleanly.
+  // characterId='emma' is the canonical default; factsJson/summary/transcriptJson
+  // have Prisma @default values, so we only need to provide the composite key.
+  await prisma.userMemory.create({
+    data: {
+      userId: user.id,
+      characterId: 'emma',
+    },
+  });
   const token = signToken(user.id);
   return Response.json({
     token,
