@@ -165,7 +165,19 @@
       "Bash(node -e \"const esbuild=require\\('esbuild'\\);esbuild.buildSync\\({entryPoints:['app/api/chat/end/route.js'],bundle:false,write:false,loader:{'.js':'jsx'}}\\);console.log\\('chat/end OK'\\)\")",
       "Bash(npx --yes --package=@babel/parser@latest -- node -e \"const p=require\\('@babel/parser'\\);const fs=require\\('fs'\\);const src=fs.readFileSync\\('app/api/chat/end/route.js','utf8'\\);p.parse\\(src,{sourceType:'module',plugins:['jsx']}\\);console.log\\('chat/end parse OK'\\)\")",
       "Bash(awk '/^model / {m=$2} NR==563 || NR==730 || NR==756 {print NR\": model=\"m}' /Users/mac-mini-tim/Documents/projects/speechrobot/prisma/schema.prisma)",
-      "Bash(npx --yes --package=@babel/parser@latest -- node -e 'const p=require\\('\\\\''@babel/parser'\\\\''\\);const fs=require\\('\\\\''fs'\\\\''\\);p.parse\\(fs.readFileSync\\('\\\\''__TRACKED_VAR__'\\\\'','\\\\''utf8'\\\\''\\),{sourceType:'\\\\''module'\\\\'',plugins:['\\\\''jsx'\\\\'']}\\);')"
+      "Bash(npx --yes --package=@babel/parser@latest -- node -e 'const p=require\\('\\\\''@babel/parser'\\\\''\\);const fs=require\\('\\\\''fs'\\\\''\\);p.parse\\(fs.readFileSync\\('\\\\''__TRACKED_VAR__'\\\\'','\\\\''utf8'\\\\''\\),{sourceType:'\\\\''module'\\\\'',plugins:['\\\\''jsx'\\\\'']}\\);')",
+      "Bash(node scripts/check-embedding-response.js)",
+      "Bash(node --check lib/storyPromptBuilder.js)",
+      "Bash(node -e \"require\\('./lib/memoryExtractor.js'\\); console.log\\('✅ memoryExtractor loads'\\);\")",
+      "Bash(node -e \"require\\('./lib/apiUsage.js'\\); console.log\\('✅ apiUsage loads'\\);\")",
+      "Bash(node -e \"const sp=require\\('./lib/storyPromptBuilder'\\);console.log\\('✅ storyPromptBuilder loaded, exports:',Object.keys\\(sp\\).join\\(','\\)\\);\")",
+      "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('✅ recallEngine'\\);\")",
+      "Bash(node -e \"require\\('./lib/generateFragmentCloud.js'\\); console.log\\('✅ generateFragmentCloud'\\);\")",
+      "Bash(npx --yes --package=@babel/parser@latest -- node -e \"const p=require\\('@babel/parser'\\);const fs=require\\('fs'\\);p.parse\\(fs.readFileSync\\('app/api/chat/end/route.js','utf8'\\),{sourceType:'module',plugins:['jsx']}\\);console.log\\('✅ chat/end'\\);\")",
+      "Bash(npx --yes --package=@babel/parser@latest -- node -e \"const p=require\\('@babel/parser'\\);const fs=require\\('fs'\\);p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf8'\\),{sourceType:'module',plugins:['jsx']}\\);console.log\\('✅ my-stories/page.jsx'\\);\")",
+      "Bash(node -e \"require\\('./lib/topicExtractor.js'\\); console.log\\('OK'\\);\")",
+      "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('OK'\\);\")",
+      "Bash(node -e \"require\\('./lib/generateFragmentCloud.js'\\); console.log\\('OK'\\);\")"
     ]
   }
 }

@@ -427,6 +427,28 @@
   white-space: pre-wrap;
 }
 
+/* 2026-04-24: Markdown rendering for Semi-Interview format (Story mode).
+   Questions appear as **bold?** blocks; styled as interviewer prompts.
+   Legacy plain-text fragments render unchanged (no <strong> tags). */
+.modalContent p {
+  margin: 0 0 1em 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.modalContent strong {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-size: 1.05em;
+}
+
+.modalContent p:first-child strong:first-child {
+  margin-top: 0;
+}
+
 .modalTagSection {
   margin-top: 18px;
   padding-top: 14px;

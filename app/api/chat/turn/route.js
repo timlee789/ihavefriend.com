@@ -146,6 +146,34 @@ User message: "${userMessage.substring(0, 300)}"` }]
       console.timeEnd(`[Turn] fragment-detect turn=${turnNumber}`);
     }
 
+    // ── 3.5 Topic Anchor extraction (first turn only, story mode only) ─────
+    // 🆕 2026-04-24: Fire-and-forget. Story mode + turn 1 + no existing anchor.
+    try {
+      if (turnNumber === 1) {
+        const sessionRow = await db.query(
+          `SELECT conversation_mode, topic_anchor FROM chat_sessions WHERE id = $1`,
+          [sessionId]
+        );
+        const sess = sessionRow.rows[0];
+        if (sess?.conversation_mode === 'STORY' && !sess.topic_anchor) {
+          const { extractTopicAnchor } = require('@/lib/topicExtractor');
+          const lang = (user.lang || 'ko').toLowerCase();
+          const anchor = await extractTopicAnchor(userMessage, lang, apiKey, {
+            db, userId: user.id, sessionId,
+          });
+          if (anchor) {
+            await db.query(
+              `UPDATE chat_sessions SET topic_anchor = $1 WHERE id = $2`,
+              [anchor, sessionId]
+            );
+            console.log(`[Turn] topic_anchor saved: "${anchor}"`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Turn] topic anchor extraction failed (non-fatal):', e.message);
+    }
+
     // ── 4. Accumulate transcript in DB (crash-safe) ────────────────────────
     if (userText || aiText) {
       console.time(`[Turn] transcript-save turn=${turnNumber}`);

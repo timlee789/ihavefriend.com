@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 import s from './page.module.css';
 
 // ── Visibility (Private/Public) 다국어 카피 ────────────────────────────────
@@ -189,7 +190,9 @@ function SampleStoryModal({ story, onClose }) {
           <button className={s.modalClose} onClick={onClose}>✕</button>
         </div>
         <div className={s.modalBody}>
-          <div className={s.modalContent}>{story.content}</div>
+          <div className={s.modalContent}>
+            <ReactMarkdown>{story.content || ''}</ReactMarkdown>
+          </div>
           {story.tags?.length > 0 && (
             <div className={s.modalTagSection}>
               <div className={s.modalTagLabel}>태그</div>
@@ -343,7 +346,9 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 </span>
               </div>
 
-              <div className={s.modalContent}>{fragment.content}</div>
+              <div className={s.modalContent}>
+                <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
+              </div>
 
               {fragment.truncated && (
                 <div className={s.truncatedBanner}>

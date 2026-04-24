@@ -90,12 +90,14 @@ export async function POST(request) {
   // Resolve conversation_mode: prefer body value, fall back to DB
   let sessionMode = conversationMode;
   if (!['companion', 'story', 'auto'].includes(sessionMode)) sessionMode = 'auto';
+  let topicAnchor = null; // 🆕 2026-04-24
   try {
     const modeRow = await db.query(
-      `SELECT conversation_mode FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+      `SELECT conversation_mode, topic_anchor FROM chat_sessions WHERE id = $1 AND user_id = $2`,
       [sessionId, user.id]
     );
     const dbMode = modeRow.rows[0]?.conversation_mode;
+    topicAnchor = modeRow.rows[0]?.topic_anchor || null; // 🆕
     // v2: conversation_mode is now ConversationMode enum → DB returns UPPERCASE.
     // Convert to lowercase for case-insensitive biz-logic comparison.
     const dbModeLower = dbMode?.toLowerCase();
@@ -282,6 +284,8 @@ Rules:
                 db,                 // 🆕 usage logging
                 userId,
                 sessionId,
+                conversationMode: sessionMode,  // 🆕 'auto' | 'companion' | 'story'
+                topicAnchor,                    // 🆕 2026-04-24: user-declared topic
               });
 
               if (!fragmentJson) {

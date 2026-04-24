@@ -296,6 +296,11 @@ model ChatSession {
   fragmentCandidate Boolean          @default(false) @map("fragment_candidate")
   fragmentElements  Json             @default("{}") @map("fragment_elements")
   conversationMode  ConversationMode @default(AUTO) @map("conversation_mode")
+  // 🆕 2026-04-24: Topic Anchor — user sovereignty
+  // Extracted from user's FIRST message (after greeting) in a story-mode session.
+  // Acts as a constraint on Emma's questions and Fragment's title/subtitle.
+  // NULL for companion/auto sessions or when extraction fails.
+  topicAnchor       String?          @map("topic_anchor") @db.Text
   oneWordSummary    String?          @map("one_word_summary") @db.VarChar(50) // N2 🆕
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
