@@ -554,6 +554,7 @@ export default function EmmaChat({ initialMode }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const topic        = searchParams.get('topic');
+  const continueFragmentId = searchParams.get('continueFragment'); // 🆕 2026-04-25
 
   // ── mode (day/night) ──────────────────────────────────────────────────────
   const [mode, setMode] = useState(initialMode ?? 'day');
@@ -820,6 +821,11 @@ export default function EmmaChat({ initialMode }) {
   // ── Turn timing (Task 4 — profiling logs) ─────────────────────────────────
   const turnStartRef        = useRef(0);     // when user started this speech turn
   const thinkingShownAtRef  = useRef(0);     // ms when "thinking..." indicator first shown
+  // 🆕 2026-04-25: VAD tuning for senior users
+  // Track total accumulated loud time within the current turn.
+  // Used to distinguish real utterances (≥2s) from fillers/noise (<2s).
+  const accumulatedSpeechTimeRef = useRef(0); // ms of cumulative loud frames
+  const lastFrameTimeRef         = useRef(0); // ms timestamp of previous audio frame
 
   // keep refs in sync
   useEffect(() => { tokenRef.current  = token;   }, [token]);
@@ -865,6 +871,67 @@ export default function EmmaChat({ initialMode }) {
       }]);
     }
   }, [topic]);
+
+  // 🆕 2026-04-25: Auto-start session when arriving via /chat?continueFragment=<id>
+  // User clicked "이어서 말하기" in /my-stories. We:
+  //   1. Show a friendly intro (also dismisses welcome 3-card view since messages.length > 0)
+  //   2. Force story mode — continuation only makes sense for story sessions
+  //   3. Auto-trigger connect() so they don't have to tap a card again
+  const continueAutoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!continueFragmentId) return;
+    if (continueAutoStartedRef.current) return;
+    if (!token) return;        // wait for auth-ready
+    if (isConnected) return;   // already in a session
+
+    continueAutoStartedRef.current = true;
+
+    (async () => {
+      let parentTitle = '';
+      try {
+        const res = await fetch(`/api/fragments/${continueFragmentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          parentTitle = data?.fragment?.title || data?.title || '';
+        }
+      } catch (e) {
+        console.warn('[EmmaChat] continueFragment title fetch failed:', e.message);
+      }
+
+      const currentLang = langRef.current || 'KO';
+      const introText =
+        currentLang === 'KO'
+          ? (parentTitle
+              ? `"${parentTitle}" 이야기에 더 들려주실 부분이 있으시군요. 시작할게요…`
+              : '이어가실 이야기가 있으시군요. 시작할게요…')
+          : currentLang === 'ES'
+          ? (parentTitle
+              ? `Quieres añadir más a "${parentTitle}". Comenzando…`
+              : 'Quieres continuar una historia. Comenzando…')
+          : (parentTitle
+              ? `You want to add more to "${parentTitle}". Starting…`
+              : 'Continuing your story. Starting now…');
+
+      setMessages([{
+        id: Date.now(),
+        role: 'emma',
+        text: introText,
+        timestamp: nowStr(),
+      }]);
+
+      // Force story mode for continuation
+      setConversationMode('story');
+      convModeRef.current = 'story';
+
+      // Auto-connect after a tick so the intro renders first
+      setTimeout(() => {
+        setMicOn(true);
+        connect();
+      }, 200);
+    })();
+  }, [continueFragmentId, token, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── wake lock ─────────────────────────────────────────────────────────────
   async function acquireWakeLock() {
@@ -1106,16 +1173,51 @@ export default function EmmaChat({ initialMode }) {
           const now        = Date.now();
           const silentFor  = now - lastLoudFrameRef.current;
 
-          // (a) User visibly stopped talking (~2000ms silence).
-          //     Senior users pause mid-sentence to think/breathe; 2s gives
-          //     room for natural pauses while still feeling responsive.
-          //     Raised from 350ms because Emma was cutting in whenever the
-          //     user took a breath.
-          if (silentFor > 2000 && !speechEndedLoggedRef.current) {
+          // 🆕 2026-04-25: Senior-friendly VAD — wait longer + verify substance.
+          //
+          // Two changes vs previous 2000ms / no-substance-check version:
+          //
+          // 1) Silence threshold 2000ms → 3000ms.
+          //    Seniors pause 2-3s mid-thought. 3s is the balance point
+          //    Tim landed on after testing — long enough to protect
+          //    thinking time, short enough that responses don't feel
+          //    laggy. (Tried 5000ms first; felt too slow.)
+          //
+          // 2) Minimum speech duration check (NEW).
+          //    Track accumulated loud-frame time within the turn. If user
+          //    only produced <2000ms of cumulative voiced audio, treat the
+          //    turn as a non-event (filler, throat-clearing, ambient
+          //    noise burst, false start) and DON'T send activity_end.
+          //    The mic just keeps listening.
+          const SILENCE_THRESHOLD_MS = 3000;
+          const MIN_SPEECH_DURATION_MS = 2000;
+
+          if (silentFor > SILENCE_THRESHOLD_MS && !speechEndedLoggedRef.current) {
+            const accumulated = accumulatedSpeechTimeRef.current;
+            const wasSubstantive = accumulated >= MIN_SPEECH_DURATION_MS;
+
+            if (!wasSubstantive) {
+              // Silent rejection: noise/filler/false start — reset turn
+              // state without notifying the server. Mic stays open.
+              console.log('[Turn] Discarding non-substantive turn:', {
+                accumulatedMs: accumulated,
+                thresholdMs: MIN_SPEECH_DURATION_MS,
+                reason: 'too brief — likely filler / noise / false start',
+              });
+              hasSpokenThisTurnRef.current = false;
+              speechEndedLoggedRef.current = false;
+              accumulatedSpeechTimeRef.current = 0;
+              loudStreakRef.current = 0;
+              turnStartRef.current = 0;
+              return; // exit this poll iteration — DO NOT send activity_end
+            }
+
             speechEndedLoggedRef.current = true;
             thinkingShownAtRef.current   = now;
             console.log('[Turn] User speech ended at:', now,
-              turnStartRef.current ? `(spoke for ${now - turnStartRef.current}ms)` : '');
+              turnStartRef.current
+                ? `(spoke for ${now - turnStartRef.current}ms total, ${accumulated}ms loud)`
+                : '');
 
             // Manual VAD: signal end of user activity. Server treats audio
             // between activity_start and activity_end as the user's turn and
@@ -1245,6 +1347,9 @@ export default function EmmaChat({ initialMode }) {
         speechEndedLoggedRef.current = false;
         thinkingShownAtRef.current   = 0;
         firstServerMsgRef.current    = null;
+        accumulatedSpeechTimeRef.current = 0; // 🆕 2026-04-25
+        lastFrameTimeRef.current     = 0;     // 🆕 2026-04-25
+        loudStreakRef.current        = 0;     // 🆕 ensure clean start for next turn
         clearTimeout(thinkingDelayRef.current);
         thinkingDelayRef.current     = null;
         setIsThinking(false);
@@ -1357,29 +1462,41 @@ export default function EmmaChat({ initialMode }) {
       const now = Date.now();
       lastAudioSentRef.current = now;
 
-      // Only update lastLoudFrameRef when the mic actually heard something.
-      // Otherwise a stream of near-silent chunks would keep us in "still
-      // speaking" mode forever and the thinking indicator would never fire.
-      // Raised from 0.015 → 0.025 to ignore ambient noise / breathing.
-      const LOUD_AMP = 0.025;
+      // 🆕 2026-04-25: Senior-friendly VAD tuning.
+      // Raised from 0.025 → 0.04 to ignore more ambient noise (HVAC,
+      // distant traffic, fridge hum). Real speech amplitude is
+      // consistently >0.05.
+      const LOUD_AMP = 0.04;
       const isLoud   = maxAmp > LOUD_AMP;
       if (isLoud) {
         lastLoudFrameRef.current = now;
         loudStreakRef.current   += 1;
+
+        // 🆕 Track cumulative speech time across the turn.
+        // Only count when isLoud — silence between words shouldn't accumulate.
+        const dt = lastFrameTimeRef.current ? (now - lastFrameTimeRef.current) : 0;
+        // Cap dt at ~300ms to avoid huge jumps if frames were dropped.
+        if (dt > 0 && dt < 300) {
+          accumulatedSpeechTimeRef.current += dt;
+        }
       } else {
         loudStreakRef.current = 0;
       }
+      lastFrameTimeRef.current = now;
 
       // Track when user started speaking this turn (for timing log).
-      // Manual VAD: signal activity_start ONLY after sustained speech
-      // (≥3 consecutive loud frames ≈ 768ms @ 4096/16kHz) to avoid
-      // triggering on momentary noise like a cough, door, or typing.
-      const LOUD_STREAK_TO_START = 3;
+      // 🆕 2026-04-25: Raised from 3 → 5 frames (~1280ms @ 4096/16kHz).
+      // Senior users often make filler sounds ("음", "어", "그러니까") that
+      // last 800-1200ms. Requiring 1280ms+ of sustained loud frames
+      // filters most fillers while still catching genuine speech onset.
+      const LOUD_STREAK_TO_START = 5;
       if (isLoud
         && loudStreakRef.current >= LOUD_STREAK_TO_START
         && !hasSpokenThisTurnRef.current) {
         hasSpokenThisTurnRef.current = true;
         turnStartRef.current = now;
+        accumulatedSpeechTimeRef.current = 0; // 🆕 reset for new turn
+        lastFrameTimeRef.current = now;       // 🆕 reset for new turn
         console.log('[Turn] User speech started at:', now);
         try {
           if (ws.readyState === 1) {
@@ -1431,6 +1548,9 @@ export default function EmmaChat({ initialMode }) {
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
     thinkingShownAtRef.current   = 0;
+    accumulatedSpeechTimeRef.current = 0; // 🆕 2026-04-25
+    lastFrameTimeRef.current     = 0;     // 🆕 2026-04-25
+    loudStreakRef.current        = 0;     // 🆕 2026-04-25
     setIsConnected(false);
     setIsAiSpeaking(false);
     setIsThinking(false);
@@ -1471,9 +1591,10 @@ export default function EmmaChat({ initialMode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
         body: JSON.stringify({
-          message          : pendingTopicRef.current || '',
-          lang             : currentLang.toLowerCase(),
-          conversationMode : convModeRef.current,
+          message            : pendingTopicRef.current || '',
+          lang               : currentLang.toLowerCase(),
+          conversationMode   : convModeRef.current,
+          continueFragmentId : continueFragmentId || null, // 🆕 2026-04-25
         }),
       });
       if (res.ok) {
@@ -1537,6 +1658,9 @@ export default function EmmaChat({ initialMode }) {
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
     thinkingShownAtRef.current   = 0;
+    accumulatedSpeechTimeRef.current = 0; // 🆕 2026-04-25
+    lastFrameTimeRef.current     = 0;     // 🆕 2026-04-25
+    loudStreakRef.current        = 0;     // 🆕 2026-04-25
     setIsConnected(false);
     setMicOn(false);
     setLiveText('');

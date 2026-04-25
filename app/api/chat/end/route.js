@@ -91,13 +91,15 @@ export async function POST(request) {
   let sessionMode = conversationMode;
   if (!['companion', 'story', 'auto'].includes(sessionMode)) sessionMode = 'auto';
   let topicAnchor = null; // 🆕 2026-04-24
+  let continuationParentId = null; // 🆕 2026-04-25
   try {
     const modeRow = await db.query(
-      `SELECT conversation_mode, topic_anchor FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+      `SELECT conversation_mode, topic_anchor, continuation_parent_id FROM chat_sessions WHERE id = $1 AND user_id = $2`,
       [sessionId, user.id]
     );
     const dbMode = modeRow.rows[0]?.conversation_mode;
     topicAnchor = modeRow.rows[0]?.topic_anchor || null; // 🆕
+    continuationParentId = modeRow.rows[0]?.continuation_parent_id || null; // 🆕 2026-04-25
     // v2: conversation_mode is now ConversationMode enum → DB returns UPPERCASE.
     // Convert to lowercase for case-insensitive biz-logic comparison.
     const dbModeLower = dbMode?.toLowerCase();
@@ -227,16 +229,42 @@ Rules:
         const parsed = JSON.parse(raw.trim());
         const fragment = parsed.fragment;
 
-        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode}`);
+        // 🆕 2026-04-25: Continuation sessions ALWAYS save (skip completeness gate).
+        // Rationale: User explicitly clicked "이어서 말하기" → intent is clear.
+        // The parent fragment already has all 6 elements; additions are
+        // expected to be fragmentary ("그때 그분 이름이 정자씨였어요"). Failing
+        // to save = data loss = broken trust with senior users.
+        // Min 2 user turns guards against accidental clicks / greeting-only sessions.
+        const isContinuation = !!continuationParentId;
+        const userTurnCount = history.filter(m => m.role === 'user').length;
+        const continuationMinTurns = 2;
 
-        // Threshold: story mode is more permissive (completeness >= 2),
-        // companion and auto modes require stronger signal (completeness >= 3)
+        // Threshold for non-continuation flows (unchanged):
+        //   story mode is more permissive (completeness >= 2),
+        //   companion / auto modes require stronger signal (completeness >= 3).
         const completenessThreshold = sessionMode === 'story' ? 2 : 3;
 
-        // story mode: queue immediately if detected regardless of completeness
-        // companion mode: only queue if Gemini's analysis is confident (detected + threshold met)
-        const shouldQueue = fragment?.detected &&
-          (sessionMode === 'story' || (fragment?.completeness ?? 0) >= completenessThreshold);
+        let shouldQueue;
+        let generationReason;
+        if (isContinuation) {
+          if (userTurnCount >= continuationMinTurns) {
+            shouldQueue = true;
+            generationReason = `continuation session with ${userTurnCount} user turns (>= ${continuationMinTurns})`;
+          } else {
+            shouldQueue = false;
+            generationReason = `continuation session too short (${userTurnCount} < ${continuationMinTurns} user turns)`;
+          }
+        } else {
+          // Standard flow — keep existing detected/completeness gate.
+          shouldQueue = fragment?.detected &&
+            (sessionMode === 'story' || (fragment?.completeness ?? 0) >= completenessThreshold);
+          generationReason = shouldQueue
+            ? `standard session detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} mode=${sessionMode}`
+            : `standard session insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} threshold=${completenessThreshold})`;
+        }
+
+        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount}`);
+        console.log(`[chat/end] Generation decision: ${shouldQueue ? '✅ GENERATE' : '❌ SKIP'} — ${generationReason}`);
 
         if (shouldQueue) {
           // Step 1: Mark session as fragment candidate
@@ -276,6 +304,29 @@ Rules:
                 .join(',');
               console.log(`[chat/end:bg] calling generateFragmentCloud — userId=${userId} session=${sessionId} userMsgs=${userMsgCount} elements=[${elementKeys}] completeness=${fragment?.completeness}`);
 
+              // 🆕 2026-04-25: Continuation context — fetch parent title once,
+              //                used both by the prompt and for thread_order assignment.
+              let parentTitle = null;
+              let nextThreadOrder = null;
+              if (continuationParentId) {
+                try {
+                  const parentRow = await db.query(
+                    `SELECT title FROM story_fragments WHERE id = $1`,
+                    [continuationParentId]
+                  );
+                  parentTitle = parentRow.rows[0]?.title || null;
+                  const orderRes = await db.query(
+                    `SELECT COALESCE(MAX(thread_order), 0) + 1 AS next_order
+                       FROM story_fragments
+                      WHERE parent_fragment_id = $1`,
+                    [continuationParentId]
+                  );
+                  nextThreadOrder = orderRes.rows[0]?.next_order || 1;
+                } catch (e) {
+                  console.warn('[chat/end:bg] continuation parent lookup failed:', e.message);
+                }
+              }
+
               const fragmentJson = await generateFragmentCloud({
                 elements:   fragmentElements,
                 transcript: bgHistory,
@@ -286,6 +337,8 @@ Rules:
                 sessionId,
                 conversationMode: sessionMode,  // 🆕 'auto' | 'companion' | 'story'
                 topicAnchor,                    // 🆕 2026-04-24: user-declared topic
+                isContinuation: !!continuationParentId, // 🆕 2026-04-25
+                parentTitle,                            // 🆕 2026-04-25
               });
 
               if (!fragmentJson) {
@@ -309,11 +362,13 @@ Rules:
                    (user_id, title, subtitle, content, content_raw,
                     source_session_ids, source_conversation_date,
                     tags_era, tags_people, tags_place, tags_theme, tags_emotion,
-                    word_count, language, status, generated_by, truncated)
+                    word_count, language, status, generated_by, truncated,
+                    parent_fragment_id, thread_order)
                  VALUES ($1, $2, $3, $4, $5,
                          $6::uuid[], $7,
                          $8, $9, $10, $11, $12,
-                         $13, $14, $15, $16, $17)
+                         $13, $14, $15, $16, $17,
+                         $18, $19)
                  RETURNING id`,
                 [
                   userId,
@@ -333,6 +388,8 @@ Rules:
                   fragmentStatusToDb('draft'),       // $15 — 'DRAFT' (v2 enum)
                   'gemini-2.5-flash',                // $16
                   truncatedFlag,                     // $17
+                  continuationParentId,              // $18 🆕 2026-04-25
+                  nextThreadOrder,                   // $19 🆕 2026-04-25
                 ]
               );
 

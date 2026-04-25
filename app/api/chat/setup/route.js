@@ -26,8 +26,12 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { message = '', lang = 'en', conversationMode = 'auto' } = await request.json().catch(() => ({}));
-  const safeMode = ['companion', 'story', 'auto'].includes(conversationMode) ? conversationMode : 'auto';
+  const { message = '', lang = 'en', conversationMode = 'auto', continueFragmentId = null } =
+    await request.json().catch(() => ({}));
+  // 🆕 2026-04-25: Continuation sessions are always story mode.
+  let effectiveMode = conversationMode;
+  if (continueFragmentId) effectiveMode = 'story';
+  const safeMode = ['companion', 'story', 'auto'].includes(effectiveMode) ? effectiveMode : 'auto';
 
   const db = createDb();
 
@@ -70,14 +74,34 @@ export async function POST(request) {
     }
   });
 
+  // 🆕 2026-04-25: If continuing an existing root fragment, validate ownership +
+  // root-only constraint, then persist the link on the new chat_sessions row.
+  let validContinuationParentId = null;
+  if (continueFragmentId) {
+    try {
+      const parentRes = await db.query(
+        `SELECT id FROM story_fragments
+          WHERE id = $1 AND user_id = $2 AND parent_fragment_id IS NULL`,
+        [continueFragmentId, user.id]
+      );
+      if (parentRes.rows[0]) {
+        validContinuationParentId = parentRes.rows[0].id;
+      } else {
+        console.warn(`[chat/setup] continueFragmentId ${continueFragmentId} not found / not root / not owned`);
+      }
+    } catch (e) {
+      console.warn('[chat/setup] continuation parent lookup failed:', e.message);
+    }
+  }
+
   // 1. Create chat session row
   let sessionId;
   console.time('[chat/setup] insert-session');
   try {
     const res = await db.query(
-      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode)
-       VALUES ($1, NOW(), $2) RETURNING id`,
-      [user.id, conversationModeToDb(safeMode)]
+      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode, continuation_parent_id)
+       VALUES ($1, NOW(), $2, $3) RETURNING id`,
+      [user.id, conversationModeToDb(safeMode), validContinuationParentId]
     );
     sessionId = res.rows[0]?.id;
   } catch (e) {

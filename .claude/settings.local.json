@@ -178,7 +178,15 @@
       "Bash(node -e \"require\\('./lib/topicExtractor.js'\\); console.log\\('OK'\\);\")",
       "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('OK'\\);\")",
       "Bash(node -e \"require\\('./lib/generateFragmentCloud.js'\\); console.log\\('OK'\\);\")",
-      "Bash(npx --yes -p @babel/core@7 -p @babel/preset-react@7 babel --presets @babel/preset-react components/emma/EmmaChat.jsx -o /tmp/_emmachat_check.js)"
+      "Bash(npx --yes -p @babel/core@7 -p @babel/preset-react@7 babel --presets @babel/preset-react components/emma/EmmaChat.jsx -o /tmp/_emmachat_check.js)",
+      "Bash(node --check app/api/fragments/[id]/route.js)",
+      "Bash(node --check 'app/api/fragments/[id]/route.js')",
+      "Bash(node --env-file=.env.local -e ' *)",
+      "Bash(node --env-file=.env -e ' *)",
+      "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('components/emma/EmmaChat.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('EmmaChat OK'\\)\")",
+      "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('app/my-stories/page.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('my-stories OK'\\)\")",
+      "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('components/emma/EmmaChat.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('OK'\\)\")",
+      "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('require OK'\\)\")"
     ]
   }
 }

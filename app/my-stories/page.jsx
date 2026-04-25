@@ -23,6 +23,9 @@ const VIS_MSGS = {
     confirmToPriBtn  : 'Private으로 변경',
     saving           : '변경 중…',
     errMsg           : '변경에 실패했습니다. 다시 시도해주세요.',
+    continueLabel    : '💬 이어서 말하기',
+    continueHint     : '원본은 그대로 두고, 이 이야기에 새로운 내용을 추가합니다.',
+    threadTitle      : '추가된 이야기',
   },
   EN: {
     privateBadge     : '🔒 Private',
@@ -40,6 +43,9 @@ const VIS_MSGS = {
     confirmToPriBtn  : 'Make Private',
     saving           : 'Updating…',
     errMsg           : 'Could not update. Please try again.',
+    continueLabel    : '💬 Add to this story',
+    continueHint     : 'The original stays untouched — your new words will be added as a continuation.',
+    threadTitle      : 'Added later',
   },
   ES: {
     privateBadge     : '🔒 Privado',
@@ -57,6 +63,9 @@ const VIS_MSGS = {
     confirmToPriBtn  : 'Hacer privada',
     saving           : 'Actualizando…',
     errMsg           : 'No se pudo actualizar. Inténtalo de nuevo.',
+    continueLabel    : '💬 Añadir a esta historia',
+    continueHint     : 'El original queda intacto — tus nuevas palabras se añadirán como continuación.',
+    threadTitle      : 'Añadido después',
   },
 };
 
@@ -260,7 +269,25 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
   const [editContent, setEditCont] = useState(fragment.content || '');
   const [saving, setSaving]       = useState(false);
   const [currentVis, setCurrentVis] = useState(fragment.visibility || 'private');
+  const [continuations, setContinuations] = useState(fragment.continuations || []);
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+
+  // 🆕 2026-04-25: Load continuations (thread children) when modal opens
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch(`/api/fragments/${fragment.id}`);
+        const data = await res.json();
+        if (!cancelled && data?.fragment?.continuations) {
+          setContinuations(data.fragment.continuations);
+        }
+      } catch (e) {
+        console.warn('[FragmentModal] continuations load failed:', e.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fragment.id]);
 
   const allTags = [
     ...(fragment.tags_theme   || []).map(t => ({ text: t, cls: s.tagTheme })),
@@ -346,6 +373,16 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 </span>
               </div>
 
+              {/* 🆕 2026-04-25: Continue button moved here — right under title/visibility,
+                  so users don't need to scroll past long fragments to find it. */}
+              <button
+                className={s.continueBtn}
+                onClick={() => router.push(`/chat?continueFragment=${fragment.id}`)}
+              >
+                {vm.continueLabel}
+              </button>
+              <div className={s.continueHint}>{vm.continueHint}</div>
+
               <div className={s.modalContent}>
                 <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
               </div>
@@ -374,6 +411,21 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                       <span key={i} className={`${s.tag} ${t.cls}`}>{t.text}</span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* 🆕 2026-04-25: Continuation thread display */}
+              {continuations.length > 0 && (
+                <div className={s.threadSection}>
+                  <div className={s.threadTitle}>{vm.threadTitle}</div>
+                  {continuations.map((c, i) => (
+                    <div key={c.id} className={s.threadItem}>
+                      <div className={s.threadOrder}>#{c.thread_order ?? i + 1}</div>
+                      <div className={s.threadContent}>
+                        <ReactMarkdown>{c.content || ''}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

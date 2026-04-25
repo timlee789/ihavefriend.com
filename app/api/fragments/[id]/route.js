@@ -1,9 +1,44 @@
 /**
+ * GET    /api/fragments/:id — Fetch a fragment + its continuations (thread)
  * PATCH  /api/fragments/:id — Update a fragment (user edit)
  * DELETE /api/fragments/:id — Soft-delete a fragment
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+
+export async function GET(request, { params }) {
+  const { user, error } = await requireAuth(request);
+  if (error) return error;
+
+  const { id } = await params;
+  if (!id) return Response.json({ error: 'Fragment ID required' }, { status: 400 });
+
+  const db = createDb();
+
+  try {
+    const fragRes = await db.query(
+      `SELECT * FROM story_fragments WHERE id = $1 AND user_id = $2`,
+      [id, user.id]
+    );
+    const fragment = fragRes.rows[0];
+    if (!fragment) return Response.json({ error: 'Fragment not found' }, { status: 404 });
+
+    // 🆕 2026-04-25: Load continuations (children) ordered by thread_order
+    const contRes = await db.query(
+      `SELECT id, title, subtitle, content, thread_order, word_count, created_at
+         FROM story_fragments
+        WHERE parent_fragment_id = $1 AND user_id = $2
+        ORDER BY thread_order ASC NULLS LAST, created_at ASC`,
+      [id, user.id]
+    );
+    fragment.continuations = contRes.rows;
+
+    return Response.json({ fragment });
+  } catch (e) {
+    console.error('[GET /api/fragments/:id]', e.message);
+    return Response.json({ error: 'Failed to fetch fragment' }, { status: 500 });
+  }
+}
 
 export async function PATCH(request, { params }) {
   const { user, error } = await requireAuth(request);
