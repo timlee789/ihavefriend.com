@@ -26,6 +26,40 @@ const VIS_MSGS = {
     continueLabel    : '💬 이어서 말하기',
     continueHint     : '원본은 그대로 두고, 이 이야기에 새로운 내용을 추가합니다.',
     threadTitle      : '추가된 이야기',
+    // ─── Collections (2026-04-26) ───
+    tabStories       : '내 이야기들',
+    tabCollections   : '모음집',
+    createCollection : '새 모음집 만들기',
+    noCollections    : '아직 모음집이 없어요',
+    noCollectionsHint: '이야기들을 주제별로 묶어 정리할 수 있어요',
+    fragmentCountLabel: (n) => `이야기 ${n}개`,
+    charsLabel       : '자',
+    nameLabel        : '이름',
+    namePlaceholder  : '예: 가족 이야기, 신앙 여정, Collegiate Grill 추억',
+    descriptionLabel : '설명',
+    descriptionPlaceholder: '이 모음집은 어떤 이야기들을 담나요?',
+    optional         : '선택',
+    nameRequired     : '이름을 입력해 주세요',
+    create           : '만들기',
+    createFailed     : '생성에 실패했어요. 다시 시도해 주세요',
+    addFragmentBtn   : '이야기 추가하기',
+    noFragmentsInCollection: '아직 이야기가 없어요',
+    removeFromCollection: '모음집에서 제거',
+    editCollection   : '수정',
+    deleteCollection : '삭제',
+    confirmDelete    : '이 모음집을 삭제하시겠어요? 이야기들은 그대로 남습니다.',
+    closeBtn         : '닫기',
+    saveBtn          : '저장',
+    selectFragmentsTitle: '추가할 이야기 선택',
+    allFragmentsAdded: '모든 이야기가 이미 이 모음집에 있어요',
+    loading          : '불러오는 중…',
+    doneBtn          : '완료',
+    inCollectionsLabel: '속한 모음집',
+    noCollectionsForFragment: '아직 어느 모음집에도 속하지 않았어요',
+    addToCollectionBtn: '모음집에 추가',
+    pickCollectionTitle: '모음집 선택',
+    noCollectionsYet : '먼저 모음집을 만들어 주세요',
+    continuationChildBlocked: '이어말한 이야기는 부모를 추가하면 함께 따라옵니다.',
   },
   EN: {
     privateBadge     : '🔒 Private',
@@ -46,6 +80,40 @@ const VIS_MSGS = {
     continueLabel    : '💬 Add to this story',
     continueHint     : 'The original stays untouched — your new words will be added as a continuation.',
     threadTitle      : 'Added later',
+    // ─── Collections (2026-04-26) ───
+    tabStories       : 'My Stories',
+    tabCollections   : 'Collections',
+    createCollection : 'Create Collection',
+    noCollections    : 'No collections yet',
+    noCollectionsHint: 'Group stories by theme to organize them',
+    fragmentCountLabel: (n) => n === 1 ? '1 story' : `${n} stories`,
+    charsLabel       : ' chars',
+    nameLabel        : 'Name',
+    namePlaceholder  : 'e.g. Family Stories, My Faith Journey, Collegiate Grill Memories',
+    descriptionLabel : 'Description',
+    descriptionPlaceholder: 'What stories does this collection hold?',
+    optional         : 'optional',
+    nameRequired     : 'Please enter a name',
+    create           : 'Create',
+    createFailed     : 'Could not create. Please try again.',
+    addFragmentBtn   : 'Add Stories',
+    noFragmentsInCollection: 'No stories yet',
+    removeFromCollection: 'Remove from collection',
+    editCollection   : 'Edit',
+    deleteCollection : 'Delete',
+    confirmDelete    : 'Delete this collection? The stories themselves will remain.',
+    closeBtn         : 'Close',
+    saveBtn          : 'Save',
+    selectFragmentsTitle: 'Select Stories to Add',
+    allFragmentsAdded: 'All your stories are already in this collection',
+    loading          : 'Loading…',
+    doneBtn          : 'Done',
+    inCollectionsLabel: 'In Collections',
+    noCollectionsForFragment: 'Not in any collection yet',
+    addToCollectionBtn: 'Add to Collection',
+    pickCollectionTitle: 'Choose Collection',
+    noCollectionsYet : 'Create a collection first',
+    continuationChildBlocked: 'Continuation entries follow their parent automatically.',
   },
   ES: {
     privateBadge     : '🔒 Privado',
@@ -66,6 +134,40 @@ const VIS_MSGS = {
     continueLabel    : '💬 Añadir a esta historia',
     continueHint     : 'El original queda intacto — tus nuevas palabras se añadirán como continuación.',
     threadTitle      : 'Añadido después',
+    // ─── Collections (2026-04-26) ───
+    tabStories       : 'Mis historias',
+    tabCollections   : 'Colecciones',
+    createCollection : 'Crear colección',
+    noCollections    : 'Aún no hay colecciones',
+    noCollectionsHint: 'Agrupa historias por tema para organizarlas',
+    fragmentCountLabel: (n) => n === 1 ? '1 historia' : `${n} historias`,
+    charsLabel       : ' caracteres',
+    nameLabel        : 'Nombre',
+    namePlaceholder  : 'ej. Historias familiares, Mi camino de fe',
+    descriptionLabel : 'Descripción',
+    descriptionPlaceholder: '¿Qué historias contiene esta colección?',
+    optional         : 'opcional',
+    nameRequired     : 'Por favor ingresa un nombre',
+    create           : 'Crear',
+    createFailed     : 'No se pudo crear. Inténtalo de nuevo.',
+    addFragmentBtn   : 'Añadir historias',
+    noFragmentsInCollection: 'Aún sin historias',
+    removeFromCollection: 'Quitar de la colección',
+    editCollection   : 'Editar',
+    deleteCollection : 'Eliminar',
+    confirmDelete    : '¿Eliminar esta colección? Las historias se conservarán.',
+    closeBtn         : 'Cerrar',
+    saveBtn          : 'Guardar',
+    selectFragmentsTitle: 'Selecciona historias',
+    allFragmentsAdded: 'Todas tus historias ya están en esta colección',
+    loading          : 'Cargando…',
+    doneBtn          : 'Listo',
+    inCollectionsLabel: 'En colecciones',
+    noCollectionsForFragment: 'Aún no está en ninguna colección',
+    addToCollectionBtn: 'Añadir a colección',
+    pickCollectionTitle: 'Elegir colección',
+    noCollectionsYet : 'Primero crea una colección',
+    continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
   },
 };
 
@@ -270,17 +372,33 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
   const [saving, setSaving]       = useState(false);
   const [currentVis, setCurrentVis] = useState(fragment.visibility || 'private');
   const [continuations, setContinuations] = useState(fragment.continuations || []);
+  const [fragmentCollections, setFragmentCollections] = useState(fragment.collections || []);
+  const [showPicker, setShowPicker] = useState(false);
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
-  // 🆕 2026-04-25: Load continuations (thread children) when modal opens
+  // 🆕 2026-04-25: Load continuations (thread children) + collections when modal opens
+  const reloadFragmentMeta = useCallback(async () => {
+    try {
+      const res = await authFetch(`/api/fragments/${fragment.id}`);
+      const data = await res.json();
+      if (data?.fragment) {
+        if (data.fragment.continuations) setContinuations(data.fragment.continuations);
+        if (data.fragment.collections) setFragmentCollections(data.fragment.collections);
+      }
+    } catch (e) {
+      console.warn('[FragmentModal] meta load failed:', e.message);
+    }
+  }, [fragment.id]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await authFetch(`/api/fragments/${fragment.id}`);
         const data = await res.json();
-        if (!cancelled && data?.fragment?.continuations) {
-          setContinuations(data.fragment.continuations);
+        if (!cancelled && data?.fragment) {
+          if (data.fragment.continuations) setContinuations(data.fragment.continuations);
+          if (data.fragment.collections) setFragmentCollections(data.fragment.collections);
         }
       } catch (e) {
         console.warn('[FragmentModal] continuations load failed:', e.message);
@@ -346,6 +464,7 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
   }
 
   return (
+    <>
     <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
         <div className={s.modalHandle} />
@@ -382,6 +501,29 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 {vm.continueLabel}
               </button>
               <div className={s.continueHint}>{vm.continueHint}</div>
+
+              {/* 🆕 2026-04-26: Collections this fragment belongs to (Task 36) */}
+              {/* Only show for root fragments — continuations follow their parent */}
+              {!fragment.parent_fragment_id && (
+                <div className={s.fragmentCollectionsSection}>
+                  <div className={s.collectionsLabel}>{vm.inCollectionsLabel}</div>
+                  {fragmentCollections.length > 0 ? (
+                    <div className={s.collectionTags}>
+                      {fragmentCollections.map(c => (
+                        <span key={c.id} className={s.collectionTag}>📚 {c.name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={s.noCollections}>{vm.noCollectionsForFragment}</div>
+                  )}
+                  <button
+                    className={s.addToCollectionBtn}
+                    onClick={() => setShowPicker(true)}
+                  >
+                    📚 {vm.addToCollectionBtn}
+                  </button>
+                </div>
+              )}
 
               <div className={s.modalContent}>
                 <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
@@ -516,6 +658,17 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
         </div>
       </div>
     </div>
+
+    {showPicker && (
+      <FragmentCollectionPicker
+        fragmentId={fragment.id}
+        currentCollectionIds={fragmentCollections.map(c => c.id)}
+        lang={lang}
+        onClose={() => setShowPicker(false)}
+        onChanged={reloadFragmentMeta}
+      />
+    )}
+    </>
   );
 }
 
@@ -671,6 +824,593 @@ function EbookModal({ fragments, onClose, onSuccess }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// UserCollection components (2026-04-26 — Task 36)
+// ═══════════════════════════════════════════════════════════════
+
+function CollectionsView({ collections, onCreated, onChanged, lang, fragments }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [openCollectionId, setOpenCollectionId] = useState(null);
+
+  return (
+    <div className={s.collectionsContainer}>
+      <button
+        className={s.createCollectionBtn}
+        onClick={() => setShowCreateModal(true)}
+      >
+        ➕ {vm.createCollection}
+      </button>
+
+      {collections.length === 0 ? (
+        <div className={s.emptyState}>
+          <div className={s.emptyIcon}>📚</div>
+          <div className={s.emptyTitle}>{vm.noCollections}</div>
+          <div className={s.emptyDesc}>{vm.noCollectionsHint}</div>
+        </div>
+      ) : (
+        <div className={s.collectionsList}>
+          {collections.map(c => (
+            <button
+              key={c.id}
+              className={s.collectionCard}
+              onClick={() => setOpenCollectionId(c.id)}
+            >
+              <div className={s.collectionTitle}>{c.name}</div>
+              {c.description && (
+                <div className={s.collectionDesc}>{c.description}</div>
+              )}
+              <div className={s.collectionMeta}>
+                {vm.fragmentCountLabel(c.fragment_count || 0)} · {(c.total_word_count || 0).toLocaleString()}{vm.charsLabel}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showCreateModal && (
+        <CreateCollectionModal
+          lang={lang}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            onCreated();
+          }}
+        />
+      )}
+
+      {openCollectionId && (
+        <CollectionDetailModal
+          collectionId={openCollectionId}
+          lang={lang}
+          fragments={fragments}
+          onClose={() => setOpenCollectionId(null)}
+          onChanged={onChanged}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateCollectionModal({ lang, onClose, onCreated }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit() {
+    if (!name.trim()) {
+      setError(vm.nameRequired);
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const res = await authFetch('/api/collections', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || null,
+        }),
+      });
+      if (res.ok) {
+        onCreated();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || vm.createFailed);
+      }
+    } catch {
+      setError(vm.createFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div className={s.modalTitle}>{vm.createCollection}</div>
+          <button className={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          <label className={s.formLabelCol}>{vm.nameLabel}</label>
+          <input
+            type="text"
+            className={s.formInputCol}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            maxLength={200}
+            placeholder={vm.namePlaceholder}
+            autoFocus
+          />
+
+          <label className={s.formLabelCol}>{vm.descriptionLabel} ({vm.optional})</label>
+          <textarea
+            className={s.formTextareaCol}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            maxLength={5000}
+            rows={3}
+            placeholder={vm.descriptionPlaceholder}
+          />
+
+          {error && <div className={s.errorMsg}>{error}</div>}
+
+          <div className={s.modalActions}>
+            <button className={s.cancelBtn} onClick={onClose} disabled={saving}>
+              {vm.cancelBtn}
+            </button>
+            <button
+              className={s.btnPrimaryCol}
+              onClick={handleSubmit}
+              disabled={saving || !name.trim()}
+            >
+              {saving ? vm.saving : vm.create}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectionDetailModal({ collectionId, lang, fragments, onClose, onChanged }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [collection, setCollection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [showAddFragmentModal, setShowAddFragmentModal] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await authFetch(`/api/collections/${collectionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCollection(data.collection);
+        setEditName(data.collection.name);
+        setEditDescription(data.collection.description || '');
+      }
+    } catch (e) {
+      console.error('[CollectionDetailModal load]', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [collectionId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSave() {
+    if (!editName.trim()) {
+      setError(vm.nameRequired);
+      return;
+    }
+    setError('');
+    try {
+      const res = await authFetch(`/api/collections/${collectionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: editName.trim(),
+          description: editDescription.trim() || null,
+        }),
+      });
+      if (res.ok) {
+        setEditing(false);
+        await load();
+        onChanged();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || vm.errMsg);
+      }
+    } catch {
+      setError(vm.errMsg);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(vm.confirmDelete)) return;
+    try {
+      const res = await authFetch(`/api/collections/${collectionId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        onChanged();
+        onClose();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleRemoveFragment(fragmentId) {
+    try {
+      const res = await authFetch(
+        `/api/collections/${collectionId}/fragments/${fragmentId}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) {
+        await load();
+        onChanged();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  if (loading || !collection) {
+    return (
+      <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className={s.modal}>
+          <div className={s.modalHandle} />
+          <div className={s.modalBody}><Spinner /></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className={s.modal}>
+          <div className={s.modalHandle} />
+          <div className={s.modalHeader}>
+            <div className={s.modalTitle}>
+              {editing ? vm.editCollection : collection.name}
+            </div>
+            <button className={s.modalClose} onClick={onClose}>✕</button>
+          </div>
+
+          <div className={s.modalBody}>
+            {editing ? (
+              <>
+                <label className={s.formLabelCol}>{vm.nameLabel}</label>
+                <input
+                  type="text"
+                  className={s.formInputCol}
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  maxLength={200}
+                />
+                <label className={s.formLabelCol}>{vm.descriptionLabel}</label>
+                <textarea
+                  className={s.formTextareaCol}
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  maxLength={5000}
+                  rows={3}
+                  placeholder={vm.descriptionPlaceholder}
+                />
+                {error && <div className={s.errorMsg}>{error}</div>}
+                <div className={s.modalActions}>
+                  <button className={s.cancelBtn} onClick={() => { setEditing(false); setError(''); }}>
+                    {vm.cancelBtn}
+                  </button>
+                  <button className={s.btnPrimaryCol} onClick={handleSave}>
+                    {vm.saveBtn}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {collection.description && (
+                  <p className={s.collectionDescFull}>{collection.description}</p>
+                )}
+                <div className={s.collectionMetaFull}>
+                  {vm.fragmentCountLabel(collection.fragment_count || 0)} · {(collection.total_word_count || 0).toLocaleString()}{vm.charsLabel}
+                </div>
+
+                <button
+                  className={s.addFragmentBtn}
+                  onClick={() => setShowAddFragmentModal(true)}
+                >
+                  ➕ {vm.addFragmentBtn}
+                </button>
+
+                <div className={s.fragmentList}>
+                  {collection.fragments.length === 0 ? (
+                    <div className={s.emptyHint}>{vm.noFragmentsInCollection}</div>
+                  ) : (
+                    collection.fragments.map(f => (
+                      <div key={f.id} className={s.fragmentRow}>
+                        <div className={s.fragmentRowMain}>
+                          <div className={s.fragmentRowTitle}>📄 {f.title}</div>
+                          <div className={s.fragmentRowMeta}>
+                            {(f.word_count || 0).toLocaleString()}{vm.charsLabel}
+                            {f.continuation_count > 0 && ` · +${f.continuation_count}`}
+                          </div>
+                        </div>
+                        <button
+                          className={s.removeBtn}
+                          onClick={() => handleRemoveFragment(f.id)}
+                          title={vm.removeFromCollection}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {error && <div className={s.errorMsg}>{error}</div>}
+
+                <div className={s.modalActions}>
+                  <button className={s.btnDangerCol} onClick={handleDelete}>
+                    {vm.deleteCollection}
+                  </button>
+                  <button className={s.cancelBtn} onClick={() => setEditing(true)}>
+                    {vm.editCollection}
+                  </button>
+                  <button className={s.btnPrimaryCol} onClick={onClose}>
+                    {vm.closeBtn}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showAddFragmentModal && (
+        <AddFragmentToCollectionModal
+          collectionId={collectionId}
+          allFragments={fragments}
+          existingFragmentIds={collection.fragments.map(f => f.id)}
+          lang={lang}
+          onClose={() => setShowAddFragmentModal(false)}
+          onAdded={async () => {
+            await load();
+            onChanged();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function AddFragmentToCollectionModal({ collectionId, allFragments, existingFragmentIds, lang, onClose, onAdded }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [adding, setAdding] = useState(null);
+
+  // Only root fragments (parent_fragment_id IS NULL) can be added
+  const rootFragments = (allFragments || []).filter(f => !f.parent_fragment_id);
+  const available = rootFragments.filter(f => !existingFragmentIds.includes(f.id));
+
+  async function handleAdd(fragmentId) {
+    setAdding(fragmentId);
+    try {
+      const res = await authFetch(`/api/collections/${collectionId}/fragments`, {
+        method: 'POST',
+        body: JSON.stringify({ fragmentId }),
+      });
+      if (res.ok || res.status === 409) {
+        await onAdded();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAdding(null);
+    }
+  }
+
+  return (
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div className={s.modalTitle}>{vm.selectFragmentsTitle}</div>
+          <button className={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          {available.length === 0 ? (
+            <div className={s.emptyHint}>{vm.allFragmentsAdded}</div>
+          ) : (
+            <div className={s.fragmentSelectList}>
+              {available.map(f => (
+                <button
+                  key={f.id}
+                  className={s.fragmentSelectRow}
+                  onClick={() => handleAdd(f.id)}
+                  disabled={adding === f.id}
+                >
+                  <div className={s.fragmentSelectMain}>
+                    <div className={s.fragmentSelectTitle}>📄 {f.title}</div>
+                    <div className={s.fragmentSelectMeta}>
+                      {(f.word_count || 0).toLocaleString()}{vm.charsLabel}
+                    </div>
+                  </div>
+                  <div className={s.addIndicator}>
+                    {adding === f.id ? '…' : '➕'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className={s.modalActions}>
+            <button className={s.btnPrimaryCol} onClick={onClose}>
+              {vm.doneBtn}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FragmentCollectionPicker({ fragmentId, currentCollectionIds, lang, onClose, onChanged }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+  // Track local membership so toggling reflects immediately
+  const [localIds, setLocalIds] = useState(new Set(currentCollectionIds));
+
+  useEffect(() => {
+    setLocalIds(new Set(currentCollectionIds));
+  }, [currentCollectionIds]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch('/api/collections');
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setCollections(data.collections || []);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // 🆕 2026-04-26 (Task 37): Optimistic updates so seniors see the count change immediately.
+  // localIds + collections[i].fragment_count are updated BEFORE the request fires; on failure they roll back.
+  function bumpCount(collectionId, delta) {
+    setCollections(prev => prev.map(c =>
+      c.id === collectionId
+        ? { ...c, fragment_count: Math.max(0, (c.fragment_count || 0) + delta) }
+        : c
+    ));
+  }
+
+  async function handleAdd(collectionId) {
+    setBusyId(collectionId);
+    // Optimistic
+    setLocalIds(prev => new Set(prev).add(collectionId));
+    bumpCount(collectionId, +1);
+    try {
+      const res = await authFetch(`/api/collections/${collectionId}/fragments`, {
+        method: 'POST',
+        body: JSON.stringify({ fragmentId }),
+      });
+      if (res.ok || res.status === 409) {
+        // 409 = already in collection on server — keep optimistic state (it's correct)
+        onChanged();
+      } else {
+        console.warn('[FragmentCollectionPicker] add failed, rolling back', collectionId, res.status);
+        setLocalIds(prev => { const n = new Set(prev); n.delete(collectionId); return n; });
+        bumpCount(collectionId, -1);
+      }
+    } catch (e) {
+      console.warn('[FragmentCollectionPicker] add error, rolling back', e?.message);
+      setLocalIds(prev => { const n = new Set(prev); n.delete(collectionId); return n; });
+      bumpCount(collectionId, -1);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleRemove(collectionId) {
+    setBusyId(collectionId);
+    // Optimistic
+    setLocalIds(prev => { const n = new Set(prev); n.delete(collectionId); return n; });
+    bumpCount(collectionId, -1);
+    try {
+      const res = await authFetch(
+        `/api/collections/${collectionId}/fragments/${fragmentId}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) {
+        onChanged();
+      } else {
+        console.warn('[FragmentCollectionPicker] remove failed, rolling back', collectionId, res.status);
+        setLocalIds(prev => new Set(prev).add(collectionId));
+        bumpCount(collectionId, +1);
+      }
+    } catch (e) {
+      console.warn('[FragmentCollectionPicker] remove error, rolling back', e?.message);
+      setLocalIds(prev => new Set(prev).add(collectionId));
+      bumpCount(collectionId, +1);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function handleToggle(collectionId) {
+    const isIn = localIds.has(collectionId);
+    return isIn ? handleRemove(collectionId) : handleAdd(collectionId);
+  }
+
+  return (
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div className={s.modalTitle}>{vm.pickCollectionTitle}</div>
+          <button className={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          {loading ? (
+            <Spinner />
+          ) : collections.length === 0 ? (
+            <div className={s.emptyHint}>{vm.noCollectionsYet}</div>
+          ) : (
+            <div className={s.collectionPickerList}>
+              {collections.map(c => {
+                const isIn = localIds.has(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    className={`${s.collectionPickerRow} ${isIn ? s.collectionPickerActive : ''}`}
+                    onClick={() => handleToggle(c.id)}
+                    disabled={busyId === c.id}
+                  >
+                    <div className={s.collectionPickerMain}>
+                      <div className={s.collectionPickerTitle}>{c.name}</div>
+                      <div className={s.collectionPickerMeta}>
+                        {vm.fragmentCountLabel(c.fragment_count || 0)}
+                      </div>
+                    </div>
+                    <div className={s.collectionPickerCheck}>
+                      {busyId === c.id ? '…' : (isIn ? '✓' : '➕')}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className={s.modalActions}>
+            <button className={s.btnPrimaryCol} onClick={onClose}>
+              {vm.doneBtn}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────────
 export default function MyStoriesPage() {
   const router = useRouter();
@@ -678,11 +1418,14 @@ export default function MyStoriesPage() {
 
   const [fragments, setFragments]   = useState([]);
   const [books, setBooks]           = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [activeTab, setActiveTab]   = useState('stories');  // 'stories' | 'collections'
   const [loading, setLoading]       = useState(true);
   const [selected, setSelected]     = useState(null);   // fragment for detail modal
   const [showEbook, setShowEbook]   = useState(false);
   const [toast, setToast]           = useState('');
   const toastTimer = useRef(null);
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
   function showToast(msg) {
     setToast(msg);
@@ -697,9 +1440,10 @@ export default function MyStoriesPage() {
 
     setLoading(true);
     try {
-      const [fragRes, bookRes] = await Promise.all([
+      const [fragRes, bookRes, colRes] = await Promise.all([
         authFetch('/api/fragments?status=draft,confirmed&limit=100'),
         authFetch('/api/books/status'),
+        authFetch('/api/collections'),
       ]);
 
       if (fragRes.status === 401 || bookRes.status === 401) {
@@ -709,9 +1453,11 @@ export default function MyStoriesPage() {
 
       const fragData = await fragRes.json();
       const bookData = await bookRes.json();
+      const colData  = colRes.ok ? await colRes.json() : { collections: [] };
 
       setFragments(fragData.fragments || []);
       setBooks(bookData.books || []);
+      setCollections(colData.collections || []);
     } catch (e) {
       console.error(e);
       showToast('데이터를 불러오지 못했습니다.');
@@ -721,6 +1467,19 @@ export default function MyStoriesPage() {
   }, [router]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Lightweight refresh for collections only (after create/edit/delete/add/remove)
+  const reloadCollections = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/collections');
+      if (res.ok) {
+        const data = await res.json();
+        setCollections(data.collections || []);
+      }
+    } catch (e) {
+      console.error('[reloadCollections]', e.message);
+    }
+  }, []);
 
   // ── Callbacks ────────────────────────────────────────────────
   function handleUpdated(updated) {
@@ -766,6 +1525,32 @@ export default function MyStoriesPage() {
         <Spinner />
       ) : (
         <>
+          {/* ── Tab Bar (2026-04-26 — Task 36) ── */}
+          <div className={s.tabBar}>
+            <button
+              className={`${s.tab} ${activeTab === 'stories' ? s.tabActive : ''}`}
+              onClick={() => setActiveTab('stories')}
+            >
+              {vm.tabStories} ({fragments.length})
+            </button>
+            <button
+              className={`${s.tab} ${activeTab === 'collections' ? s.tabActive : ''}`}
+              onClick={() => setActiveTab('collections')}
+            >
+              {vm.tabCollections} ({collections.length})
+            </button>
+          </div>
+
+          {activeTab === 'collections' ? (
+            <CollectionsView
+              collections={collections}
+              onCreated={reloadCollections}
+              onChanged={reloadCollections}
+              lang={lang}
+              fragments={fragments}
+            />
+          ) : (
+          <>
           {/* ── Stats Bar ── */}
           <div className={s.statsBar}>
             <div className={s.statItem}>
@@ -857,6 +1642,8 @@ export default function MyStoriesPage() {
               {fragments.length === 0 ? 'ebook 신청 (이야기가 없음)' : 'ebook 신청'}
             </button>
           </div>
+          </>
+          )}
         </>
       )}
 

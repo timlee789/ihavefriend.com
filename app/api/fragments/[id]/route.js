@@ -33,6 +33,17 @@ export async function GET(request, { params }) {
     );
     fragment.continuations = contRes.rows;
 
+    // 🆕 2026-04-26: Collections this fragment belongs to (Task 36)
+    const colRes = await db.query(
+      `SELECT c.id, c.name
+         FROM user_collections c
+         INNER JOIN collection_fragments cf ON cf.collection_id = c.id
+        WHERE cf.fragment_id = $1 AND c.user_id = $2
+        ORDER BY c.name`,
+      [id, user.id]
+    );
+    fragment.collections = colRes.rows;
+
     return Response.json({ fragment });
   } catch (e) {
     console.error('[GET /api/fragments/:id]', e.message);

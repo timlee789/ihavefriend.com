@@ -186,7 +186,13 @@
       "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('components/emma/EmmaChat.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('EmmaChat OK'\\)\")",
       "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('app/my-stories/page.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('my-stories OK'\\)\")",
       "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('components/emma/EmmaChat.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('OK'\\)\")",
-      "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('require OK'\\)\")"
+      "Bash(node -e \"require\\('./lib/recallEngine.js'\\); console.log\\('require OK'\\)\")",
+      "Bash(node --check app/api/collections/route.js)",
+      "Bash(node --check 'app/api/collections/[id]/route.js')",
+      "Bash(node --check 'app/api/collections/[id]/fragments/route.js')",
+      "Bash(node --check 'app/api/collections/[id]/fragments/[fragmentId]/route.js')",
+      "Bash(node -e \"const p=require\\('@babel/parser'\\); const fs=require\\('fs'\\); try { p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('JSX OK'\\); } catch\\(e\\){ console.error\\('PARSE ERR:', e.message\\); process.exit\\(1\\); }\")",
+      "Bash(node -e \"const p=require\\('@babel/parser'\\),fs=require\\('fs'\\); p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf-8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('JSX OK'\\);\")"
     ]
   }
 }
