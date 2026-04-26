@@ -8,6 +8,8 @@
   background: #f2f2f0;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
+  max-width: 430px;
+  margin: 0 auto;
 }
 
 /* ── Header ── */

@@ -192,7 +192,9 @@
       "Bash(node --check 'app/api/collections/[id]/fragments/route.js')",
       "Bash(node --check 'app/api/collections/[id]/fragments/[fragmentId]/route.js')",
       "Bash(node -e \"const p=require\\('@babel/parser'\\); const fs=require\\('fs'\\); try { p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf-8'\\), {sourceType:'module', plugins:['jsx']}\\); console.log\\('JSX OK'\\); } catch\\(e\\){ console.error\\('PARSE ERR:', e.message\\); process.exit\\(1\\); }\")",
-      "Bash(node -e \"const p=require\\('@babel/parser'\\),fs=require\\('fs'\\); p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf-8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('JSX OK'\\);\")"
+      "Bash(node -e \"const p=require\\('@babel/parser'\\),fs=require\\('fs'\\); p.parse\\(fs.readFileSync\\('app/my-stories/page.jsx','utf-8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('JSX OK'\\);\")",
+      "Bash(node -e \"const p=require\\('@babel/parser'\\),fs=require\\('fs'\\); ['app/page.jsx','app/friends/page.jsx','app/login/page.js'].forEach\\(f=>{p.parse\\(fs.readFileSync\\(f,'utf-8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('OK',f\\);}\\)\")",
+      "Bash(node -e \"const p=require\\('@babel/parser'\\);const fs=require\\('fs'\\);p.parse\\(fs.readFileSync\\('app/page.jsx','utf8'\\),{sourceType:'module',plugins:['jsx']}\\);console.log\\('OK'\\);\")"
     ]
   }
 }

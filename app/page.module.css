@@ -1,142 +1,425 @@
-.page {
-  --background: #fafafa;
-  --foreground: #fff;
+/* ═══════════════════════════════════════════════════════════
+   Home Page — Identity-First (Task 38 + 39 + 40 final polish)
+   ═══════════════════════════════════════════════════════════ */
 
-  --text-primary: #000;
-  --text-secondary: #666;
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+.loadingScreen {
+  min-height: 100dvh;
+  background: #fdf8f4;
 }
 
-.main {
+.homeContainer {
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #fff7ed 0%, #fdf8f4 100%);
+  padding: 16px;
   display: flex;
-  flex: 1;
-  width: 100%;
-  max-width: 800px;
   flex-direction: column;
-  align-items: flex-start;
+  gap: 14px;
+  box-sizing: border-box;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* PC: unified background outside the 430px card */
+@media (min-width: 432px) {
+  :global(body) {
+    background: #fdf8f4;
+  }
+}
+
+/* Header */
+.homeHeader {
+  display: flex;
   justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
-}
-
-.intro {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
-}
-
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.ctas a {
-  display: flex;
-  justify-content: center;
   align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 500;
+  padding: 4px 0;
 }
 
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
+.logo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ea580c;
+  letter-spacing: -0.01em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-a.secondary {
-  border-color: var(--button-secondary-border);
+.logoutBtn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: inherit;
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
+.logoutBtn:hover {
+  color: #444;
+  background: rgba(0, 0, 0, 0.04);
 }
 
-@media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
-  }
-
-  .intro {
-    gap: 16px;
-  }
-
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
+.langPill {
+  background: #fff;
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
+.langPill:hover {
+  background: #fff7ed;
+}
+
+/* Greeting (single line, small) */
+.greetingLine {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+  padding: 2px 4px 4px;
+  letter-spacing: -0.01em;
+}
+
+/* ── Intro Card (expanded — main + divider + companion) ────── */
+.introCard {
+  background: #fff;
+  border: 1px solid #fed7aa;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.05);
+}
+
+/* Main section */
+.introMainSection {
+  text-align: center;
+}
+
+.introTagline {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.introSteps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.introStep {
+  font-size: 13px;
+  color: #ea580c;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: #fff7ed;
+  border-radius: 12px;
+}
+
+.introArrow {
+  color: #fb923c;
+  font-size: 14px;
+}
+
+.introBottomLine {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Hierarchy divider — gradient with fade ends */
+.introDivider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #fed7aa 50%,
+    transparent 100%
+  );
+  margin: 18px 0 14px;
+}
+
+/* Companion section — mirror-symmetric with main (vertical stack) */
+.introCompanionSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.companionTagline {
+  font-size: 15px;
+  color: #555;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  align-self: stretch;
+}
+
+.companionAvatars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+.companionAvatarSlot {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fde8d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* EmmaAvatar size="md" renders a fixed 34px SVG —
+   scale it up so the larger 54px slot doesn't dwarf the avatar. */
+.companionAvatarSlot svg {
+  transform: scale(1.4);
+  transform-origin: center;
+}
+
+.companionAvatarPlaceholder {
+  background: #fff7ed;
+  border: 1.5px dashed #fed7aa;
+}
+
+.placeholderQuestion {
+  color: #fb923c;
+  font-size: 22px;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+.companionSubline {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Primary CTA */
+.primaryCta {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 32px 24px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.primaryCta:active {
+  transform: scale(0.98);
+}
+
+.primaryCta:hover {
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.35);
+}
+
+.ctaIcon {
+  font-size: 28px;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.ctaTextWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.ctaMain {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.ctaSub {
+  font-size: 13px;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+/* Recent Stories card (entire card is a button) */
+.recentStoriesCard {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #fed7aa;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  flex: 1;
+  min-height: 200px;
+}
+
+.recentStoriesCard:hover {
+  border-color: #ea580c;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.1);
+}
+
+.recentStoriesCard:active {
+  transform: scale(0.99);
+}
+
+.viewAllLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ea580c;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+
+.recentDivider {
+  height: 1px;
+  background: #fef3e8;
+  margin-bottom: 12px;
+}
+
+.recentStoriesLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #999;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.recentStoriesList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recentStoryItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid #fef3e8;
+}
+
+.recentStoryItem:last-child {
+  border-bottom: none;
+}
+
+.recentStoryIcon {
+  font-size: 14px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.recentStoryTitle {
+  flex: 1;
+  font-size: 15px;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentEmpty {
+  text-align: center;
+  padding: 24px 12px;
+  color: #999;
+  font-size: 14px;
+}
+
+.recentEmptyHint {
+  font-size: 12px;
+  color: #bbb;
+  margin-top: 4px;
+}
+
+/* Dark mode (system preference) */
 @media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
+  .loadingScreen {
+    background: #0f0c0a;
   }
 
-  .page {
-    --background: #000;
-    --foreground: #000;
+  .homeContainer {
+    background: linear-gradient(180deg, #1a1410 0%, #0f0c0a 100%);
+  }
 
-    --text-primary: #ededed;
-    --text-secondary: #999;
+  .logo { color: #fb923c; }
+  .greetingLine { color: rgba(255, 255, 255, 0.75); }
 
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
+  .logoutBtn { color: #aaa; }
+  .logoutBtn:hover { color: #fdf8f4; background: rgba(255, 255, 255, 0.06); }
+
+  .langPill {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(251, 146, 60, 0.4);
+    color: #fb923c;
+  }
+
+  .introCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(251, 146, 60, 0.3);
+    box-shadow: none;
+  }
+  .introTagline { color: rgba(255, 255, 255, 0.85); }
+  .introBottomLine { color: rgba(255, 255, 255, 0.5); }
+
+  .introDivider {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(251, 146, 60, 0.3) 50%,
+      transparent 100%
+    );
+  }
+  .companionTagline { color: rgba(255, 255, 255, 0.75); }
+  .companionSubline { color: rgba(255, 255, 255, 0.5); }
+  .companionAvatarSlot {
+    background: rgba(28, 18, 48, 0.6);
+  }
+  .companionAvatarPlaceholder {
+    background: rgba(255, 247, 237, 0.04);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  .placeholderQuestion {
+    color: rgba(251, 146, 60, 0.5);
+  }
+
+  .recentStoriesCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  .viewAllLabel { color: #fb923c; }
+  .recentDivider { background: rgba(255, 255, 255, 0.08); }
+  .recentStoriesLabel { color: rgba(255, 255, 255, 0.5); }
+  .recentStoryItem { border-bottom-color: rgba(255, 255, 255, 0.06); }
+  .recentStoryTitle { color: rgba(255, 255, 255, 0.92); }
+}
+
+@media (prefers-color-scheme: dark) and (min-width: 432px) {
+  :global(body) {
+    background: #0f0c0a;
   }
 }

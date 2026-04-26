@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (data.user.role === 'admin') {
         router.push('/admin');
       } else {
-        router.push('/friends');
+        router.push('/');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -48,9 +48,9 @@ export default function LoginPage() {
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logo}>
-          <div style={styles.logoIcon}>✨</div>
-          <h1 style={styles.logoText}>AI Companion</h1>
-          <p style={styles.logoSub}>Your personal AI friend, always here for you</p>
+          <div style={styles.logoIcon}>📚</div>
+          <h1 style={styles.logoText}>SayAndKeep</h1>
+          <p style={styles.logoSub}>A space to listen, organize, and keep every story</p>
         </div>
 
         {/* Tabs */}

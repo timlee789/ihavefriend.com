@@ -1781,7 +1781,7 @@ export default function EmmaChat({ initialMode }) {
 
       {/* ── top nav ── */}
       <header className={`${styles.topnav} ${isDay ? styles.topnavDay : styles.topnavNight}`}>
-        <button className={styles.backBtn} onClick={() => { disconnect(); router.push('/friends'); }}>←</button>
+        <button className={styles.backBtn} onClick={() => { disconnect(); router.push('/'); }}>←</button>
 
         <div className={`${styles.navAvatar} ${isDay ? styles.navAvatarDay : styles.navAvatarNight}`}>
           <EmmaAvatar size="md" mode={mode} />
@@ -2125,7 +2125,7 @@ export default function EmmaChat({ initialMode }) {
                 <div className={styles.feedbackBtns}>
                   <button
                     className={`${styles.skipBtn} ${isDay ? styles.skipBtnDay : styles.skipBtnNight}`}
-                    onClick={() => { setShowFeedback(false); router.push('/friends'); }}
+                    onClick={() => { setShowFeedback(false); router.push('/'); }}
                   >
                     {lang === 'KO' ? '건너뛰기' : lang === 'ES' ? 'Omitir' : 'Skip'}
                   </button>

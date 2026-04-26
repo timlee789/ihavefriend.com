@@ -73,7 +73,7 @@ export default function AdminPage() {
       <div style={S.header}>
         <div>
           <h1 style={S.title}>⚙️ Admin Dashboard</h1>
-          <p style={S.subtitle}>AI Companion — User Management</p>
+          <p style={S.subtitle}>SayAndKeep — User Management</p>
         </div>
         <button style={S.logoutBtn} onClick={() => { localStorage.clear(); router.push('/login'); }}>Logout</button>
       </div>
