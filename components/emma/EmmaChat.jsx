@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaChat.module.css';
 import { pickStarterCards } from '@/lib/storyStarterQuestions';
+import { detectBurst } from '@/lib/transcriptNoise';
 
 // ── Emma character configs per language ──────────────────────────────────────
 const EMMA_CHARS = {
@@ -47,6 +48,11 @@ Always respond in English.`,
     status_lost:     'Connection lost. Tap to reconnect.',
     status_failed:   'Reconnect failed. Tap to try again.',
     status_nokey:    '❌ Server not configured. Contact admin.',
+    captionLabel:    'Live captions',
+    captionListening:'(waiting for your voice…)',
+    captionToggleOn: '👁 Captions on',
+    captionToggleOff:'🚫 Captions off',
+    sttWarn:         '⚠️ Voice recognition seems stuck. Please pause briefly and say it again.',
   },
   KO: {
     voice: 'Kore',
@@ -86,6 +92,11 @@ Always respond in English.`,
     status_lost:     '연결이 끊겼어요. 다시 탭하여 대화하세요.',
     status_failed:   '재연결 실패. 다시 탭하여 대화하세요.',
     status_nokey:    '❌ API 키가 설정되지 않았어요. 관리자에게 문의하세요.',
+    captionLabel:    '실시간 자막',
+    captionListening:'(말씀해 주세요…)',
+    captionToggleOn: '👁 자막 켜기',
+    captionToggleOff:'🚫 자막 끄기',
+    sttWarn:         '⚠️ 음성 인식이 멈춘 것 같아요. 잠시 멈추고 다시 말씀해 주세요.',
   },
   ES: {
     voice: 'Leda',
@@ -126,6 +137,11 @@ Responde siempre en español.`,
     status_lost:     'Conexión perdida. Toca para reconectar.',
     status_failed:   'Reconexión fallida. Inténtalo de nuevo.',
     status_nokey:    '❌ Servidor no configurado. Contacta al admin.',
+    captionLabel:    'Subtítulos en vivo',
+    captionListening:'(habla, por favor…)',
+    captionToggleOn: '👁 Activar subtítulos',
+    captionToggleOff:'🚫 Desactivar subtítulos',
+    sttWarn:         '⚠️ El reconocimiento de voz parece atascado. Pausa un momento y vuelve a decirlo.',
   },
 };
 
@@ -632,6 +648,24 @@ export default function EmmaChat({ initialMode }) {
   // keep ref in sync
   useEffect(() => { convModeRef.current = conversationMode; }, [conversationMode]);
 
+  // Hydrate captions toggle from localStorage (default ON).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const v = localStorage.getItem('captionsOn');
+    if (v === '0') setCaptionsOn(false);
+  }, []);
+  function toggleCaptions() {
+    setCaptionsOn(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('captionsOn', next ? '1' : '0');
+      }
+      // Wipe stale text/warning when turning off so they don't linger.
+      if (!next) { setUserLiveText(''); setSttWarning(''); }
+      return next;
+    });
+  }
+
   function toggleMute() {
     const next = !isMuted;
     setIsMuted(next);
@@ -755,6 +789,21 @@ export default function EmmaChat({ initialMode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [liveText,  setLiveText]  = useState('');   // streaming AI text
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  // 🆕 Task 47: live STT diagnostics for the user
+  //   - userLiveText: rolling tail of what STT has emitted for the current
+  //                   user turn. Updated on every inputTranscription chunk.
+  //   - sttWarning:   set when detectBurst() fires, cleared on turnComplete
+  //                   or when the user speaks something new and clean.
+  //   - captionsOn:   localStorage-persisted (default ON). Lets seniors
+  //                   who find the captions distracting hide them.
+  const [userLiveText, setUserLiveText] = useState('');
+  const [sttWarning,   setSttWarning]   = useState('');
+  const [captionsOn,   setCaptionsOn]   = useState(true);
+  // Mirror sttWarning into a ref so the WS message handler (which closes
+  // over the initial render's state) can read the latest value without a
+  // stale-closure bug.
+  const sttWarningRef = useRef('');
+  useEffect(() => { sttWarningRef.current = sttWarning; }, [sttWarning]);
   const [isThinking,   setIsThinking]   = useState(false); // user done speaking, Emma processing
   // thinkingLevel: 0 = dots only, 1 = "잠시만요, 생각하고 있어요" (≥5s),
   //                2 = "조금만 더 기다려 주세요" (≥10s), 3 = error fallback (≥15s)
@@ -1332,7 +1381,23 @@ export default function EmmaChat({ initialMode }) {
 
       // User transcript
       const userTranscript = msg.serverContent?.inputTranscription?.text ?? msg.inputTranscription?.text;
-      if (userTranscript) currentUserMsgRef.current += userTranscript;
+      if (userTranscript) {
+        currentUserMsgRef.current += userTranscript;
+        // 🆕 Task 47 #1+#2: surface streaming user STT for the live caption
+        // strip and run repetition-burst detection. Tail-only display keeps
+        // the row stable when transcripts grow long.
+        const tail = currentUserMsgRef.current.length > 220
+          ? '…' + currentUserMsgRef.current.slice(-220)
+          : currentUserMsgRef.current;
+        setUserLiveText(tail);
+        const burst = detectBurst(currentUserMsgRef.current);
+        if (burst.hit) {
+          setSttWarning(emma.sttWarn || '⚠️ STT collapse detected');
+        } else if (sttWarningRef.current) {
+          // User pushed past a previous burst with new clean content → clear.
+          setSttWarning('');
+        }
+      }
 
       // Turn complete → finalize messages
       if (msg.serverContent?.turnComplete) {
@@ -1372,6 +1437,10 @@ export default function EmmaChat({ initialMode }) {
         currentUserMsgRef.current = '';
         rawAiTextRef.current     = '';
         setLiveText('');
+        // 🆕 Task 47: clear the live user caption + any STT warning at
+        // turn boundary so they don't bleed into the next turn.
+        setUserLiveText('');
+        setSttWarning('');
         setIsAiSpeaking(false);
 
         // Save turn to server
@@ -1941,6 +2010,30 @@ export default function EmmaChat({ initialMode }) {
           );
         })()}
       </div>
+
+      {/* ── Live STT diagnostics (Task 47): captions + burst warning ── */}
+      {(isConnected || messages.length > 0) && (
+        <div className={`${styles.sttStrip} ${isDay ? styles.sttStripDay : styles.sttStripNight}`}>
+          {/* Warning takes priority over plain caption */}
+          {sttWarning ? (
+            <div className={`${styles.sttWarn} ${isDay ? styles.sttWarnDay : styles.sttWarnNight}`}>
+              {sttWarning}
+            </div>
+          ) : captionsOn && (userLiveText || micOn) ? (
+            <div className={`${styles.sttCaption} ${isDay ? styles.sttCaptionDay : styles.sttCaptionNight}`}>
+              {userLiveText || emma.captionListening}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className={`${styles.captionToggle} ${isDay ? styles.captionToggleDay : styles.captionToggleNight}`}
+            onClick={toggleCaptions}
+            aria-pressed={captionsOn}
+          >
+            {captionsOn ? emma.captionToggleOff : emma.captionToggleOn}
+          </button>
+        </div>
+      )}
 
       {/* ── voice bottom bar (hidden on welcome; shown during/after a session) ── */}
       {(isConnected || messages.length > 0) && (

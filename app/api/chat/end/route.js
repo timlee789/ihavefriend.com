@@ -21,7 +21,7 @@ import { createDb } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
 import { after } from 'next/server';
 import { fragmentStatusToDb } from '@/lib/enumMappers';
-import { cleanTranscript } from '@/lib/transcriptNoise';
+import { cleanTranscript, buildConversationSample, hadBurst } from '@/lib/transcriptNoise';
 
 // Allow the background fragment-generation task (Gemini Flash call + INSERT)
 // enough time to finish on Vercel Hobby before the lambda is frozen.
@@ -137,6 +137,31 @@ export async function POST(request) {
     console.warn(`[chat/end] ⚠️ STT noise detected — original=${originalLen} cleaned=${cleanedLen} ratio=${(noiseRatio*100).toFixed(1)}% userTurnsKept=${userTurnsKept}`);
   }
 
+  // 🆕 Task 47 #4 — STT quality telemetry. Compute per-session signals and
+  // persist on chat_sessions for downstream analytics. Fire-and-forget; an
+  // analytics-write failure must never block memory extraction.
+  try {
+    const noisyTurnCount = rawHistory.reduce((n, m) => {
+      if (m.role !== 'user') return n;
+      // Use hadBurst (full-text retrospective scan) — detectBurst is
+      // tail-only and would miss bursts that the user spoke past.
+      return hadBurst(m.content || '') ? n + 1 : n;
+    }, 0);
+    const sttQualityScore = originalLen > 0
+      ? Math.max(0, Math.min(1, 1 - noiseRatio))
+      : null;
+    await db.query(
+      `UPDATE chat_sessions
+         SET stt_quality_score = $1,
+             noisy_turn_count  = $2
+       WHERE id = $3`,
+      [sttQualityScore, noisyTurnCount, sessionId]
+    );
+    console.log(`[chat/end] 📊 telemetry — sttQualityScore=${sttQualityScore?.toFixed(3) ?? 'null'} noisyTurnCount=${noisyTurnCount}`);
+  } catch (telErr) {
+    console.warn('[chat/end] telemetry write failed (non-fatal):', telErr.message);
+  }
+
   let result = { memoriesExtracted: 0 };
   try {
     const { processSessionEnd } = require('@/lib/recallEngine');
@@ -159,16 +184,21 @@ export async function POST(request) {
   let fragmentJobId = null;
   if (apiKey && history.length >= 2) {
     try {
-      const conversationText = history
-        .map(m => `${m.role === 'user' ? '사용자' : 'Emma'}: ${m.content}`)
-        .join('\n');
+      // 🆕 2026-04-27 (Task 47 #5): replace brittle substring(0, 3000) with
+      // a sampler that prioritises user turns and caps any single turn so
+      // one giant noisy message can't starve the rest of the context.
+      const conversationText = buildConversationSample(history, {
+        maxChars: 3000,
+        userLabel: '사용자',
+        assistantLabel: 'Emma',
+      });
 
       const analysisPrompt = `Analyze this conversation between a user and Emma (AI friend) for story-worthy moments.
 
 A story-worthy moment has specific WHEN, WHERE, WHO, WHAT, EMOTION, or WHY elements.
 
 Conversation:
-${conversationText.substring(0, 3000)}
+${conversationText}
 
 Return ONLY valid JSON (no explanation):
 {

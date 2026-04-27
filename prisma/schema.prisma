@@ -246,29 +246,29 @@ model UserSetting {
 // ═══════════════════════════════════════════════════════════════
 
 model ApiUsageLog {
-  id           BigInt   @id @default(autoincrement())
-  userId       Int      @map("user_id")
-  sessionId    String?  @map("session_id") @db.Uuid
+  id        BigInt  @id @default(autoincrement())
+  userId    Int     @map("user_id")
+  sessionId String? @map("session_id") @db.Uuid
 
   // Provider info
-  provider     String   @db.VarChar(20)
-  model        String   @db.VarChar(50)
-  operation    String   @db.VarChar(40)
+  provider  String @db.VarChar(20)
+  model     String @db.VarChar(50)
+  operation String @db.VarChar(40)
 
   // Token counts
-  inputTokens  Int      @default(0) @map("input_tokens")
-  outputTokens Int      @default(0) @map("output_tokens")
-  totalTokens  Int      @default(0) @map("total_tokens")
+  inputTokens  Int @default(0) @map("input_tokens")
+  outputTokens Int @default(0) @map("output_tokens")
+  totalTokens  Int @default(0) @map("total_tokens")
 
   // Cost — 저장 시점 단가로 계산해 고정 (나중에 단가 변경돼도 과거 기록 불변)
-  costUsd      Decimal  @default(0) @map("cost_usd") @db.Decimal(10, 8)
+  costUsd Decimal @default(0) @map("cost_usd") @db.Decimal(10, 8)
 
   // Context
-  success      Boolean  @default(true)
-  errorCode    String?  @map("error_code") @db.VarChar(50)
-  latencyMs    Int?     @map("latency_ms")
+  success   Boolean @default(true)
+  errorCode String? @map("error_code") @db.VarChar(50)
+  latencyMs Int?    @map("latency_ms")
 
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -284,28 +284,33 @@ model ApiUsageLog {
 // ═══════════════════════════════════════════════════════════════
 
 model ChatSession {
-  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId            Int              @map("user_id")
-  characterId       String           @default("emma") @map("character_id") @db.VarChar(20)
-  startedAt         DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
-  endedAt           DateTime?        @map("ended_at") @db.Timestamptz(6)
-  totalTurns        Int              @default(0) @map("total_turns")
-  memoriesExtracted Boolean          @default(false) @map("memories_extracted")
-  extractionCount   Int              @default(0) @map("extraction_count")
-  transcriptData    Json             @default("[]") @map("transcript_data")
-  fragmentCandidate Boolean          @default(false) @map("fragment_candidate")
-  fragmentElements  Json             @default("{}") @map("fragment_elements")
-  conversationMode  ConversationMode @default(AUTO) @map("conversation_mode")
+  id                   String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId               Int              @map("user_id")
+  characterId          String           @default("emma") @map("character_id") @db.VarChar(20)
+  startedAt            DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
+  endedAt              DateTime?        @map("ended_at") @db.Timestamptz(6)
+  totalTurns           Int              @default(0) @map("total_turns")
+  memoriesExtracted    Boolean          @default(false) @map("memories_extracted")
+  extractionCount      Int              @default(0) @map("extraction_count")
+  transcriptData       Json             @default("[]") @map("transcript_data")
+  fragmentCandidate    Boolean          @default(false) @map("fragment_candidate")
+  fragmentElements     Json             @default("{}") @map("fragment_elements")
+  conversationMode     ConversationMode @default(AUTO) @map("conversation_mode")
   // 🆕 2026-04-24: Topic Anchor — user sovereignty
   // Extracted from user's FIRST message (after greeting) in a story-mode session.
   // Acts as a constraint on Emma's questions and Fragment's title/subtitle.
   // NULL for companion/auto sessions or when extraction fails.
-  topicAnchor       String?          @map("topic_anchor") @db.Text
+  topicAnchor          String?          @map("topic_anchor") @db.Text
   // 🆕 2026-04-25: Continuation — when this session continues a prior root fragment
-  continuationParentId String?       @map("continuation_parent_id") @db.Uuid
-  oneWordSummary    String?          @map("one_word_summary") @db.VarChar(50) // N2 🆕
-  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
+  continuationParentId String?          @map("continuation_parent_id") @db.Uuid
+  oneWordSummary       String?          @map("one_word_summary") @db.VarChar(50) // N2 🆕
+  // 🆕 2026-04-27 (Task 47 #4): STT quality telemetry
+  // sttQualityScore: 1.0 = clean, 0.0 = entirely noise (1 - noiseRatio)
+  // noisyTurnCount:  count of user turns that contained an ASR repetition burst
+  sttQualityScore      Float?           @map("stt_quality_score")
+  noisyTurnCount       Int              @default(0) @map("noisy_turn_count")
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   emotionTurns     EmotionTurn[]
@@ -570,8 +575,8 @@ model StoryFragment {
   // - parentFragmentId NULL = root fragment (independent or original)
   // - parentFragmentId NOT NULL = a continuation of the parent fragment
   // - threadOrder: ordering among siblings under same parent (1, 2, 3, ...)
-  parentFragmentId  String? @map("parent_fragment_id") @db.Uuid
-  threadOrder       Int?    @map("thread_order")       @db.SmallInt
+  parentFragmentId String? @map("parent_fragment_id") @db.Uuid
+  threadOrder      Int?    @map("thread_order") @db.SmallInt
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

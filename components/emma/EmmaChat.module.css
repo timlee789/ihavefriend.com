@@ -171,6 +171,90 @@
   50%       { transform: translateY(-4px); opacity: 1; }
 }
 
+/* ── STT diagnostics strip (Task 47): captions + burst warning ── */
+.sttStrip {
+  flex-shrink: 0;
+  padding: 6px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+.sttStripDay   { background: #fff5ee; border-top: 0.5px solid rgba(234,88,12,0.08); }
+.sttStripNight { background: #13101f; border-top: 0.5px solid rgba(124,58,237,0.10); }
+
+.sttCaption {
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  letter-spacing: -0.1px;
+  /* The strip can be busy with quick text changes — animate softly. */
+  transition: background-color 0.18s ease, color 0.18s ease;
+  /* Avoid layout jump as text grows: keep a min-height equivalent of one line. */
+  min-height: 1.4em;
+  word-break: break-word;
+}
+.sttCaptionDay {
+  background: rgba(234,88,12,0.06);
+  color: #5a3b22;
+}
+.sttCaptionNight {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.78);
+}
+
+.sttWarn {
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  /* Soft attention pulse so seniors notice without being alarmed. */
+  animation: sttWarnPulse 1.4s ease-in-out infinite;
+}
+.sttWarnDay {
+  background: #fff1d6;
+  color: #92400e;
+  border: 1px solid rgba(180,83,9,0.25);
+}
+.sttWarnNight {
+  background: rgba(251,191,36,0.10);
+  color: #fcd34d;
+  border: 1px solid rgba(251,191,36,0.25);
+}
+@keyframes sttWarnPulse {
+  0%, 100% { opacity: 1.0; }
+  50%      { opacity: 0.78; }
+}
+
+.captionToggle {
+  align-self: center;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+.captionToggleDay {
+  color: #b76a3a;
+}
+.captionToggleDay:hover {
+  background: rgba(234,88,12,0.08);
+}
+.captionToggleNight {
+  color: rgba(255,255,255,0.55);
+}
+.captionToggleNight:hover {
+  background: rgba(255,255,255,0.06);
+}
+
 /* ── voice bar ── */
 .voiceBar {
   flex-shrink: 0;
