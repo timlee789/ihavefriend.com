@@ -21,6 +21,7 @@ import { createDb } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
 import { after } from 'next/server';
 import { fragmentStatusToDb } from '@/lib/enumMappers';
+import { cleanTranscript } from '@/lib/transcriptNoise';
 
 // Allow the background fragment-generation task (Gemini Flash call + INSERT)
 // enough time to finish on Vercel Hobby before the lambda is frozen.
@@ -120,10 +121,21 @@ export async function POST(request) {
   }
 
   // Convert transcript format: [{role, text}] → [{role, content}]
-  const history = transcript.map(t => ({
+  const rawHistory = transcript.map(t => ({
     role: t.role === 'user' ? 'user' : 'assistant',
     content: t.text || t.content || '',
   }));
+
+  // 🆕 2026-04-27 (Task 47): Normalise STT noise BEFORE any LLM call.
+  // ASR repetition collapse ("어디 어디 어디 …" ×500) can dominate the
+  // 3000–4000 char truncation window used by fragment-detect and
+  // generateFragmentCloud. We collapse those runs and cap implausibly
+  // long single turns so downstream stages see real content.
+  const { cleaned: history, noiseRatio, hadNoise, userTurnsKept, originalLen, cleanedLen } =
+    cleanTranscript(rawHistory);
+  if (hadNoise) {
+    console.warn(`[chat/end] ⚠️ STT noise detected — original=${originalLen} cleaned=${cleanedLen} ratio=${(noiseRatio*100).toFixed(1)}% userTurnsKept=${userTurnsKept}`);
+  }
 
   let result = { memoriesExtracted: 0 };
   try {
@@ -261,6 +273,22 @@ Rules:
           generationReason = shouldQueue
             ? `standard session detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} mode=${sessionMode}`
             : `standard session insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} threshold=${completenessThreshold})`;
+
+          // 🆕 2026-04-27 (Task 47): STORY-mode noise rescue.
+          // When STT noise was detected and Gemini's fragment-detect
+          // returned detected=false / low completeness, the cleaned
+          // transcript may still contain a real story — Gemini just got
+          // confused by the surrounding noise. If the user was in STORY
+          // mode (explicit story-recording intent) and we still have at
+          // least 2 cleaned user turns of substance, force-queue the
+          // generation. The downstream Gemini Flash rewrite is robust
+          // enough to handle the cleaned content, and losing a 5-minute
+          // intentional story to a noisy mic is a worse failure mode than
+          // occasionally generating a thin fragment.
+          if (!shouldQueue && sessionMode === 'story' && hadNoise && userTurnsKept >= 2) {
+            shouldQueue = true;
+            generationReason = `STORY-mode noise rescue — hadNoise=true userTurnsKept=${userTurnsKept} noiseRatio=${(noiseRatio*100).toFixed(1)}%`;
+          }
         }
 
         console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount}`);
