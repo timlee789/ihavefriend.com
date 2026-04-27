@@ -360,6 +360,61 @@
   margin-top: 4px;
 }
 
+/* Sharing Stories card — content discovery (Task 45) */
+.sharingStoriesCard {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  gap: 14px;
+}
+
+.sharingStoriesCard:hover {
+  border-color: #ea580c;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.1);
+}
+
+.sharingStoriesCard:active {
+  transform: scale(0.99);
+}
+
+.sharingStoriesIcon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.sharingStoriesContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.sharingStoriesTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+
+.sharingStoriesDesc {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.sharingStoriesArrow {
+  font-size: 18px;
+  color: #ea580c;
+  flex-shrink: 0;
+}
+
 /* Dark mode (system preference) */
 @media (prefers-color-scheme: dark) {
   .loadingScreen {
@@ -410,6 +465,14 @@
   .placeholderQuestion {
     color: rgba(251, 146, 60, 0.5);
   }
+
+  .sharingStoriesCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  .sharingStoriesTitle { color: rgba(255, 255, 255, 0.92); }
+  .sharingStoriesDesc { color: rgba(255, 255, 255, 0.55); }
+  .sharingStoriesArrow { color: #fb923c; }
 
   .recentStoriesCard {
     background: rgba(255, 255, 255, 0.05);

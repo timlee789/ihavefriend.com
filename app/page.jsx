@@ -36,6 +36,7 @@ const HOME_MSGS = {
     logout          : '로그아웃',
     companionTagline: '친구와 이야기하는 기록되지 않는 공간',
     companionSubline: '친구와 대화를 나누어요',
+    sharingStoriesTitle: '이야기 듣기',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -54,6 +55,7 @@ const HOME_MSGS = {
     logout          : 'Log out',
     companionTagline: 'Space to chat with a friend (not kept)',
     companionSubline: 'Have a casual chat',
+    sharingStoriesTitle: 'Listen to Stories',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -72,6 +74,7 @@ const HOME_MSGS = {
     logout          : 'Cerrar sesión',
     companionTagline: 'Espacio para charlar con un amigo (no se guarda)',
     companionSubline: 'Conversa de forma casual',
+    sharingStoriesTitle: 'Escuchar historias',
   },
 };
 
@@ -241,6 +244,18 @@ export default function Home() {
           <div className={s.ctaMain}>{msgs.startStoryBtn}</div>
           <div className={s.ctaSub}>{msgs.startStoryHint}</div>
         </div>
+      </button>
+
+      {/* Sharing Stories — content discovery, retention loop */}
+      <button
+        className={s.sharingStoriesCard}
+        onClick={() => router.push('/sharing-stories')}
+      >
+        <div className={s.sharingStoriesIcon}>📖</div>
+        <div className={s.sharingStoriesContent}>
+          <div className={s.sharingStoriesTitle}>{msgs.sharingStoriesTitle}</div>
+        </div>
+        <div className={s.sharingStoriesArrow}>→</div>
       </button>
 
       {/* Recent Stories card (entire card → /my-stories) */}
