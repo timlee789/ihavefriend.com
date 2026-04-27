@@ -60,6 +60,60 @@ const VIS_MSGS = {
     pickCollectionTitle: '모음집 선택',
     noCollectionsYet : '먼저 모음집을 만들어 주세요',
     continuationChildBlocked: '이어말한 이야기는 부모를 추가하면 함께 따라옵니다.',
+    // ─── Page level (Task 44 i18n) ───
+    pageTitle        : '나의 이야기들',
+    refreshTitle     : '새로고침',
+    statLabelStories : '이야기',
+    statLabelChars   : '글자 수',
+    statLabelLatest  : '최근 생성',
+    sectionConfirmed : '완성된 이야기',
+    sectionDraft     : '초안',
+    statusConfirmed  : '완성',
+    statusDraft      : '초안',
+    emptyTitleStories: '아직 이야기가 없어요',
+    emptyDescStories : '엠마와 대화하다 보면\n소중한 이야기들이 자동으로 모입니다.',
+    truncatedTitle   : '이야기가 중간에 끊겼어요',
+    truncatedBannerText: '이 이야기는 중간에 끊겼어요. Emma와 이어서 이야기해볼까요?',
+    truncatedShort   : '이야기가 중간에 끊겼어요.',
+    continueWithEmma : 'Emma와 이어서 이야기하기',
+    editMode         : '편집',
+    editTitlePlaceholder    : '제목',
+    editSubtitlePlaceholder : '부제 (선택)',
+    editContentPlaceholder  : '이야기 내용',
+    tagsLabel        : '태그',
+    confirmDeleteFragment   : '정말 이 이야기를 삭제할까요? 되돌릴 수 없습니다.',
+    confirmDeleteYes : '네, 삭제합니다',
+    deletingMsg      : '삭제 중…',
+    savingMsg        : '저장 중…',
+    deleteFragment   : '삭제',
+    toastSaved       : '저장되었습니다.',
+    toastDeleted     : '삭제되었습니다.',
+    toastLoadFailed  : '데이터를 불러오지 못했습니다.',
+    ebookSectionTitle: '📖 나만의 ebook',
+    ebookSectionDesc : '이야기들을 모아 PDF ebook으로 만들어 드립니다.',
+    ebookRequestBtn  : 'ebook 신청',
+    ebookRequestEmpty: 'ebook 신청 (이야기가 없음)',
+    ebookDownload    : '↓ PDF 다운로드',
+    ebookDownloadFailed     : '다운로드에 실패했습니다.',
+    ebookDownloadError      : '다운로드 중 오류가 발생했습니다.',
+    ebookModalTitle  : 'ebook 신청',
+    ebookTitleLabel  : 'ebook 제목',
+    ebookTitleDefault: '나의 이야기',
+    ebookDedicationLabel    : '헌사 (선택)',
+    ebookDedicationPlaceholder : '예: 사랑하는 가족에게…',
+    ebookOptionPreface      : '머리말 자동 생성',
+    ebookOptionEpilogue     : '맺음말 자동 생성',
+    ebookFragmentsLabel     : (sel, total) => `포함할 이야기 (${sel}/${total})`,
+    ebookSelectAll   : '전체 선택',
+    ebookDeselectAll : '전체 해제',
+    ebookSubmit      : '신청하기',
+    ebookSubmitting  : '신청 중…',
+    ebookSuccessTitle: 'ebook 신청이 완료되었습니다.',
+    ebookSuccessDesc : '24시간 내에 정리하여 다운로드 가능합니다.\n완성되면 상태가 업데이트됩니다.',
+    bookStatusPending     : 'ebook을 준비 중입니다 (24시간 내)',
+    bookStatusGenerating  : 'ebook을 생성 중입니다…',
+    bookStatusReview      : 'ebook 검수 중입니다',
+    bookStatusCompleted   : 'ebook이 준비되었습니다!',
   },
   EN: {
     privateBadge     : '🔒 Private',
@@ -114,6 +168,60 @@ const VIS_MSGS = {
     pickCollectionTitle: 'Choose Collection',
     noCollectionsYet : 'Create a collection first',
     continuationChildBlocked: 'Continuation entries follow their parent automatically.',
+    // ─── Page level (Task 44 i18n) ───
+    pageTitle        : 'My Stories',
+    refreshTitle     : 'Refresh',
+    statLabelStories : 'Stories',
+    statLabelChars   : 'Characters',
+    statLabelLatest  : 'Latest',
+    sectionConfirmed : 'Completed Stories',
+    sectionDraft     : 'Drafts',
+    statusConfirmed  : 'Done',
+    statusDraft      : 'Draft',
+    emptyTitleStories: 'No stories yet',
+    emptyDescStories : 'Your stories will appear here\nas you talk with Emma.',
+    truncatedTitle   : 'This story was cut off',
+    truncatedBannerText: 'This story was cut off. Want to continue it with Emma?',
+    truncatedShort   : 'This story was cut off.',
+    continueWithEmma : 'Continue with Emma',
+    editMode         : 'Edit',
+    editTitlePlaceholder    : 'Title',
+    editSubtitlePlaceholder : 'Subtitle (optional)',
+    editContentPlaceholder  : 'Story content',
+    tagsLabel        : 'Tags',
+    confirmDeleteFragment   : 'Really delete this story? This cannot be undone.',
+    confirmDeleteYes : 'Yes, delete',
+    deletingMsg      : 'Deleting…',
+    savingMsg        : 'Saving…',
+    deleteFragment   : 'Delete',
+    toastSaved       : 'Saved.',
+    toastDeleted     : 'Deleted.',
+    toastLoadFailed  : 'Could not load data.',
+    ebookSectionTitle: '📖 Your ebook',
+    ebookSectionDesc : 'We can compile your stories into a PDF ebook.',
+    ebookRequestBtn  : 'Request ebook',
+    ebookRequestEmpty: 'Request ebook (no stories yet)',
+    ebookDownload    : '↓ Download PDF',
+    ebookDownloadFailed     : 'Download failed.',
+    ebookDownloadError      : 'An error occurred while downloading.',
+    ebookModalTitle  : 'Request ebook',
+    ebookTitleLabel  : 'ebook title',
+    ebookTitleDefault: 'My Stories',
+    ebookDedicationLabel    : 'Dedication (optional)',
+    ebookDedicationPlaceholder : 'e.g. To my beloved family…',
+    ebookOptionPreface      : 'Auto-generate preface',
+    ebookOptionEpilogue     : 'Auto-generate epilogue',
+    ebookFragmentsLabel     : (sel, total) => `Stories to include (${sel}/${total})`,
+    ebookSelectAll   : 'Select all',
+    ebookDeselectAll : 'Deselect all',
+    ebookSubmit      : 'Submit',
+    ebookSubmitting  : 'Submitting…',
+    ebookSuccessTitle: 'Your ebook request has been received.',
+    ebookSuccessDesc : 'It will be ready for download within 24 hours.\nThe status will update when complete.',
+    bookStatusPending     : 'Preparing your ebook (within 24 hours)',
+    bookStatusGenerating  : 'Generating your ebook…',
+    bookStatusReview      : 'ebook is in review',
+    bookStatusCompleted   : 'Your ebook is ready!',
   },
   ES: {
     privateBadge     : '🔒 Privado',
@@ -168,6 +276,60 @@ const VIS_MSGS = {
     pickCollectionTitle: 'Elegir colección',
     noCollectionsYet : 'Primero crea una colección',
     continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
+    // ─── Page level (Task 44 i18n) ───
+    pageTitle        : 'Mis historias',
+    refreshTitle     : 'Actualizar',
+    statLabelStories : 'Historias',
+    statLabelChars   : 'Caracteres',
+    statLabelLatest  : 'Última',
+    sectionConfirmed : 'Historias completas',
+    sectionDraft     : 'Borradores',
+    statusConfirmed  : 'Lista',
+    statusDraft      : 'Borrador',
+    emptyTitleStories: 'Aún no hay historias',
+    emptyDescStories : 'Tus historias aparecerán aquí\nmientras hablas con Emma.',
+    truncatedTitle   : 'Esta historia se interrumpió',
+    truncatedBannerText: 'Esta historia se interrumpió. ¿Quieres continuarla con Emma?',
+    truncatedShort   : 'Esta historia se interrumpió.',
+    continueWithEmma : 'Continuar con Emma',
+    editMode         : 'Editar',
+    editTitlePlaceholder    : 'Título',
+    editSubtitlePlaceholder : 'Subtítulo (opcional)',
+    editContentPlaceholder  : 'Contenido de la historia',
+    tagsLabel        : 'Etiquetas',
+    confirmDeleteFragment   : '¿Eliminar esta historia? No se puede deshacer.',
+    confirmDeleteYes : 'Sí, eliminar',
+    deletingMsg      : 'Eliminando…',
+    savingMsg        : 'Guardando…',
+    deleteFragment   : 'Eliminar',
+    toastSaved       : 'Guardado.',
+    toastDeleted     : 'Eliminado.',
+    toastLoadFailed  : 'No se pudieron cargar los datos.',
+    ebookSectionTitle: '📖 Tu ebook',
+    ebookSectionDesc : 'Podemos compilar tus historias en un ebook PDF.',
+    ebookRequestBtn  : 'Solicitar ebook',
+    ebookRequestEmpty: 'Solicitar ebook (sin historias)',
+    ebookDownload    : '↓ Descargar PDF',
+    ebookDownloadFailed     : 'Falló la descarga.',
+    ebookDownloadError      : 'Ocurrió un error al descargar.',
+    ebookModalTitle  : 'Solicitar ebook',
+    ebookTitleLabel  : 'Título del ebook',
+    ebookTitleDefault: 'Mis historias',
+    ebookDedicationLabel    : 'Dedicatoria (opcional)',
+    ebookDedicationPlaceholder : 'ej. A mi querida familia…',
+    ebookOptionPreface      : 'Generar prólogo automático',
+    ebookOptionEpilogue     : 'Generar epílogo automático',
+    ebookFragmentsLabel     : (sel, total) => `Historias a incluir (${sel}/${total})`,
+    ebookSelectAll   : 'Seleccionar todas',
+    ebookDeselectAll : 'Deseleccionar todas',
+    ebookSubmit      : 'Enviar',
+    ebookSubmitting  : 'Enviando…',
+    ebookSuccessTitle: 'Tu solicitud de ebook se ha recibido.',
+    ebookSuccessDesc : 'Estará listo para descargar en 24 horas.\nEl estado se actualizará al completarse.',
+    bookStatusPending     : 'Preparando tu ebook (en 24 horas)',
+    bookStatusGenerating  : 'Generando tu ebook…',
+    bookStatusReview      : 'ebook en revisión',
+    bookStatusCompleted   : '¡Tu ebook está listo!',
   },
 };
 
@@ -180,56 +342,6 @@ function useLang() {
   }, []);
   return lang;
 }
-
-// ── Sample community stories (Task 2) ──────────────────────────────────────
-const SAMPLE_STORIES = [
-  {
-    id      : 'sample-1',
-    title   : '할머니의 된장찌개',
-    subtitle: '맛보다 더 깊은 것들',
-    content : `할머니 집에 가면 항상 그 냄새가 먼저였다. 된장이 부글부글 끓는 소리, 파가 지글거리는 소리. 문을 열기도 전에 배가 고파졌다.
-
-할머니는 된장을 직접 담그셨다. 매년 봄이면 마당 한켠 장독대 앞에 쪼그려 앉아 항아리를 열어보셨는데, 그 모습이 마치 작은 의식 같았다. 나는 그 옆에서 흙장난을 하다 말고 슬금슬금 다가가 냄새를 맡곤 했다. 퀴퀴하면서도 구수한, 뭐라 설명하기 어려운 냄새.
-
-지금 나는 마흔셋이고 할머니는 오래전 돌아가셨다. 된장찌개를 끓일 때마다 그 마당이 생각난다. 흙냄새, 장독의 서늘함, 할머니의 손등에 있던 주름들. 음식은 참 묘하다. 혀가 기억하는 게 아니라, 온몸이 기억한다.
-
-그날 이후로 나는 아이들에게 된장찌개를 가르치고 있다. 언젠가 내가 없어도, 이 냄새만큼은 남아있으면 좋겠다고 생각하면서.`,
-    tags    : ['가족', '추억', '음식', '할머니'],
-    preview : '할머니 집에 가면 항상 그 냄새가 먼저였다. 된장이 부글부글 끓는 소리, 파가 지글거리는 소리.',
-  },
-  {
-    id      : 'sample-2',
-    title   : '첫 출근의 넥타이',
-    subtitle: '아버지가 매주신 매듭',
-    content : `스물두 살 첫 출근 날, 나는 넥타이를 맬 줄 몰랐다.
-
-전날 밤 유튜브를 보며 20번쯤 연습했지만 아침에 거울 앞에 서니 손이 떨렸다. 그때 문이 열리더니 아버지가 들어오셨다. 말없이 내 앞에 서서 넥타이를 잡으셨다. 굵고 거칠었던 손. 공사판에서 30년을 일하신 손.
-
-"반 하프 윈저. 이게 제일 믿음직스러워 보여."
-
-아버지는 내 넥타이를 매주시면서 그 한마디만 하셨다. 그런데 그 말이 내내 마음에 걸렸다. 믿음직스러워 보인다는 게 그날 내게 가장 필요한 말이었으니까.
-
-회사를 그만두고 창업을 했을 때도, 힘든 날 혼자 넥타이를 매면서 그 손의 감촉을 생각했다. 이제는 나도 아버지처럼 아이에게 넥타이 매는 법을 가르쳐 주는 날을 기다리고 있다.`,
-    tags    : ['아버지', '첫 경험', '직장', '성장'],
-    preview : '스물두 살 첫 출근 날, 나는 넥타이를 맬 줄 몰랐다. 전날 밤 유튜브를 보며 20번쯤 연습했지만…',
-  },
-  {
-    id      : 'sample-3',
-    title   : '딸이 처음 걸었던 날',
-    subtitle: '11걸음',
-    content : `딸이 걷기 시작한 건 14개월째 되던 토요일 오후였다.
-
-아내와 나는 거실 양 끝에 앉아 서로를 바라보고 있었다. 딸은 그 사이에서 소파 모서리를 잡고 망설이고 있었다. 우리는 숨을 참았다.
-
-한 걸음. 두 걸음. 세 걸음. 네 걸음에서 엉덩방아를 찧었다가 다시 일어났다. 다섯, 여섯, 일곱… 열한 걸음. 내 품에 와서 쿵 하고 안겼다.
-
-나는 그 순간 울었다. 아내도 울었다. 딸은 영문을 모르고 우리 얼굴을 번갈아 보다가 자기도 따라 울었다. 셋이서 거실 바닥에 앉아 한참을 울었다.
-
-그 열한 걸음이 나한테는 아직도 선명하다. 살면서 그보다 더 극적인 장면을 본 적이 없다. 열한 걸음. 그게 전부였는데. 그게 전부인데도 세상이 달라 보였다.`,
-    tags    : ['자녀', '가족', '행복', '육아'],
-    preview : '딸이 걷기 시작한 건 14개월째 되던 토요일 오후였다. 아내와 나는 거실 양 끝에 앉아 서로를 바라보고 있었다.',
-  },
-];
 
 // ── helpers ────────────────────────────────────────────────────
 function getToken() {
@@ -249,10 +361,11 @@ function authFetch(url, opts = {}) {
   });
 }
 
-function fmtDate(d) {
+function fmtDate(d, lang = 'KO') {
   if (!d) return '';
   const dt = new Date(d);
-  return dt.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+  const locale = lang === 'EN' ? 'en-US' : lang === 'ES' ? 'es-ES' : 'ko-KR';
+  return dt.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function fmtDateShort(d) {
@@ -267,13 +380,16 @@ function preview(text, max = 100) {
 }
 
 // ── Status label helpers ────────────────────────────────────────
-const BOOK_STATUS = {
-  pending  : { msg: 'ebook을 준비 중입니다 (24시간 내)', cls: 'pendingMsg',   card: 'pending'   },
-  generating: { msg: 'ebook을 생성 중입니다…',           cls: 'pendingMsg',   card: 'pending'   },
-  review   : { msg: 'ebook 검수 중입니다',               cls: 'reviewMsg',    card: 'review'    },
-  completed: { msg: 'ebook이 준비되었습니다!',           cls: 'completedMsg', card: 'completed' },
-  published: { msg: 'ebook이 준비되었습니다!',           cls: 'completedMsg', card: 'completed' },
-};
+function getBookStatusInfo(status, vm) {
+  const map = {
+    pending   : { msg: vm.bookStatusPending,    cls: 'pendingMsg',   card: 'pending'   },
+    generating: { msg: vm.bookStatusGenerating, cls: 'pendingMsg',   card: 'pending'   },
+    review    : { msg: vm.bookStatusReview,     cls: 'reviewMsg',    card: 'review'    },
+    completed : { msg: vm.bookStatusCompleted,  cls: 'completedMsg', card: 'completed' },
+    published : { msg: vm.bookStatusCompleted,  cls: 'completedMsg', card: 'completed' },
+  };
+  return map[status] || map.pending;
+}
 
 // ── Spinner ─────────────────────────────────────────────────────
 function Spinner() {
@@ -287,81 +403,6 @@ function Spinner() {
 }
 
 // ── Fragment Detail Modal ────────────────────────────────────────
-// ── Sample Story Modal (Task 2) ─────────────────────────────────────────────
-function SampleStoryModal({ story, onClose }) {
-  return (
-    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className={s.modal}>
-        <div className={s.modalHandle} />
-        <div className={s.modalHeader}>
-          <div>
-            <div className={s.modalTitle}>{story.title}</div>
-            {story.subtitle && <div className={s.modalSubtitle}>{story.subtitle}</div>}
-          </div>
-          <button className={s.modalClose} onClick={onClose}>✕</button>
-        </div>
-        <div className={s.modalBody}>
-          <div className={s.modalContent}>
-            <ReactMarkdown>{story.content || ''}</ReactMarkdown>
-          </div>
-          {story.tags?.length > 0 && (
-            <div className={s.modalTagSection}>
-              <div className={s.modalTagLabel}>태그</div>
-              <div className={s.tagRow}>
-                {story.tags.map((t, i) => (
-                  <span key={i} className={`${s.tag} ${s.tagTheme}`}>{t}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Sample Gallery (Task 2) ──────────────────────────────────────────────────
-function SampleGallery({ onStartChat }) {
-  const [selected, setSelected] = useState(null);
-
-  return (
-    <div className={s.sampleSection}>
-      <div className={s.sectionTitle} style={{ paddingTop: 0 }}>다른 분들의 이야기</div>
-      <div className={s.sampleDesc}>
-        엠마와 나눈 대화에서 탄생한 실제 이야기들이에요.
-      </div>
-      <div className={s.cardList}>
-        {SAMPLE_STORIES.map(story => (
-          <div key={story.id} className={`${s.card} ${s.sampleCard}`}
-            onClick={() => setSelected(story)}>
-            <div className={s.cardHeader}>
-              <div className={s.cardTitle}>{story.title}</div>
-              <span className={`${s.statusBadge} ${s.statusConfirmed}`}>샘플</span>
-            </div>
-            {story.subtitle && <div className={s.cardSubtitle}>{story.subtitle}</div>}
-            <div className={s.cardPreview}>{story.preview}</div>
-            <div className={s.cardFooter}>
-              <div className={s.tagRow}>
-                {(story.tags || []).slice(0, 3).map((t, i) => (
-                  <span key={i} className={`${s.tag} ${s.tagTheme}`}>{t}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button className={s.startChatBtn} onClick={onStartChat}>
-        ✏️ 나도 이야기 남기기
-      </button>
-
-      {selected && (
-        <SampleStoryModal story={selected} onClose={() => setSelected(null)} />
-      )}
-    </div>
-  );
-}
-
 // ── Fragment Modal ─────────────────────────────────────────────────────────
 function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' }) {
   const router = useRouter();
@@ -473,7 +514,7 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
         <div className={s.modalHeader}>
           <div>
             <div className={s.modalTitle}>
-              {mode === 'edit' ? '편집' : fragment.title}
+              {mode === 'edit' ? vm.editMode : fragment.title}
             </div>
             {mode === 'view' && fragment.subtitle && (
               <div className={s.modalSubtitle}>{fragment.subtitle}</div>
@@ -532,7 +573,7 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
               {fragment.truncated && (
                 <div className={s.truncatedBanner}>
                   <div className={s.truncatedBannerText}>
-                    이 이야기는 중간에 끊겼어요. Emma와 이어서 이야기해볼까요?
+                    {vm.truncatedBannerText}
                   </div>
                   <button
                     className={s.regenerateBtn}
@@ -540,14 +581,14 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                       router.push(`/chat?topic=${encodeURIComponent(fragment.title)}&fromFragment=${fragment.id}`);
                     }}
                   >
-                    Emma와 이어서 이야기하기
+                    {vm.continueWithEmma}
                   </button>
                 </div>
               )}
 
               {allTags.length > 0 && (
                 <div className={s.modalTagSection}>
-                  <div className={s.modalTagLabel}>태그</div>
+                  <div className={s.modalTagLabel}>{vm.tagsLabel}</div>
                   <div className={s.tagRow}>
                     {allTags.map((t, i) => (
                       <span key={i} className={`${s.tag} ${t.cls}`}>{t.text}</span>
@@ -572,11 +613,11 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
               )}
 
               <div className={s.modalActions}>
-                <button className={s.editBtn} onClick={() => setMode('edit')}>편집</button>
+                <button className={s.editBtn} onClick={() => setMode('edit')}>{vm.editMode}</button>
                 <button className={s.visibilityBtn} onClick={() => setMode('confirmVisibility')}>
                   {currentVis === 'private' ? vm.toggleToPublic : vm.toggleToPrivate}
                 </button>
-                <button className={s.deleteBtn} onClick={() => setMode('confirmDelete')}>삭제</button>
+                <button className={s.deleteBtn} onClick={() => setMode('confirmDelete')}>{vm.deleteFragment}</button>
               </div>
             </>
           )}
@@ -614,13 +655,13 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
           {/* ── CONFIRM DELETE ── */}
           {mode === 'confirmDelete' && (
             <>
-              <div className={s.confirmMsg}>정말 이 이야기를 삭제할까요? 되돌릴 수 없습니다.</div>
+              <div className={s.confirmMsg}>{vm.confirmDeleteFragment}</div>
               <div className={s.confirmRow}>
                 <button className={s.deleteBtn} onClick={handleDelete} disabled={saving}
                   style={{ flex: 1 }}>
-                  {saving ? '삭제 중…' : '네, 삭제합니다'}
+                  {saving ? vm.deletingMsg : vm.confirmDeleteYes}
                 </button>
-                <button className={s.cancelBtn} onClick={() => setMode('view')}>취소</button>
+                <button className={s.cancelBtn} onClick={() => setMode('view')}>{vm.cancelBtn}</button>
               </div>
             </>
           )}
@@ -632,26 +673,26 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 className={s.editInput}
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
-                placeholder="제목"
+                placeholder={vm.editTitlePlaceholder}
               />
               <input
                 className={s.editInput}
                 value={editSubtitle}
                 onChange={e => setEditSub(e.target.value)}
-                placeholder="부제 (선택)"
+                placeholder={vm.editSubtitlePlaceholder}
               />
               <textarea
                 className={s.editArea}
                 value={editContent}
                 onChange={e => setEditCont(e.target.value)}
-                placeholder="이야기 내용"
+                placeholder={vm.editContentPlaceholder}
               />
               <div className={s.modalActions}>
                 <button className={s.saveBtn} onClick={handleSave}
                   disabled={saving || !editTitle.trim() || !editContent.trim()}>
-                  {saving ? '저장 중…' : '저장'}
+                  {saving ? vm.savingMsg : vm.saveBtn}
                 </button>
-                <button className={s.cancelBtn} onClick={() => setMode('view')}>취소</button>
+                <button className={s.cancelBtn} onClick={() => setMode('view')}>{vm.cancelBtn}</button>
               </div>
             </>
           )}
@@ -673,8 +714,9 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
 }
 
 // ── Ebook Request Modal ──────────────────────────────────────────
-function EbookModal({ fragments, onClose, onSuccess }) {
-  const [title, setTitle]           = useState('나의 이야기');
+function EbookModal({ fragments, onClose, onSuccess, lang = 'KO' }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  const [title, setTitle]           = useState(vm.ebookTitleDefault);
   const [dedication, setDedication] = useState('');
   const [autoPreface, setAutoPreface]   = useState(true);
   const [autoEpilogue, setAutoEpilogue] = useState(true);
@@ -732,7 +774,7 @@ function EbookModal({ fragments, onClose, onSuccess }) {
         <div className={s.modalHandle} />
 
         <div className={s.modalHeader}>
-          <div className={s.modalTitle}>ebook 신청</div>
+          <div className={s.modalTitle}>{vm.ebookModalTitle}</div>
           <button className={s.modalClose} onClick={onClose}>✕</button>
         </div>
 
@@ -740,33 +782,32 @@ function EbookModal({ fragments, onClose, onSuccess }) {
           {done ? (
             <div className={s.successBox}>
               <div className={s.successIcon}>📖</div>
-              <div className={s.successTitle}>ebook 신청이 완료되었습니다.</div>
-              <div className={s.successDesc}>
-                24시간 내에 정리하여 다운로드 가능합니다.{'\n'}
-                완성되면 상태가 업데이트됩니다.
+              <div className={s.successTitle}>{vm.ebookSuccessTitle}</div>
+              <div className={s.successDesc} style={{ whiteSpace: 'pre-line' }}>
+                {vm.ebookSuccessDesc}
               </div>
             </div>
           ) : (
             <>
               {/* Title */}
               <div className={s.formGroup}>
-                <label className={s.formLabel}>ebook 제목</label>
+                <label className={s.formLabel}>{vm.ebookTitleLabel}</label>
                 <input
                   className={s.formInput}
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="나의 이야기"
+                  placeholder={vm.ebookTitleDefault}
                 />
               </div>
 
               {/* Dedication */}
               <div className={s.formGroup}>
-                <label className={s.formLabel}>헌사 (선택)</label>
+                <label className={s.formLabel}>{vm.ebookDedicationLabel}</label>
                 <textarea
                   className={`${s.formInput} ${s.formTextarea}`}
                   value={dedication}
                   onChange={e => setDedication(e.target.value)}
-                  placeholder="예: 사랑하는 가족에게…"
+                  placeholder={vm.ebookDedicationPlaceholder}
                 />
               </div>
 
@@ -775,12 +816,12 @@ function EbookModal({ fragments, onClose, onSuccess }) {
                 <label className={s.checkLabel}>
                   <input type="checkbox" checked={autoPreface}
                     onChange={e => setAutoPreface(e.target.checked)} />
-                  머리말 자동 생성
+                  {vm.ebookOptionPreface}
                 </label>
                 <label className={s.checkLabel}>
                   <input type="checkbox" checked={autoEpilogue}
                     onChange={e => setAutoEpilogue(e.target.checked)} />
-                  맺음말 자동 생성
+                  {vm.ebookOptionEpilogue}
                 </label>
               </div>
 
@@ -788,13 +829,13 @@ function EbookModal({ fragments, onClose, onSuccess }) {
               <div className={s.formGroup}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label className={s.formLabel}>
-                    포함할 이야기 ({selectedIds.size}/{fragments.length})
+                    {vm.ebookFragmentsLabel(selectedIds.size, fragments.length)}
                   </label>
                   <button
                     onClick={toggleAll}
                     style={{ background: 'none', border: 'none', fontSize: 12,
                       color: '#ea580c', cursor: 'pointer', fontWeight: 600 }}>
-                    {allSelected ? '전체 해제' : '전체 선택'}
+                    {allSelected ? vm.ebookDeselectAll : vm.ebookSelectAll}
                   </button>
                 </div>
                 <div className={s.fragmentPicker}>
@@ -814,7 +855,7 @@ function EbookModal({ fragments, onClose, onSuccess }) {
                 className={s.ctaBtn}
                 onClick={handleSubmit}
                 disabled={submitting || !title.trim() || selectedIds.size === 0}>
-                {submitting ? '신청 중…' : '신청하기'}
+                {submitting ? vm.ebookSubmitting : vm.ebookSubmit}
               </button>
             </>
           )}
@@ -1460,7 +1501,7 @@ export default function MyStoriesPage() {
       setCollections(colData.collections || []);
     } catch (e) {
       console.error(e);
-      showToast('데이터를 불러오지 못했습니다.');
+      showToast(vm.toastLoadFailed);
     } finally {
       setLoading(false);
     }
@@ -1485,13 +1526,13 @@ export default function MyStoriesPage() {
   function handleUpdated(updated) {
     setFragments(prev => prev.map(f => f.id === updated.id ? updated : f));
     if (selected?.id === updated.id) setSelected(updated);
-    showToast('저장되었습니다.');
+    showToast(vm.toastSaved);
   }
 
   function handleDeleted(id) {
     setFragments(prev => prev.filter(f => f.id !== id));
     setSelected(null);
-    showToast('삭제되었습니다.');
+    showToast(vm.toastDeleted);
   }
 
   function handleEbookSuccess() {
@@ -1516,9 +1557,9 @@ export default function MyStoriesPage() {
       <div className={s.header}>
         <div className={s.headerLeft}>
           <button className={s.backBtn} onClick={() => router.back()}>‹</button>
-          <span className={s.pageTitle}>나의 이야기들</span>
+          <span className={s.pageTitle}>{vm.pageTitle}</span>
         </div>
-        <button className={s.refreshBtn} onClick={loadAll} title="새로고침">↻</button>
+        <button className={s.refreshBtn} onClick={loadAll} title={vm.refreshTitle}>↻</button>
       </div>
 
       {loading ? (
@@ -1555,24 +1596,24 @@ export default function MyStoriesPage() {
           <div className={s.statsBar}>
             <div className={s.statItem}>
               <div className={s.statValue}>{fragments.length}</div>
-              <div className={s.statLabel}>이야기</div>
+              <div className={s.statLabel}>{vm.statLabelStories}</div>
             </div>
             <div className={s.statItem}>
               <div className={s.statValue}>
                 {totalChars >= 1000 ? `${(totalChars / 1000).toFixed(1)}k` : totalChars}
               </div>
-              <div className={s.statLabel}>글자 수</div>
+              <div className={s.statLabel}>{vm.statLabelChars}</div>
             </div>
             <div className={s.statItem}>
               <div className={s.statValue} style={{ fontSize: 14 }}>{lastCreated}</div>
-              <div className={s.statLabel}>최근 생성</div>
+              <div className={s.statLabel}>{vm.statLabelLatest}</div>
             </div>
           </div>
 
           {/* ── Confirmed Fragments ── */}
           {confirmedFragments.length > 0 && (
             <>
-              <div className={s.sectionTitle}>완성된 이야기</div>
+              <div className={s.sectionTitle}>{vm.sectionConfirmed}</div>
               <div className={s.cardList}>
                 {confirmedFragments.map(f => (
                   <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
@@ -1584,7 +1625,7 @@ export default function MyStoriesPage() {
           {/* ── Draft Fragments ── */}
           {draftFragments.length > 0 && (
             <>
-              <div className={s.sectionTitle}>초안</div>
+              <div className={s.sectionTitle}>{vm.sectionDraft}</div>
               <div className={s.cardList}>
                 {draftFragments.map(f => (
                   <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
@@ -1597,36 +1638,31 @@ export default function MyStoriesPage() {
           {fragments.length === 0 && (
             <div className={s.emptyState}>
               <div className={s.emptyIcon}>📝</div>
-              <div className={s.emptyTitle}>아직 이야기가 없어요</div>
-              <div className={s.emptyDesc}>
-                엠마와 대화하다 보면<br />소중한 이야기들이 자동으로 모입니다.
+              <div className={s.emptyTitle}>{vm.emptyTitleStories}</div>
+              <div className={s.emptyDesc} style={{ whiteSpace: 'pre-line' }}>
+                {vm.emptyDescStories}
               </div>
             </div>
           )}
 
-          {/* ── Sample Gallery (Task 2) ── */}
-          <SampleGallery onStartChat={() => router.push('/chat')} />
-
           {/* ── Ebook Section ── */}
           <div className={s.ebookSection}>
-            <div className={s.ebookSectionTitle}>📖 나만의 ebook</div>
-            <div className={s.ebookSectionDesc}>
-              이야기들을 모아 PDF ebook으로 만들어 드립니다.
-            </div>
+            <div className={s.ebookSectionTitle}>{vm.ebookSectionTitle}</div>
+            <div className={s.ebookSectionDesc}>{vm.ebookSectionDesc}</div>
 
             {/* Existing books */}
             {books.length > 0 && (
               <div className={s.ebookStatusList}>
                 {books.map(book => {
-                  const info = BOOK_STATUS[book.status] || BOOK_STATUS.pending;
+                  const info = getBookStatusInfo(book.status, vm);
                   return (
                     <div key={book.id} className={`${s.ebookStatusCard} ${s[info.card]}`}>
                       <div className={s.ebookStatusTitle}>{book.title}</div>
                       <div className={`${s.ebookStatusMsg} ${s[info.cls]}`}>{info.msg}</div>
                       {(book.status === 'completed' || book.status === 'published') && book.has_output && (
                         <button className={s.downloadBtn}
-                          onClick={() => handleDownload(book.id, book.title)}>
-                          ↓ PDF 다운로드
+                          onClick={() => handleDownload(book.id, book.title, vm)}>
+                          {vm.ebookDownload}
                         </button>
                       )}
                     </div>
@@ -1639,7 +1675,7 @@ export default function MyStoriesPage() {
               className={s.ctaBtn}
               onClick={() => setShowEbook(true)}
               disabled={fragments.length === 0}>
-              {fragments.length === 0 ? 'ebook 신청 (이야기가 없음)' : 'ebook 신청'}
+              {fragments.length === 0 ? vm.ebookRequestEmpty : vm.ebookRequestBtn}
             </button>
           </div>
           </>
@@ -1662,6 +1698,7 @@ export default function MyStoriesPage() {
       {showEbook && (
         <EbookModal
           fragments={fragments}
+          lang={lang}
           onClose={() => setShowEbook(false)}
           onSuccess={handleEbookSuccess}
         />
@@ -1692,7 +1729,7 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
     <div className={s.card} onClick={onClick}>
       <div className={s.cardHeader}>
         <div className={s.cardTitle}>
-          {f.truncated && <span className={s.truncatedIcon} title="이야기가 중간에 끊겼어요">⚠️</span>}
+          {f.truncated && <span className={s.truncatedIcon} title={vm.truncatedTitle}>⚠️</span>}
           {f.title}
         </div>
         <div className={s.cardHeaderBadges}>
@@ -1700,7 +1737,7 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
             {(f.visibility === 'public') ? vm.publicBadge : vm.privateBadge}
           </span>
           <span className={`${s.statusBadge} ${f.status === 'confirmed' ? s.statusConfirmed : s.statusDraft}`}>
-            {f.status === 'confirmed' ? '완성' : '초안'}
+            {f.status === 'confirmed' ? vm.statusConfirmed : vm.statusDraft}
           </span>
         </div>
       </div>
@@ -1722,9 +1759,9 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
 
       {f.truncated && (
         <div className={s.truncatedBanner}>
-          <div className={s.truncatedBannerText}>이야기가 중간에 끊겼어요.</div>
+          <div className={s.truncatedBannerText}>{vm.truncatedShort}</div>
           <button className={s.regenerateBtn} onClick={handleRegenerate}>
-            Emma와 이어서 이야기하기
+            {vm.continueWithEmma}
           </button>
         </div>
       )}
@@ -1733,13 +1770,13 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
 }
 
 // ── Download helper ──────────────────────────────────────────────
-async function handleDownload(bookId, title) {
+async function handleDownload(bookId, title, vm) {
   const token = getToken();
   try {
     const res = await fetch(`/api/books/download/${bookId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    if (!res.ok) { alert('다운로드에 실패했습니다.'); return; }
+    if (!res.ok) { alert(vm?.ebookDownloadFailed || 'Download failed.'); return; }
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -1751,6 +1788,6 @@ async function handleDownload(bookId, title) {
     URL.revokeObjectURL(url);
   } catch (e) {
     console.error(e);
-    alert('다운로드 중 오류가 발생했습니다.');
+    alert(vm?.ebookDownloadError || 'An error occurred while downloading.');
   }
 }
