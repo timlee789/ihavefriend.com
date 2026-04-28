@@ -571,6 +571,14 @@ export default function EmmaChat({ initialMode }) {
   const searchParams = useSearchParams();
   const topic        = searchParams.get('topic');
   const continueFragmentId = searchParams.get('continueFragment'); // 🆕 2026-04-25
+  // 🆕 Task 49 — Home page sends ?mode=companion or ?mode=story so the
+  // mode-selection welcome screen is auto-skipped and the user lands
+  // straight in their chosen conversation. Unknown / missing values fall
+  // back to the existing welcome cards.
+  const initialModeFromUrl = (() => {
+    const v = searchParams.get('mode');
+    return v === 'companion' || v === 'story' ? v : null;
+  })();
 
   // ── mode (day/night) ──────────────────────────────────────────────────────
   const [mode, setMode] = useState(initialMode ?? 'day');
@@ -1837,6 +1845,21 @@ export default function EmmaChat({ initialMode }) {
     connect();
   }
 
+  // 🆕 Task 49: auto-start the chosen mode when the home page handed us
+  //   ?mode=companion or ?mode=story. Wait until user/token are loaded
+  //   (otherwise connect() bails out and the user is stranded on a
+  //   welcome screen we've also hidden). Fires exactly once via a ref
+  //   guard, so re-renders or back/forward navigation don't re-trigger.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current) return;
+    if (!initialModeFromUrl) return;
+    if (!user || !token) return;
+    if (isConnected) return;
+    autoStartedRef.current = true;
+    startCustomTopic(initialModeFromUrl);
+  }, [initialModeFromUrl, user, token, isConnected]);
+
   const isDay  = mode === 'day';
   const emma   = getEmma(lang);
   // eslint-disable-next-line no-unused-vars
@@ -1907,7 +1930,9 @@ export default function EmmaChat({ initialMode }) {
       <div className={styles.chatArea} ref={scrollRef}>
 
         {/* ── New Welcome Screen (2026-04-24): 2 fixed cards + scrollable fragment list ── */}
-        {messages.length === 0 && !isConnected && (() => {
+        {/* When ?mode= is present the auto-start effect will connect us in
+            a moment — hide the welcome cards so they don't flash. */}
+        {messages.length === 0 && !isConnected && !initialModeFromUrl && (() => {
           const wmsgs    = WELCOME_MSGS[lang] || WELCOME_MSGS.KO;
           const nw       = wmsgs.newWelcome;
           const frags    = Array.isArray(userFragments) ? userFragments : [];

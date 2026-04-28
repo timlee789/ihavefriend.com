@@ -29,14 +29,19 @@ const HOME_MSGS = {
     startStoryBtn   : '이야기 하기',
     startStoryHint  : 'Emma가 듣고 기록해드려요',
     recentStoriesLabel: '최근 이야기',
-    viewAllStories  : '📚 모든 이야기 보기 →',
+    viewAllStories  : '나의 이야기들',
     noStoriesYet    : '아직 이야기가 없어요',
     noStoriesHint   : '첫 번째 이야기를 들려주세요',
     loading         : '불러오는 중…',
     logout          : '로그아웃',
     companionTagline: '친구와 이야기하는 기록되지 않는 공간',
     companionSubline: '친구와 대화를 나누어요',
-    sharingStoriesTitle: '이야기 듣기',
+    sharingStoriesTitle: '이야기 보기',
+    sharingStoriesSub  : '다른 사람의 이야기들',
+    companionCtaTitle  : '그냥 이야기하기',
+    companionCtaSub    : '편하게 이야기 나눠요 (기록 안 됨)',
+    storyCtaTitle      : '내 이야기 남기기',
+    storyCtaSub        : 'Emma가 듣고 기록해드려요',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -48,14 +53,19 @@ const HOME_MSGS = {
     startStoryBtn   : 'Start a Story',
     startStoryHint  : 'Emma will listen and write it down for you',
     recentStoriesLabel: 'Recent Stories',
-    viewAllStories  : '📚 View all stories →',
+    viewAllStories  : 'My Stories',
     noStoriesYet    : 'No stories yet',
     noStoriesHint   : 'Share your first story',
     loading         : 'Loading…',
     logout          : 'Log out',
     companionTagline: 'Space to chat with a friend (not kept)',
     companionSubline: 'Have a casual chat',
-    sharingStoriesTitle: 'Listen to Stories',
+    sharingStoriesTitle: 'View Stories',
+    sharingStoriesSub  : "Other people's stories",
+    companionCtaTitle  : 'Just talk',
+    companionCtaSub    : 'Casual chat (nothing is kept)',
+    storyCtaTitle      : 'Record my story',
+    storyCtaSub        : 'Emma will listen and write it down',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -67,14 +77,19 @@ const HOME_MSGS = {
     startStoryBtn   : 'Contar una historia',
     startStoryHint  : 'Emma te escuchará y lo escribirá por ti',
     recentStoriesLabel: 'Historias recientes',
-    viewAllStories  : '📚 Ver todas las historias →',
+    viewAllStories  : 'Mis historias',
     noStoriesYet    : 'Aún no hay historias',
     noStoriesHint   : 'Comparte tu primera historia',
     loading         : 'Cargando…',
     logout          : 'Cerrar sesión',
     companionTagline: 'Espacio para charlar con un amigo (no se guarda)',
     companionSubline: 'Conversa de forma casual',
-    sharingStoriesTitle: 'Escuchar historias',
+    sharingStoriesTitle: 'Ver historias',
+    sharingStoriesSub  : 'Historias de otras personas',
+    companionCtaTitle  : 'Solo charlar',
+    companionCtaSub    : 'Charla casual (no se guarda)',
+    storyCtaTitle      : 'Grabar mi historia',
+    storyCtaSub        : 'Emma escuchará y la registrará',
   },
 };
 
@@ -134,14 +149,14 @@ export default function Home() {
     setAuthChecked(true);
   }, [router]);
 
-  // Load 3 most-recent stories (root only — API returns roots by default)
+  // Load 12 most-recent stories (root only — API returns roots by default)
   useEffect(() => {
     if (!authChecked) return;
     const token = localStorage.getItem('token');
     if (!token) return;
 
     let cancelled = false;
-    fetch('/api/fragments?limit=3&status=draft,confirmed', {
+    fetch('/api/fragments?limit=12&status=draft,confirmed', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : { fragments: [] })
@@ -194,68 +209,42 @@ export default function Home() {
       {/* Greeting */}
       <div className={s.greetingLine}>{msgs.greeting(userName)}</div>
 
-      {/* Combined Intro Card — main + companion with divider */}
-      <div className={s.introCard}>
-        {/* Main: gather and organize stories */}
-        <div className={s.introMainSection}>
-          <div className={s.introTagline}>1. {msgs.introLine1}</div>
-          <div className={s.introSteps}>
-            <span className={s.introStep}>{msgs.introStep1}</span>
-            <span className={s.introArrow}>→</span>
-            <span className={s.introStep}>{msgs.introStep2}</span>
-            <span className={s.introArrow}>→</span>
-            <span className={s.introStep}>{msgs.introStep3}</span>
-          </div>
-          <div className={s.introBottomLine}>{msgs.introTagline}</div>
-        </div>
-
-        {/* Hierarchy divider */}
-        <div className={s.introDivider} />
-
-        {/* Companion: mirror-symmetric with main (title → 3 avatars → subtitle) */}
-        <div className={s.introCompanionSection}>
-          <div className={s.companionTagline}>2. {msgs.companionTagline}</div>
-
-          <div className={s.companionAvatars}>
-            {/* Slot 1 — Emma (active) */}
-            <div className={s.companionAvatarSlot}>
-              <EmmaAvatar size="md" mode={isDark ? 'night' : 'day'} />
-            </div>
-            {/* Slots 2-3 — future characters */}
-            <div className={`${s.companionAvatarSlot} ${s.companionAvatarPlaceholder}`}>
-              <span className={s.placeholderQuestion}>?</span>
-            </div>
-            <div className={`${s.companionAvatarSlot} ${s.companionAvatarPlaceholder}`}>
-              <span className={s.placeholderQuestion}>?</span>
-            </div>
-          </div>
-
-          <div className={s.companionSubline}>{msgs.companionSubline}</div>
-        </div>
-      </div>
-
-      {/* Primary CTA → /chat */}
+      {/* Mode-specific CTAs (Task 49) — split the single "이야기 하기" button
+          into two so users can pick companion vs story up front. /chat
+          auto-skips its mode-selection screen when ?mode= is present. */}
       <button
-        className={s.primaryCta}
-        onClick={() => router.push('/chat')}
+        className={s.companionCta}
+        onClick={() => router.push('/chat?mode=companion')}
       >
-        <div className={s.ctaIcon}>🎙️</div>
+        <div className={s.ctaIcon}>💬</div>
         <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.startStoryBtn}</div>
-          <div className={s.ctaSub}>{msgs.startStoryHint}</div>
+          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
         </div>
       </button>
 
-      {/* Sharing Stories — content discovery, retention loop */}
       <button
-        className={s.sharingStoriesCard}
+        className={s.storyCta}
+        onClick={() => router.push('/chat?mode=story')}
+      >
+        <div className={s.ctaIcon}>🎙️</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.storyCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.storyCtaSub}</div>
+        </div>
+      </button>
+
+      {/* View Stories CTA — promoted to a full-size CTA mirroring Primary CTA
+          shape, with a purple gradient to contrast against the orange (Task 48 #3) */}
+      <button
+        className={s.viewStoriesCta}
         onClick={() => router.push('/sharing-stories')}
       >
-        <div className={s.sharingStoriesIcon}>📖</div>
-        <div className={s.sharingStoriesContent}>
-          <div className={s.sharingStoriesTitle}>{msgs.sharingStoriesTitle}</div>
+        <div className={s.ctaIcon}>📖</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.sharingStoriesTitle}</div>
+          <div className={s.ctaSub}>{msgs.sharingStoriesSub}</div>
         </div>
-        <div className={s.sharingStoriesArrow}>→</div>
       </button>
 
       {/* Recent Stories card (entire card → /my-stories) */}
