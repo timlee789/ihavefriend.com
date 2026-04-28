@@ -6,6 +6,7 @@ import EmmaAvatar from './EmmaAvatar';
 import styles from './EmmaChat.module.css';
 import { pickStarterCards } from '@/lib/storyStarterQuestions';
 import { detectBurst } from '@/lib/transcriptNoise';
+import { filterEmmaResponse } from '@/lib/emmaResponseFilter';
 
 // ── Short, varied opening prompts (Task 51 #2 → revised in Task 52 #1) ──
 // Tim's first 4-turn test showed Emma was opening with a QUESTION
@@ -407,18 +408,32 @@ const PRIVATE_BANNER_MSGS = {
 };
 
 // ── Post-session "내 이야기 확인하기" banner copy ─────────────────────────────
+// 🔥 Task 54 #4 (2026-04-28): the banner was vague ("잠시 후") and there
+//   was no signal whether the fragment had actually finished generating.
+//   Tim would close the page and never come back. Now we tell the user
+//   there's a ~30 second wait, and the SessionEndBanner polls /api/fragments
+//   so the message flips to a confirmed "✅ Ready" once the fragment lands.
 const SESSION_END_MSGS = {
   KO: {
-    hint : "Emma가 이야기를 정리하고 있어요.\n잠시 후 '내 이야기'에서 확인할 수 있습니다.",
-    cta  : '내 이야기 확인하기 →',
+    hint     : "Emma가 이야기를 정리하고 있어요.\n약 30초 후 '나의 이야기'에서 확인할 수 있어요.",
+    waiting  : '⏳ 정리 중…',
+    ready    : '✅ 이야기가 준비됐어요',
+    timeout  : "정리에 시간이 더 걸리네요. 잠시 후 '나의 이야기'에서 확인해 주세요.",
+    cta      : '나의 이야기 보기 →',
   },
   EN: {
-    hint : "Emma is organizing your story.\nCheck 'My Stories' in a moment.",
-    cta  : 'View my stories →',
+    hint     : "Emma is organizing your story.\nIt'll be in 'My Stories' in about 30 seconds.",
+    waiting  : '⏳ Organizing…',
+    ready    : '✅ Your story is ready',
+    timeout  : "It's taking a little longer. Check 'My Stories' in a moment.",
+    cta      : 'View my stories →',
   },
   ES: {
-    hint : "Emma está organizando tu historia.\nPuedes verla en 'Mis historias' en un momento.",
-    cta  : 'Ver mis historias →',
+    hint     : "Emma está organizando tu historia.\nEstará en 'Mis historias' en unos 30 segundos.",
+    waiting  : '⏳ Organizando…',
+    ready    : '✅ Tu historia está lista',
+    timeout  : "Está tardando un poco más. Revisa 'Mis historias' en un momento.",
+    cta      : 'Ver mis historias →',
   },
 };
 
@@ -691,6 +706,89 @@ function base64ToPcm(b64) {
   const f32 = new Float32Array(i16.length);
   for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768;
   return f32;
+}
+
+// ── Post-session banner with fragment polling (Task 54 #4) ──────────────
+// Mounts when the user's session ends. Snapshots Date.now() on mount
+// and polls /api/fragments every 5 seconds (up to 90 s). When a fragment
+// with created_at > snapshot appears, flips to the "ready" state and
+// shows the View-stories CTA. If the timeout elapses we show a softer
+// "taking a little longer" message — the fragment may still arrive,
+// the user just doesn't get an instant confirmation.
+function SessionEndBanner({ lang, isDay }) {
+  const m = SESSION_END_MSGS[lang] || SESSION_END_MSGS.KO;
+  const [phase, setPhase] = useState('waiting'); // 'waiting' | 'ready' | 'timeout'
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const startedAt = Date.now();
+    const POLL_INTERVAL_MS = 5_000;
+    const POLL_TIMEOUT_MS  = 90_000;
+    let cancelled = false;
+    let intervalId = null;
+    let timeoutId  = null;
+
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const t = localStorage.getItem('token');
+        if (!t) return;
+        const res = await fetch('/api/fragments?limit=1', {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const latest = (data?.fragments || [])[0];
+        if (latest && new Date(latest.created_at).getTime() >= startedAt - 2000) {
+          if (!cancelled) {
+            setPhase('ready');
+            clearInterval(intervalId);
+            clearTimeout(timeoutId);
+          }
+        }
+      } catch {}
+    };
+
+    // First poll a touch later than mount so the server has at least one
+    // chance to write the fragment.
+    timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setPhase(p => (p === 'waiting' ? 'timeout' : p));
+      }
+    }, POLL_TIMEOUT_MS);
+    intervalId = setInterval(tick, POLL_INTERVAL_MS);
+    // Run one early poll at 3s so a fast-completing fragment shows up
+    // without waiting the full 5-second cadence.
+    const earlyId = setTimeout(tick, 3_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      clearTimeout(earlyId);
+    };
+  }, []);
+
+  const status = phase === 'ready'   ? m.ready
+               : phase === 'timeout' ? m.timeout
+               :                       m.waiting;
+
+  return (
+    <div className={`${styles.sessionEndBanner} ${isDay ? styles.sessionEndBannerDay : styles.sessionEndBannerNight}`}>
+      <p className={`${styles.sessionEndHint} ${isDay ? styles.sessionEndHintDay : styles.sessionEndHintNight}`}>
+        {phase === 'waiting' ? m.hint : status}
+      </p>
+      {phase === 'waiting' && (
+        <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>{m.waiting}</div>
+      )}
+      <a
+        href="/my-stories"
+        className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
+      >
+        {m.cta}
+      </a>
+    </div>
+  );
 }
 
 // ── main chat component ───────────────────────────────────────────────────────
@@ -1039,13 +1137,52 @@ export default function EmmaChat({ initialMode }) {
   }, [messages, liveText, isAiSpeaking]);
 
   // ── page-close beacon ─────────────────────────────────────────────────────
+  // 🔥 Task 54 #3 (2026-04-28): the previous handler shipped
+  //   `transcript: []` — empty array — to /api/chat/end on every page
+  //   close. The server's fallback to DB transcript_data only works if
+  //   chat/turn calls finished persisting; on flaky networks they hadn't,
+  //   so a 5-minute story arriving at chat/end with [] caused the
+  //   "transcript too short" branch and the fragment was discarded.
+  //
+  //   Now we always send the live client transcript, with a keepalive
+  //   fetch fallback when the JSON exceeds sendBeacon's ~64 KB limit
+  //   (a single Korean turn averages ~120 chars/sec spoken; a 5-minute
+  //   story easily breaches the cap). Both this and forceStop() use the
+  //   same shape so racing handlers stay safe.
   useEffect(() => {
     const sendEndBeacon = () => {
       const sid = sessionIdRef.current;
       const t   = localStorage.getItem('token');
       if (!sid || !t) return;
-      const payload = JSON.stringify({ sessionId: sid, transcript: [], _token: t });
-      navigator.sendBeacon('/api/chat/end', new Blob([payload], { type: 'application/json' }));
+      const transcript = transcriptRef.current || [];
+      const body = JSON.stringify({
+        sessionId       : sid,
+        transcript,
+        conversationMode: convModeRef.current,
+        _token          : t,
+      });
+      // sendBeacon caps at ~64 KB on most browsers. Above that we have to
+      // use fetch with `keepalive: true`, which is still allowed during
+      // page unload and not subject to the same size cap.
+      const BEACON_LIMIT = 60_000;
+      if (body.length <= BEACON_LIMIT) {
+        try {
+          const ok = navigator.sendBeacon(
+            '/api/chat/end',
+            new Blob([body], { type: 'application/json' })
+          );
+          if (ok) return;
+        } catch {}
+      }
+      // Either too big or beacon failed — fall back to keepalive fetch.
+      try {
+        fetch('/api/chat/end', {
+          method   : 'POST',
+          headers  : { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      } catch {}
     };
     const onVisibility = () => { if (document.visibilityState === 'hidden') sendEndBeacon(); };
     window.addEventListener('beforeunload', sendEndBeacon);
@@ -1580,7 +1717,18 @@ export default function EmmaChat({ initialMode }) {
       // Turn complete → finalize messages
       if (msg.serverContent?.turnComplete) {
         const turnNum = ++turnsRef.current;
-        const aiMsg    = currentAiMsgRef.current.trim();
+        // 🔥 Task 54 #3: post-process Emma's reply BEFORE it joins the
+        //   transcript. stripGoodbyes() removes "have a good day" /
+        //   "오늘 잘 보내시길" / "que tengas un buen día" — phrases the
+        //   model still emits despite the [Goodbye — ABSOLUTE] block in
+        //   the personality prompt. trimTrailingQuestion() drops the
+        //   final sentence when it's a question, on a probabilistic 70%
+        //   of turns, pulling the observed question rate from ~75% down
+        //   toward the intended 20%. The filtered text is what the user
+        //   sees, what's stored in transcriptRef, and what comes back
+        //   to the LLM as "what I said last turn" context — so the
+        //   model gradually learns the desired rhythm.
+        const aiMsg    = filterEmmaResponse(currentAiMsgRef.current.trim());
         const userMsg  = currentUserMsgRef.current.trim();
         const rawAiText = rawAiTextRef.current.trim();
 
@@ -2022,7 +2170,28 @@ export default function EmmaChat({ initialMode }) {
           conversationMode: convModeRef.current,
           _token          : t,
         });
-        navigator.sendBeacon('/api/chat/end', new Blob([payload], { type: 'application/json' }));
+        // 🔥 Task 54: keepalive fetch fallback when payload exceeds the
+        //   ~64 KB sendBeacon cap. A 5-minute story easily breaches it.
+        const BEACON_LIMIT = 60_000;
+        let beaconOk = false;
+        if (payload.length <= BEACON_LIMIT) {
+          try {
+            beaconOk = navigator.sendBeacon(
+              '/api/chat/end',
+              new Blob([payload], { type: 'application/json' })
+            );
+          } catch {}
+        }
+        if (!beaconOk) {
+          try {
+            fetch('/api/chat/end', {
+              method   : 'POST',
+              headers  : { 'Content-Type': 'application/json' },
+              body     : payload,
+              keepalive: true,
+            }).catch(() => {});
+          } catch {}
+        }
       } catch {}
     }
     // 2. Per-user usage minutes (best-effort beacon)
@@ -2329,23 +2498,18 @@ export default function EmmaChat({ initialMode }) {
           </div>
         )}
 
-        {/* ── Post-session: "내 이야기 확인하기" banner ── */}
-        {sessionEnded && !isConnected && !showFeedback && (() => {
-          const m = SESSION_END_MSGS[lang] || SESSION_END_MSGS.KO;
-          return (
-            <div className={`${styles.sessionEndBanner} ${isDay ? styles.sessionEndBannerDay : styles.sessionEndBannerNight}`}>
-              <p className={`${styles.sessionEndHint} ${isDay ? styles.sessionEndHintDay : styles.sessionEndHintNight}`}>
-                {m.hint}
-              </p>
-              <a
-                href="/my-stories"
-                className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
-              >
-                {m.cta}
-              </a>
-            </div>
-          );
-        })()}
+        {/* ── Post-session banner (Task 54 #4): polls /api/fragments
+              every 5 seconds for up to 90 seconds so the message can
+              flip from "정리 중" → "준비됐어요" once the fragment lands.
+              Without this the user closed the page guessing whether
+              their 5-minute story actually saved. */}
+        {sessionEnded && !isConnected && !showFeedback && (
+          <SessionEndBanner
+            lang={lang}
+            isDay={isDay}
+            sessionStartedAt={sessionStartRef.current /* may be null after reset */}
+          />
+        )}
       </div>
 
       {/* ── Live STT diagnostics (Task 47): captions + burst warning ── */}

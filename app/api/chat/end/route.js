@@ -286,6 +286,25 @@ Rules:
         //   companion / auto modes require stronger signal (completeness >= 3).
         const completenessThreshold = sessionMode === 'story' ? 2 : 3;
 
+        // 🔥 Task 54 #2 (2026-04-28): paradigm shift — trust user intent.
+        //   Tim's c795ba73 session was STORY mode, 7 user turns, fully
+        //   intelligible — and Gemini's fragment-detect still returned
+        //   detected=false. The user-intent signal (they explicitly chose
+        //   "내 이야기 남기기") outweighs the LLM's heuristic. So:
+        //
+        //   STORY mode  →  ALWAYS save above the safety net (≥ 2 user
+        //                  turns AND ≥ 100 cumulative user chars).
+        //                  We ignore detected/completeness entirely.
+        //   COMPANION   →  keep the gate but lower the bar (2 instead
+        //   / AUTO         of 3) so a thin signal isn't a hard skip.
+        //
+        // Personality is a request, server enforcement is a guarantee.
+        const STORY_MIN_USER_TURNS  = 2;
+        const STORY_MIN_USER_CHARS  = 100;
+        const userCharCount = history
+          .filter(m => m.role === 'user')
+          .reduce((sum, m) => sum + (m.content || '').length, 0);
+
         let shouldQueue;
         let generationReason;
         if (isContinuation) {
@@ -296,29 +315,24 @@ Rules:
             shouldQueue = false;
             generationReason = `continuation session too short (${userTurnCount} < ${continuationMinTurns} user turns)`;
           }
-        } else {
-          // Standard flow — keep existing detected/completeness gate.
-          shouldQueue = fragment?.detected &&
-            (sessionMode === 'story' || (fragment?.completeness ?? 0) >= completenessThreshold);
-          generationReason = shouldQueue
-            ? `standard session detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} mode=${sessionMode}`
-            : `standard session insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0} threshold=${completenessThreshold})`;
-
-          // 🆕 2026-04-27 (Task 47): STORY-mode noise rescue.
-          // When STT noise was detected and Gemini's fragment-detect
-          // returned detected=false / low completeness, the cleaned
-          // transcript may still contain a real story — Gemini just got
-          // confused by the surrounding noise. If the user was in STORY
-          // mode (explicit story-recording intent) and we still have at
-          // least 2 cleaned user turns of substance, force-queue the
-          // generation. The downstream Gemini Flash rewrite is robust
-          // enough to handle the cleaned content, and losing a 5-minute
-          // intentional story to a noisy mic is a worse failure mode than
-          // occasionally generating a thin fragment.
-          if (!shouldQueue && sessionMode === 'story' && hadNoise && userTurnsKept >= 2) {
+        } else if (sessionMode === 'story') {
+          // STORY = explicit user intent. Save almost unconditionally,
+          // gated only by a minimal safety net so accidental "I tested
+          // for 5 seconds" sessions don't generate empty fragments.
+          if (userTurnCount >= STORY_MIN_USER_TURNS && userCharCount >= STORY_MIN_USER_CHARS) {
             shouldQueue = true;
-            generationReason = `STORY-mode noise rescue — hadNoise=true userTurnsKept=${userTurnsKept} noiseRatio=${(noiseRatio*100).toFixed(1)}%`;
+            generationReason = `STORY mode — user intent override (turns=${userTurnCount}>=${STORY_MIN_USER_TURNS}, chars=${userCharCount}>=${STORY_MIN_USER_CHARS}); ignoring detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0}`;
+          } else {
+            shouldQueue = false;
+            generationReason = `STORY mode but below safety net (turns=${userTurnCount} chars=${userCharCount})`;
           }
+        } else {
+          // companion / auto: keep the gate but slightly relax. 3 → 2.
+          shouldQueue = fragment?.detected &&
+            (fragment?.completeness ?? 0) >= 2;
+          generationReason = shouldQueue
+            ? `${sessionMode} session detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0}`
+            : `${sessionMode} session insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0})`;
         }
 
         console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount}`);
