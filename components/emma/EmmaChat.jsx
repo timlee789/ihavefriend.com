@@ -2373,9 +2373,27 @@ export default function EmmaChat({ initialMode }) {
     } else {
       // Currently off → connect
       setMicOn(true); // optimistic — will revert if connect fails
+      // 🔥 Task 56 (a): acquire wake lock IN the gesture handler so iOS
+      //   Safari accepts the NoSleep video.play() call.
+      _gestureAcquireWakeLock();
       connect();
     }
   }, [micOn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 🔥 Task 56 (a): the iOS Safari NoSleep video must be started inside
+  //   a synchronous user-gesture handler — calling acquire() from a
+  //   useEffect that fires when isConnected later flips loses that
+  //   gesture context, so video.play() rejects and the screen still
+  //   sleeps mid-conversation. We acquire here at the moment of the
+  //   button tap. The matching release stays in the isConnected effect.
+  function _gestureAcquireWakeLock() {
+    try {
+      if (wakeLockRef.current?.acquire) {
+        // Fire-and-forget; acquire() awaits internally for native lock.
+        Promise.resolve(wakeLockRef.current.acquire()).catch(() => {});
+      }
+    } catch {}
+  }
 
   // ── chip selection from empty state ─────────────────────────────────────────
   function selectChip(chip, mode = 'auto') {
@@ -2391,6 +2409,7 @@ export default function EmmaChat({ initialMode }) {
       timestamp: nowStr(),
     }]);
     setMicOn(true);
+    _gestureAcquireWakeLock();
     connect();
   }
 
@@ -2403,6 +2422,7 @@ export default function EmmaChat({ initialMode }) {
     setConversationMode(mode);
     convModeRef.current = mode;
     setMicOn(true);
+    _gestureAcquireWakeLock();
     connect();
   }
 
@@ -2611,26 +2631,19 @@ export default function EmmaChat({ initialMode }) {
         )}
       </div>
 
-      {/* ── STT warnings + (debug-only) live caption ──────────────────
-          🔥 Task 55 #2: the user-facing caption was creating anxiety —
-          STT mistranscriptions read as "Emma misheard me" even when
-          Gemini's audio understanding was fine. We now only render
-          the caption in debug mode (localStorage `captions_debug`='1'),
-          but the underlying state + burst detection still drive the
-          warning banner so the user gets told when STT really is stuck.
-          The caption-toggle button is removed entirely — the only
-          surface in this strip now is the warning banner when needed. */}
-      {(isConnected || messages.length > 0) && (sttWarning || debugCaptions) && (
+      {/* ── STT warning banner only (Task 56 b — bulletproof) ──────────
+          The user-facing caption is GONE. Even the debug-flag path was
+          reportedly leaking captions back into Tim's UI after a Vercel
+          cache cycle, so the JSX itself is removed — there's nothing
+          left to render the user STT to the screen. The userLiveText
+          state and detectBurst() still run so the warning banner here
+          can flag actual STT collapse (the genuine signal worth
+          showing). Toggle button is fully removed. */}
+      {(isConnected || messages.length > 0) && sttWarning && (
         <div className={`${styles.sttStrip} ${isDay ? styles.sttStripDay : styles.sttStripNight}`}>
-          {sttWarning ? (
-            <div className={`${styles.sttWarn} ${isDay ? styles.sttWarnDay : styles.sttWarnNight}`}>
-              {sttWarning}
-            </div>
-          ) : debugCaptions && (userLiveText || micOn) ? (
-            <div className={`${styles.sttCaption} ${isDay ? styles.sttCaptionDay : styles.sttCaptionNight}`}>
-              {userLiveText || emma.captionListening}
-            </div>
-          ) : null}
+          <div className={`${styles.sttWarn} ${isDay ? styles.sttWarnDay : styles.sttWarnNight}`}>
+            {sttWarning}
+          </div>
         </div>
       )}
 

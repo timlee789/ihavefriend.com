@@ -329,6 +329,27 @@ Rules:
 
   if (shouldQueue) {
     try {
+      // 🔥 Task 56 (c): idempotency. /api/chat/end can be called more
+      //   than once for the same session (visibilitychange beacon +
+      //   beforeunload beacon + forceStop unmount beacon all fire on
+      //   navigation). Confirmed in production: session f2d04e14
+      //   produced 3 fragments 5–43 s apart. Skip if a root fragment
+      //   already exists — the partial unique index in migration
+      //   20260428_2 is the database-level safety net for the case
+      //   where two concurrent INSERTs both pass this check.
+      const existing = await db.query(
+        `SELECT id FROM story_fragments
+          WHERE user_id = $1
+            AND source_session_ids @> ARRAY[$2]::uuid[]
+            AND parent_fragment_id IS NULL
+          LIMIT 1`,
+        [user.id, sessionId]
+      );
+      if (existing.rows.length > 0) {
+        console.log(`[chat/end] ⏭ Fragment already exists for session ${sessionId} (${existing.rows[0].id}) — skipping duplicate save`);
+        return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0, fragmentJobQueued: false, alreadyExists: true });
+      }
+
       // Step 1: Mark session as fragment candidate. fragment may be null
       //   (Gemini failed) — store empty object so downstream introspection
       //   doesn't NPE; generateFragmentCloud falls back to deriving
@@ -461,8 +482,18 @@ Rules:
               const newFragmentId = insertRes.rows[0]?.id;
               console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" truncated=${truncatedFlag} bgTotal=${Date.now() - bgStart}ms`);
             } catch (bgErr) {
-              console.error(`[chat/end:bg] ❌ Fragment generation threw for session ${sessionId}:`, bgErr?.message);
-              console.error(bgErr?.stack);
+              // 🔥 Task 56 (c): unique-constraint hit means a sibling
+              //   request already INSERTed a fragment for this session
+              //   while we were in flight. That's the desired behaviour
+              //   — log quietly instead of stack-tracing.
+              const isDup = bgErr?.code === '23505' ||
+                            /duplicate key|story_fragments_unique_session_root/i.test(bgErr?.message || '');
+              if (isDup) {
+                console.log(`[chat/end:bg] ⏭ Concurrent INSERT lost the race for session ${sessionId} — fragment already saved by sibling request`);
+              } else {
+                console.error(`[chat/end:bg] ❌ Fragment generation threw for session ${sessionId}:`, bgErr?.message);
+                console.error(bgErr?.stack);
+              }
             }
           });
     } catch (e) {
