@@ -1952,7 +1952,16 @@ export default function EmmaChat({ initialMode }) {
   //    Without this effect every navigation away while Emma was speaking
   //    left a zombie session behind, and the next /chat visit produced
   //    multiple Emmas talking on top of each other.
+  //
+  //    NOTE: explicitly reset unmountedRef to false on mount. React 19
+  //    StrictMode + Next.js Fast Refresh can re-run the effect's cleanup
+  //    on the same component instance during dev, and a stray `true`
+  //    here would silently kill every subsequent WS message — which is
+  //    exactly what happened on the first deploy of this fix (Emma
+  //    appeared "stuck on connecting" because ws.onmessage early-returned
+  //    on the unmount guard).
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
       unmountedRef.current = true;
       forceStop();
