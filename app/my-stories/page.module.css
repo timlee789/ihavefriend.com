@@ -439,10 +439,15 @@
   margin-bottom: 16px;
 }
 
+/* 🔥 Task 53 #3: tighter rhythm. The previous 1.7 line-height + 1em
+   bottom-margin made the Q/A blocks feel like they were floating apart
+   on a phone — Tim's first scan said it felt empty between the question
+   and the answer. line-height 1.55 + 6px paragraph margin restores
+   continuity without crushing the text. */
 .modalContent {
   font-size: 15px;
   color: #333;
-  line-height: 1.7;
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
@@ -450,18 +455,19 @@
    Questions appear as **bold?** blocks; styled as interviewer prompts.
    Legacy plain-text fragments render unchanged (no <strong> tags). */
 .modalContent p {
-  margin: 0 0 1em 0;
-  line-height: 1.7;
+  margin: 0 0 6px 0;
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
 .modalContent strong {
   display: block;
-  font-weight: 600;
-  color: #555;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  font-size: 1.05em;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 14px;
+  margin-bottom: 4px;
+  font-size: 1.02em;
+  letter-spacing: -0.1px;
 }
 
 .modalContent p:first-child strong:first-child {
@@ -1490,7 +1496,10 @@
 .modalHandle  { background: rgba(255, 255, 255, 0.2); }
 .modalTitle   { color: rgba(255, 255, 255, 0.95); }
 .modalSubtitle{ color: rgba(255, 255, 255, 0.6); }
-.modalContent { color: rgba(255, 255, 255, 0.88); }
+.modalContent { color: rgba(255, 255, 255, 0.92); }
+/* 🔥 Task 53 #3: bolder, warmer accent for question headers in dark
+   mode so the senior eye locks onto them at a glance. */
+.modalContent strong,
 .modalContent p strong { color: #fdba74; }
 .modalClose   { color: rgba(255, 255, 255, 0.6); }
 .modalClose:hover { color: #fdf8f4; }
@@ -1608,11 +1617,20 @@
 .truncatedIcon       { color: #fdba74; }
 
 /* Threads */
-.threadSection { border-top-color: rgba(255, 255, 255, 0.08); }
-.threadTitle   { color: rgba(255, 255, 255, 0.7); }
-.threadOrder   { color: rgba(255, 255, 255, 0.5); }
-.threadContent { color: rgba(255, 255, 255, 0.85); }
-.threadItem    { border-bottom-color: rgba(255, 255, 255, 0.06); }
+/* 🔥 Task 53 #1: the light theme rules above paint .threadSection with a
+   cream background and .threadItem with a dashed cream border. On the
+   forced-dark site that produced a near-white card with near-white text
+   inside — looked like an empty white box. Fully repaint the surface
+   in the dark override so the continuation thread is readable again. */
+.threadSection {
+  background: rgba(251, 146, 60, 0.10);
+  border-left-color: rgba(251, 146, 60, 0.55);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.threadTitle   { color: #fdba74; }
+.threadOrder   { color: #fb923c; }
+.threadContent { color: rgba(255, 255, 255, 0.92); }
+.threadItem    { border-bottom-color: rgba(251, 146, 60, 0.20); }
 
 /* Toast + spinner already work on dark; toast just needs its own surface. */
 .toast {

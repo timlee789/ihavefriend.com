@@ -543,28 +543,15 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
               </button>
               <div className={s.continueHint}>{vm.continueHint}</div>
 
-              {/* 🆕 2026-04-26: Collections this fragment belongs to (Task 36) */}
-              {/* Only show for root fragments — continuations follow their parent */}
-              {!fragment.parent_fragment_id && (
-                <div className={s.fragmentCollectionsSection}>
-                  <div className={s.collectionsLabel}>{vm.inCollectionsLabel}</div>
-                  {fragmentCollections.length > 0 ? (
-                    <div className={s.collectionTags}>
-                      {fragmentCollections.map(c => (
-                        <span key={c.id} className={s.collectionTag}>📚 {c.name}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={s.noCollections}>{vm.noCollectionsForFragment}</div>
-                  )}
-                  <button
-                    className={s.addToCollectionBtn}
-                    onClick={() => setShowPicker(true)}
-                  >
-                    📚 {vm.addToCollectionBtn}
-                  </button>
-                </div>
-              )}
+              {/* 🔥 Task 53 #4 — modal flow reordered. Previously:
+                    visibility → continue → COLLECTIONS → body → truncated
+                    → tags → thread → actions.
+                  Tim's first scan said the collections block above the
+                  body felt like an interruption. New order:
+                    visibility → continue → BODY → truncated → THREAD
+                    → tags → COLLECTIONS → actions.
+                  Continuations now sit right under their parent body so
+                  the eye flows top-to-bottom through the story. */}
 
               <div className={s.modalContent}>
                 <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
@@ -586,18 +573,9 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 </div>
               )}
 
-              {allTags.length > 0 && (
-                <div className={s.modalTagSection}>
-                  <div className={s.modalTagLabel}>{vm.tagsLabel}</div>
-                  <div className={s.tagRow}>
-                    {allTags.map((t, i) => (
-                      <span key={i} className={`${s.tag} ${t.cls}`}>{t.text}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 🆕 2026-04-25: Continuation thread display */}
+              {/* 🆕 2026-04-25: Continuation thread display.
+                  Now placed directly under the parent body so the
+                  added stories read as a continuation, not a footnote. */}
               {continuations.length > 0 && (
                 <div className={s.threadSection}>
                   <div className={s.threadTitle}>{vm.threadTitle}</div>
@@ -609,6 +587,42 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {allTags.length > 0 && (
+                <div className={s.modalTagSection}>
+                  <div className={s.modalTagLabel}>{vm.tagsLabel}</div>
+                  <div className={s.tagRow}>
+                    {allTags.map((t, i) => (
+                      <span key={i} className={`${s.tag} ${t.cls}`}>{t.text}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 🔥 Task 53 #4: collections moved below body so it acts
+                  as a curation footer rather than a header interruption.
+                  Only root fragments get this surface — continuations
+                  follow their parent's collection membership. */}
+              {!fragment.parent_fragment_id && (
+                <div className={s.fragmentCollectionsSection}>
+                  <div className={s.collectionsLabel}>{vm.inCollectionsLabel}</div>
+                  {fragmentCollections.length > 0 ? (
+                    <div className={s.collectionTags}>
+                      {fragmentCollections.map(c => (
+                        <span key={c.id} className={s.collectionTag}>📚 {c.name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={s.noCollections}>{vm.noCollectionsForFragment}</div>
+                  )}
+                  <button
+                    className={s.addToCollectionBtn}
+                    onClick={() => setShowPicker(true)}
+                  >
+                    📚 {vm.addToCollectionBtn}
+                  </button>
                 </div>
               )}
 
@@ -1714,11 +1728,13 @@ export default function MyStoriesPage() {
 function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
   const router = useRouter();
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
-  const topTags = [
-    ...(f.tags_theme   || []).slice(0, 2).map(t => ({ text: t, cls: 'tagTheme' })),
-    ...(f.tags_emotion || []).slice(0, 1).map(t => ({ text: t, cls: 'tagEmotion' })),
-    ...(f.tags_people  || []).slice(0, 1).map(t => ({ text: t, cls: 'tagPeople' })),
-  ].slice(0, 3);
+  // 🔥 Task 53 #2: Tim's first beta scan of /my-stories felt cluttered —
+  //    every card showed a status badge ("초안") plus 3–4 colored tag
+  //    chips (theme/emotion/people) that read as noise to a senior eye.
+  //    The card now keeps only the signals that help the user FIND a
+  //    story they recognise: title, subtitle, preview, date, and the
+  //    privacy badge. Status + tags moved out of the card surface (they
+  //    still live in the detail modal).
 
   function handleRegenerate(e) {
     e.stopPropagation();
@@ -1736,9 +1752,6 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
           <span className={(f.visibility === 'public') ? s.visibilityBadgePublic : s.visibilityBadgePrivate}>
             {(f.visibility === 'public') ? vm.publicBadge : vm.privateBadge}
           </span>
-          <span className={`${s.statusBadge} ${f.status === 'confirmed' ? s.statusConfirmed : s.statusDraft}`}>
-            {f.status === 'confirmed' ? vm.statusConfirmed : vm.statusDraft}
-          </span>
         </div>
       </div>
 
@@ -1748,13 +1761,6 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
 
       <div className={s.cardFooter}>
         <span className={s.cardDate}>{fmtDateShort(f.created_at)}</span>
-        {topTags.length > 0 && (
-          <div className={s.tagRow}>
-            {topTags.map((t, i) => (
-              <span key={i} className={`${s.tag} ${s[t.cls]}`}>{t.text}</span>
-            ))}
-          </div>
-        )}
       </div>
 
       {f.truncated && (
