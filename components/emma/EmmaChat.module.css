@@ -24,17 +24,39 @@
 .topnavDay   { background: #fff5ee; border-bottom: 0.5px solid rgba(234,88,12,0.12); }
 .topnavNight { background: #13101f; border-bottom: 0.5px solid rgba(124,58,237,0.15); }
 
+/* Bigger, clearly visible back button (Task 49 follow-up).
+   44×44 hit target so the button doesn't get lost under iOS notches /
+   gesture indicators, with a tinted pill background that respects the
+   day / night theme. The chevron is heavier so it reads at a glance. */
 .backBtn {
-  font-size: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 26px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 0;
   line-height: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
-.day .backBtn   { color: #b07050; }
-.night .backBtn { color: rgba(255,255,255,0.3); }
+.backBtn:active { transform: scale(0.94); }
+.day .backBtn {
+  background: rgba(234, 88, 12, 0.10);
+  color: #ea580c;
+}
+.day .backBtn:hover { background: rgba(234, 88, 12, 0.18); }
+.night .backBtn {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c4b5fd;
+}
+.night .backBtn:hover { background: rgba(168, 85, 247, 0.28); }
 
 .navAvatar {
   width: 36px; height: 36px;

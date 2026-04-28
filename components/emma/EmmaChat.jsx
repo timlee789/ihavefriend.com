@@ -581,13 +581,12 @@ export default function EmmaChat({ initialMode }) {
   })();
 
   // ── mode (day/night) ──────────────────────────────────────────────────────
-  const [mode, setMode] = useState(initialMode ?? 'day');
-  useEffect(() => {
-    if (!initialMode) {
-      const h = new Date().getHours();
-      setMode(h >= 6 && h < 21 ? 'day' : 'night');
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 🆕 Task 50 (2026-04-28): Tim wants the whole site in dark mode. The
+  //    time-based auto-flip and the prior `'day'` default are gone — we
+  //    pin to 'night' on mount. The day/night toggle button still works
+  //    if a power user wants to flip manually for one session, but the
+  //    page no longer assumes daylight by default.
+  const [mode, setMode] = useState(initialMode ?? 'night');
 
   // ── auth + language ───────────────────────────────────────────────────────
   const [user,  setUser]  = useState(null);
@@ -856,6 +855,21 @@ export default function EmmaChat({ initialMode }) {
   // Shape: { at: number, kind: string } | null. Reset on turnComplete.
   const firstServerMsgRef = useRef(null);
   const wakeLockRef       = useRef(null);
+  // 🔥 Task 50 — emergency stop infra
+  //   unmountedRef:           true once the component is unmounting. Every
+  //                           async path (WS handlers, reconnect timer,
+  //                           onaudioprocess) checks this so they don't
+  //                           resurrect Emma after the user has navigated
+  //                           away (the "ghost Emma" bug — multiple Emmas
+  //                           talking at once after re-entering /chat).
+  //   activeAudioSourcesRef:  every BufferSourceNode scheduled by
+  //                           scheduleChunk is pushed here and removed by
+  //                           its onended handler. forceStop / disconnect /
+  //                           silentReconnect iterate this list and call
+  //                           .stop() so mid-flight playback halts even if
+  //                           audioCtx.close() races.
+  const unmountedRef           = useRef(false);
+  const activeAudioSourcesRef  = useRef([]);
   const scrollRef         = useRef(null);
   const geminiKeyRef        = useRef('');
   const systemPromptBaseRef = useRef('');
@@ -1028,6 +1042,10 @@ export default function EmmaChat({ initialMode }) {
   // ── audio helpers ─────────────────────────────────────────────────────────
   function scheduleChunk(f32) {
     if (isMutedRef.current) return;
+    // 🔥 Task 50: never schedule new playback for a session the user has
+    //    already left. Late chunks arriving after unmount were the
+    //    primary cause of "ghost Emma" voices.
+    if (unmountedRef.current) return;
     const ctx = audioCtxRef.current;
     if (!ctx) return;
     const buf = ctx.createBuffer(1, f32.length, 24000);
@@ -1039,6 +1057,27 @@ export default function EmmaChat({ initialMode }) {
     const startAt = Math.max(nextPlayTimeRef.current, now + 0.04);
     src.start(startAt);
     nextPlayTimeRef.current = startAt + buf.duration;
+    // 🔥 Task 50: track this source so forceStop / disconnect can kill
+    //    queued playback even if audioCtx.close() races. Auto-clean on
+    //    natural completion to keep the array bounded.
+    activeAudioSourcesRef.current.push(src);
+    src.onended = () => {
+      const arr = activeAudioSourcesRef.current;
+      const i = arr.indexOf(src);
+      if (i >= 0) arr.splice(i, 1);
+    };
+  }
+
+  // 🔥 Task 50: stop and clear every BufferSourceNode currently scheduled
+  //    or playing. Safe to call multiple times.
+  function killActiveAudioSources() {
+    const arr = activeAudioSourcesRef.current;
+    while (arr.length > 0) {
+      const src = arr.pop();
+      try { src.onended = null; } catch {}
+      try { src.stop(0); } catch {}
+      try { src.disconnect(); } catch {}
+    }
   }
 
   function stopMic() {
@@ -1132,6 +1171,9 @@ export default function EmmaChat({ initialMode }) {
     };
 
     ws.onmessage = async (evt) => {
+      // 🔥 Task 50: bail if component already unmounted — late server chunks
+      //    must not schedule audio or set state on a dead component.
+      if (unmountedRef.current) return;
       const rcvTime = Date.now();
       const raw = typeof evt.data === 'string' ? evt.data : await evt.data.text();
       const msg = JSON.parse(raw);
@@ -1475,6 +1517,14 @@ export default function EmmaChat({ initialMode }) {
     };
 
     ws.onclose = (evt) => {
+      // 🔥 Task 50: never auto-reconnect after unmount. silentReconnect
+      //    here was the second cause of multiple Emmas — when the user
+      //    left, the WS dropped, onclose fired, onclose triggered a fresh
+      //    silentReconnect, and that new session started talking again.
+      if (unmountedRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        return;
+      }
       console.warn('[WS] closed:', {
         code: evt.code,
         reason: evt.reason,
@@ -1488,6 +1538,7 @@ export default function EmmaChat({ initialMode }) {
       setIsAiSpeaking(false);
       setLiveText('');
       stopMic();
+      killActiveAudioSources();
       nextPlayTimeRef.current = 0;
       try { audioCtxRef.current?.close(); } catch {}
       audioCtxRef.current = null;
@@ -1611,6 +1662,10 @@ export default function EmmaChat({ initialMode }) {
     wsRef.current = null;
     try { oldWs?.close(); } catch {}
     stopMic();
+    // 🔥 Task 50: silence in-flight Emma audio while we cycle the WS.
+    //    The mic stream itself is reused on the new connection, so we
+    //    deliberately do NOT stop micStreamRef tracks here.
+    killActiveAudioSources();
     nextPlayTimeRef.current = 0;
     try { audioCtxRef.current?.close(); } catch {}
     audioCtxRef.current = null;
@@ -1718,9 +1773,20 @@ export default function EmmaChat({ initialMode }) {
   async function disconnect() {
     clearTimeout(reconnectTimerRef.current);
     isReconnectingRef.current = false;
-    wsRef.current?.close();
+    // 🔥 Task 50: null wsRef BEFORE close() so onclose treats this as
+    //    user-initiated and skips silentReconnect. (Was already correct,
+    //    keeping the order explicit.)
+    const ws = wsRef.current;
     wsRef.current = null;
+    try { ws?.close(); } catch {}
     stopMic();
+    // 🔥 Stop the mic hardware itself, not just the audio graph.
+    try { micStreamRef.current?.getTracks().forEach(t => t.stop()); } catch {}
+    micStreamRef.current = null;
+    // 🔥 Kill any in-flight Emma audio that hasn't started yet (or is mid-
+    //    playback). audioCtx.close() below would normally cancel them, but
+    //    sources scheduled in the same tick can race.
+    killActiveAudioSources();
     try { audioCtxRef.current?.close(); } catch {}
     audioCtxRef.current = null;
     clearInterval(audioMonitorRef.current);
@@ -1784,6 +1850,115 @@ export default function EmmaChat({ initialMode }) {
       setStatusMsg('');
     }
   }
+
+  // ── forceStop ────────────────────────────────────────────────────────────
+  // 🔥 Task 50 — synchronous emergency teardown for component unmount.
+  //
+  // Why this exists:
+  //   disconnect() above is the user-initiated path: it sets UI state,
+  //   shows the feedback modal, awaits, etc. But on unmount the component
+  //   is already going away — calling setX() throws the React "set state
+  //   on unmounted component" warning, the feedback modal is never seen,
+  //   and worse, queued audio chunks can keep playing because no one
+  //   stops them. The "ghost Emma" bug.
+  //
+  // What this does (no awaits, no UI side effects):
+  //   1. Mark unmounted so onclose/onmessage/onaudioprocess all bail.
+  //   2. Stash session data via navigator.sendBeacon (survives the
+  //      unmount and a page navigation; auth via _token in body since
+  //      beacon can't set Authorization header).
+  //   3. Clear every timer.
+  //   4. Null wsRef BEFORE close() so the soon-to-fire onclose treats
+  //      it as user-initiated and skips silentReconnect.
+  //   5. Kill every tracked BufferSourceNode so any chunk already
+  //      pushed to the AudioContext stops mid-flight.
+  //   6. Stop mic stream tracks (releases the hardware mic).
+  //   7. Close AudioContext + release wake lock.
+  function forceStop() {
+    // Idempotent
+    if (unmountedRef.current && !wsRef.current && !audioCtxRef.current) return;
+    unmountedRef.current = true;
+
+    const sid = sessionIdRef.current;
+    const t   = tokenRef.current || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+    const transcript = transcriptRef.current || [];
+
+    // 1. Persist the session — sendBeacon survives unmount and tab
+    //    navigation. Empty/short transcripts are still OK to send;
+    //    /api/chat/end gracefully no-ops below the threshold.
+    if (sid && t && transcript.length >= 2) {
+      try {
+        const payload = JSON.stringify({
+          sessionId       : sid,
+          transcript,
+          conversationMode: convModeRef.current,
+          _token          : t,
+        });
+        navigator.sendBeacon('/api/chat/end', new Blob([payload], { type: 'application/json' }));
+      } catch {}
+    }
+    // 2. Per-user usage minutes (best-effort beacon)
+    if (sessionStartRef.current && t) {
+      try {
+        const mins = (Date.now() - sessionStartRef.current) / 60000;
+        const usagePayload = JSON.stringify({
+          minutesUsed: mins,
+          turnsCount : turnsRef.current,
+          _token     : t,
+        });
+        navigator.sendBeacon('/api/usage', new Blob([usagePayload], { type: 'application/json' }));
+      } catch {}
+    }
+
+    // 3. Timers
+    clearTimeout(reconnectTimerRef.current);
+    clearInterval(thinkingTimerRef.current);
+    clearTimeout(thinkingDelayRef.current);
+    clearInterval(audioMonitorRef.current);
+    reconnectTimerRef.current = null;
+    thinkingTimerRef.current  = null;
+    thinkingDelayRef.current  = null;
+    audioMonitorRef.current   = null;
+
+    // 4. WebSocket — null BEFORE close() so onclose skips reconnect.
+    const ws = wsRef.current;
+    wsRef.current = null;
+    try { ws?.close(); } catch {}
+
+    // 5. Audio playback — kill every queued source.
+    killActiveAudioSources();
+
+    // 6. Mic — disconnect the audio graph AND release the hardware.
+    try { processorRef.current?.disconnect(); } catch {}
+    try { sourceRef.current?.disconnect();    } catch {}
+    processorRef.current = null;
+    sourceRef.current    = null;
+    try { micStreamRef.current?.getTracks().forEach(tr => tr.stop()); } catch {}
+    micStreamRef.current = null;
+
+    // 7. AudioContext + wake lock
+    try { audioCtxRef.current?.close(); } catch {}
+    audioCtxRef.current = null;
+    nextPlayTimeRef.current = 0;
+    try { releaseWakeLock(); } catch {}
+
+    sessionIdRef.current   = null;
+    sessionStartRef.current = null;
+    isReconnectingRef.current = false;
+  }
+
+  // 🔥 Task 50 — unmount cleanup. Runs when EmmaChat is leaving the DOM
+  //    (router.push, browser back, tab close mid-session, hot reload).
+  //    Without this effect every navigation away while Emma was speaking
+  //    left a zombie session behind, and the next /chat visit produced
+  //    multiple Emmas talking on top of each other.
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+      forceStop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── submit feedback ───────────────────────────────────────────────────────
   async function submitFeedback() {

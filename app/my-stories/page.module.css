@@ -33,16 +33,33 @@
   gap: 10px;
 }
 
+/* Bigger, clearly visible back button (Task 49 follow-up). Matches the
+   sharing-stories and chat back buttons so the home affordance is
+   consistent across pages — and the 44×44 hit target keeps the button
+   from being lost under phone notches / gesture areas. */
 .backBtn {
-  background: none;
+  background: rgba(234, 88, 12, 0.10);
   border: none;
   cursor: pointer;
-  padding: 4px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
   color: #ea580c;
-  font-size: 20px;
+  font-size: 26px;
   line-height: 1;
+  font-weight: 500;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.backBtn:hover { background: rgba(234, 88, 12, 0.18); }
+.backBtn:active { transform: scale(0.94); }
+@media (prefers-color-scheme: dark) {
+  .backBtn { background: rgba(251, 146, 60, 0.16); color: #fb923c; }
+  .backBtn:hover { background: rgba(251, 146, 60, 0.24); }
 }
 
 .pageTitle {
@@ -1380,3 +1397,237 @@
   font-size: 16px;
   margin-left: 8px;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   DARK THEME — site-wide always-dark (Task 50, 2026-04-28)
+   These rules sit at file end so they win over the light defaults
+   above by source order. No @media gate — Tim wants permanent dark
+   regardless of the user's system color-scheme preference.
+   ════════════════════════════════════════════════════════════════ */
+
+.page {
+  background: #1a1410;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Header (sticky) */
+.header {
+  background: rgba(26, 20, 16, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.pageTitle  { color: #fdf8f4; }
+.refreshBtn { color: rgba(255, 255, 255, 0.6); }
+.refreshBtn:hover { color: #fdf8f4; }
+
+/* Stats bar */
+.statsBar {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+.statItem  { border-right-color: rgba(255, 255, 255, 0.08); }
+.statValue { color: #fdf8f4; }
+.statLabel { color: rgba(255, 255, 255, 0.55); }
+
+/* Section titles */
+.sectionTitle { color: rgba(255, 255, 255, 0.85); }
+
+/* Story cards */
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+  border: 1px solid rgba(251, 146, 60, 0.18);
+}
+.cardTitle    { color: rgba(255, 255, 255, 0.95); }
+.cardSubtitle { color: rgba(255, 255, 255, 0.65); }
+.cardPreview  { color: rgba(255, 255, 255, 0.75); }
+.cardDate     { color: rgba(255, 255, 255, 0.45); }
+
+/* Status / visibility badges */
+.statusDraft     { background: rgba(255, 255, 255, 0.08); color: rgba(255,255,255,0.7); }
+.statusConfirmed { background: rgba(34, 197, 94, 0.18);   color: #86efac; }
+.visibilityBadgePrivate    { background: rgba(255, 255, 255, 0.06); color: rgba(255,255,255,0.7); }
+.visibilityBadgePublic     { background: rgba(99, 102, 241, 0.18); color: #c7d2fe; }
+.visibilityBadgePrivateLg  { background: rgba(255, 255, 255, 0.06); color: rgba(255,255,255,0.85); }
+.visibilityBadgePublicLg   { background: rgba(99, 102, 241, 0.20); color: #c7d2fe; }
+
+/* Tags — slight tone-down on dark, keep accent hues */
+.tagTheme   { background: rgba(234, 88, 12, 0.18);  color: #fdba74; }
+.tagEmotion { background: rgba(124, 58, 237, 0.20); color: #c4b5fd; }
+.tagPeople  { background: rgba(56, 132, 224, 0.22); color: #93c5fd; }
+
+/* Empty state */
+.emptyState { background: transparent; }
+.emptyTitle { color: rgba(255, 255, 255, 0.7); }
+.emptyDesc  { color: rgba(255, 255, 255, 0.5); }
+.emptyHint  { color: rgba(255, 255, 255, 0.45); }
+
+/* Ebook section */
+.ebookSection {
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ebookSectionTitle { color: rgba(255, 255, 255, 0.92); }
+.ebookSectionDesc  { color: rgba(255, 255, 255, 0.6); }
+
+.ebookStatusCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ebookStatusCard.pending   { border-color: rgba(234, 88, 12, 0.4); }
+.ebookStatusCard.review    { border-color: rgba(124, 58, 237, 0.4); }
+.ebookStatusCard.completed { border-color: rgba(34, 197, 94, 0.4); }
+.ebookStatusTitle { color: rgba(255, 255, 255, 0.92); }
+.ebookStatusMsg.pendingMsg   { color: #fdba74; }
+.ebookStatusMsg.reviewMsg    { color: #c4b5fd; }
+.ebookStatusMsg.completedMsg { color: #86efac; }
+
+/* Modal */
+.overlay { background: rgba(0, 0, 0, 0.65); }
+.modal {
+  background: #1a1410;
+  color: rgba(255, 255, 255, 0.9);
+}
+.modalHandle  { background: rgba(255, 255, 255, 0.2); }
+.modalTitle   { color: rgba(255, 255, 255, 0.95); }
+.modalSubtitle{ color: rgba(255, 255, 255, 0.6); }
+.modalContent { color: rgba(255, 255, 255, 0.88); }
+.modalContent p strong { color: #fdba74; }
+.modalClose   { color: rgba(255, 255, 255, 0.6); }
+.modalClose:hover { color: #fdf8f4; }
+.modalTagLabel { color: rgba(255, 255, 255, 0.55); }
+.confirmTitle  { color: rgba(255, 255, 255, 0.92); }
+.confirmBody   { color: rgba(255, 255, 255, 0.75); }
+.confirmMsg    { color: rgba(255, 255, 255, 0.85); }
+.confirmList   { color: rgba(255, 255, 255, 0.75); }
+.continueHint  { color: rgba(255, 255, 255, 0.55); }
+
+/* Inputs */
+.editArea, .editInput,
+.formInput, .formInputCol, .formTextareaCol {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.editArea::placeholder, .editInput::placeholder,
+.formInput::placeholder, .formInputCol::placeholder, .formTextareaCol::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+.formLabel, .formLabelCol  { color: rgba(255, 255, 255, 0.7); }
+
+/* Modal action buttons */
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  border-color: transparent;
+}
+.cancelBtn:hover { background: rgba(255, 255, 255, 0.14); }
+.editBtn {
+  background: rgba(99, 102, 241, 0.20);
+  color: #c7d2fe;
+  border-color: transparent;
+}
+.deleteBtn {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: transparent;
+}
+.saveBtn, .ctaBtn, .btnPrimaryCol, .startChatBtn,
+.regenerateBtn, .continueBtn, .createCollectionBtn,
+.addFragmentBtn, .addToCollectionBtn, .visibilityBtn {
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border-color: transparent;
+}
+.btnDangerCol {
+  background: rgba(239, 68, 68, 0.20);
+  color: #fca5a5;
+  border-color: transparent;
+}
+.downloadBtn {
+  background: rgba(34, 197, 94, 0.20);
+  color: #86efac;
+}
+
+/* Tab bar */
+.tabBar {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tab        { color: rgba(255, 255, 255, 0.55); }
+.tab:hover  { color: rgba(255, 255, 255, 0.85); }
+.tabActive  { color: #fb923c; }
+
+/* Collections */
+.collectionCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(251, 146, 60, 0.18);
+}
+.collectionTitle    { color: rgba(255, 255, 255, 0.95); }
+.collectionDesc     { color: rgba(255, 255, 255, 0.65); }
+.collectionMeta     { color: rgba(255, 255, 255, 0.5); }
+.collectionDescFull { color: rgba(255, 255, 255, 0.75); }
+.collectionMetaFull { color: rgba(255, 255, 255, 0.55); }
+
+.fragmentRow,
+.fragmentSelectRow,
+.fragmentPickerItem,
+.collectionPickerRow {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.fragmentRowTitle, .fragmentSelectTitle,
+.fragmentPickerName, .collectionPickerTitle {
+  color: rgba(255, 255, 255, 0.9);
+}
+.fragmentRowMeta, .fragmentSelectMeta, .collectionPickerMeta {
+  color: rgba(255, 255, 255, 0.55);
+}
+.collectionPickerActive {
+  background: rgba(251, 146, 60, 0.16);
+  border-color: rgba(251, 146, 60, 0.4);
+}
+.removeBtn {
+  color: rgba(255, 255, 255, 0.55);
+}
+.removeBtn:hover { color: #fca5a5; }
+
+/* Misc fragment-collections */
+.collectionsLabel { color: rgba(255, 255, 255, 0.7); }
+.collectionTag {
+  background: rgba(251, 146, 60, 0.18);
+  color: #fdba74;
+}
+.noCollections   { color: rgba(255, 255, 255, 0.45); }
+
+/* Truncated banner */
+.truncatedBanner {
+  background: rgba(251, 146, 60, 0.12);
+  border-color: rgba(251, 146, 60, 0.3);
+}
+.truncatedBannerText { color: #fdba74; }
+.truncatedIcon       { color: #fdba74; }
+
+/* Threads */
+.threadSection { border-top-color: rgba(255, 255, 255, 0.08); }
+.threadTitle   { color: rgba(255, 255, 255, 0.7); }
+.threadOrder   { color: rgba(255, 255, 255, 0.5); }
+.threadContent { color: rgba(255, 255, 255, 0.85); }
+.threadItem    { border-bottom-color: rgba(255, 255, 255, 0.06); }
+
+/* Toast + spinner already work on dark; toast just needs its own surface. */
+.toast {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1410;
+}
+.spinnerDot { background: #fb923c; }
+
+/* Errors */
+.errorMsg {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Success */
+.successTitle { color: #86efac; }
+.successDesc  { color: rgba(255, 255, 255, 0.7); }

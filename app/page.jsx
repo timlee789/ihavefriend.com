@@ -42,6 +42,7 @@ const HOME_MSGS = {
     companionCtaSub    : '편하게 이야기 나눠요 (기록 안 됨)',
     storyCtaTitle      : '내 이야기 남기기',
     storyCtaSub        : 'Emma가 듣고 기록해드려요',
+    privateLabel       : 'Private Mode',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -66,6 +67,7 @@ const HOME_MSGS = {
     companionCtaSub    : 'Casual chat (nothing is kept)',
     storyCtaTitle      : 'Record my story',
     storyCtaSub        : 'Emma will listen and write it down',
+    privateLabel       : 'Private Mode',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -90,6 +92,7 @@ const HOME_MSGS = {
     companionCtaSub    : 'Charla casual (no se guarda)',
     storyCtaTitle      : 'Grabar mi historia',
     storyCtaSub        : 'Emma escuchará y la registrará',
+    privateLabel       : 'Modo Privado',
   },
 };
 
@@ -211,18 +214,8 @@ export default function Home() {
 
       {/* Mode-specific CTAs (Task 49) — split the single "이야기 하기" button
           into two so users can pick companion vs story up front. /chat
-          auto-skips its mode-selection screen when ?mode= is present. */}
-      <button
-        className={s.companionCta}
-        onClick={() => router.push('/chat?mode=companion')}
-      >
-        <div className={s.ctaIcon}>💬</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
-        </div>
-      </button>
-
+          auto-skips its mode-selection screen when ?mode= is present.
+          Order: story (primary recording intent) → companion (light chat). */}
       <button
         className={s.storyCta}
         onClick={() => router.push('/chat?mode=story')}
@@ -232,6 +225,18 @@ export default function Home() {
           <div className={s.ctaMain}>{msgs.storyCtaTitle}</div>
           <div className={s.ctaSub}>{msgs.storyCtaSub}</div>
         </div>
+      </button>
+
+      <button
+        className={s.companionCta}
+        onClick={() => router.push('/chat?mode=companion')}
+      >
+        <div className={s.ctaIcon}>💬</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
+        </div>
+        <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
       </button>
 
       {/* View Stories CTA — promoted to a full-size CTA mirroring Primary CTA

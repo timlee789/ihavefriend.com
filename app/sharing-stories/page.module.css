@@ -34,15 +34,34 @@
   gap: 10px;
 }
 
+/* Bigger, clearly visible back button (Task 49 follow-up).
+   The previous icon-only button was easily covered by phone notches /
+   gesture indicators / browser chrome. We give it a 44×44 hit target
+   (Apple HIG minimum), a tinted pill background so it reads as a
+   button at a glance, and a heavier glyph. */
 .backBtn {
-  background: none;
+  background: rgba(234, 88, 12, 0.10);
   border: none;
   cursor: pointer;
-  padding: 4px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
   color: #ea580c;
-  font-size: 22px;
+  font-size: 26px;
   line-height: 1;
-  font-weight: 300;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.backBtn:hover { background: rgba(234, 88, 12, 0.18); }
+.backBtn:active { transform: scale(0.94); }
+@media (prefers-color-scheme: dark) {
+  .backBtn { background: rgba(251, 146, 60, 0.16); color: #fb923c; }
+  .backBtn:hover { background: rgba(251, 146, 60, 0.24); }
 }
 
 .pageTitle {

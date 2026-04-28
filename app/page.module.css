@@ -243,22 +243,44 @@
   box-shadow: 0 6px 16px rgba(234, 88, 12, 0.35);
 }
 
-/* Companion CTA — cyan/teal, contrasts with the orange story CTA so the
-   two modes are visually distinct at a glance. */
+/* Companion CTA — emerald green, conveys "casual, friendly chat" while
+   staying clearly distinct from the orange (record) and purple (view)
+   actions. `position: relative` anchors the .privateBadge in the
+   top-right corner. */
 .companionCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   border: none;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
   transition: transform 0.1s ease, box-shadow 0.15s ease;
   font-family: inherit;
+  position: relative;
+}
+
+/* Private-mode badge in the top-right of the companion CTA — small,
+   semi-transparent, white text. Reassures the user that nothing said
+   here is recorded, mirroring the in-chat banner. */
+.privateBadge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
 }
 
 .companionCta:active {
@@ -266,7 +288,7 @@
 }
 
 .companionCta:hover {
-  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.35);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
 }
 
 /* Story CTA — same orange palette as the deprecated primaryCta. */
