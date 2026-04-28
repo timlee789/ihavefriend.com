@@ -254,11 +254,13 @@
   align-items: center;
   width: 100%;
   padding: 32px 24px;
+  /* 🔥 Task 56 #4: matches .storyCta orange (Group 1 = conversational
+     actions). Both buttons start a chat — they share a hue. */
   background: #2a2a2a linear-gradient(135deg,
-    rgba(16, 185, 129, 0.18),
-    rgba(5, 150, 105, 0.18));
-  color: #f1f5f4;
-  border: 1px solid rgba(16, 185, 129, 0.30);
+    rgba(251, 146, 60, 0.18),
+    rgba(234, 88, 12, 0.18));
+  color: #f5efe9;
+  border: 1px solid rgba(234, 88, 12, 0.30);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
@@ -293,7 +295,7 @@
 
 .companionCta:hover {
   background-color: #313131;
-  border-color: rgba(16, 185, 129, 0.45);
+  border-color: rgba(234, 88, 12, 0.45);
 }
 
 /* Story CTA — soft orange tint over a neutral charcoal. Same calm
@@ -348,19 +350,18 @@
   font-weight: 400;
 }
 
-/* My Stories CTA — soft cyan/teal tint. Sits between the warm
-   orange/green recording actions and the cool purple discovery
-   action so the four buttons read as a clean three-temperature set. */
+/* 🔥 Task 56 #4: matches .viewStoriesCta indigo (Group 2 = viewing
+   actions). Both surface stories — they share a hue. */
 .myStoriesCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
   background: #2a2a2a linear-gradient(135deg,
-    rgba(45, 212, 191, 0.18),
-    rgba(13, 148, 136, 0.18));
-  color: #e9faf6;
-  border: 1px solid rgba(45, 212, 191, 0.30);
+    rgba(99, 102, 241, 0.18),
+    rgba(79, 70, 229, 0.18));
+  color: #eeeefb;
+  border: 1px solid rgba(99, 102, 241, 0.30);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
@@ -371,7 +372,7 @@
 .myStoriesCta:active { transform: scale(0.98); }
 .myStoriesCta:hover {
   background-color: #313131;
-  border-color: rgba(45, 212, 191, 0.45);
+  border-color: rgba(99, 102, 241, 0.45);
 }
 
 /* View Stories CTA — soft indigo tint over a neutral charcoal. */

@@ -178,10 +178,45 @@ export async function POST(request) {
     } catch {}
   }
 
-  // ── Fragment detection via REST (Gemini Live uses AUDIO-only, no text parts) ──
-  // Analyze the full transcript with Gemini to detect story-worthy moments,
-  // then queue fragment generation if found.
+  // ── Fragment detection + universal save gate ────────────────────────
+  // 🔥 Task 56 (2026-04-28): the gate decision is now made BEFORE any
+  //   network call to Gemini. This is the structural fix for the
+  //   "STORY 5분 이야기 사라짐" regression — previously the entire
+  //   shouldQueue logic lived inside `if (geminiRes.ok)`, so any
+  //   fragment-detect timeout / network blip / JSON parse error
+  //   silently dropped the user's story even when their intent was
+  //   unambiguous. Now:
+  //
+  //     STORY mode + safety net  →  shouldQueue = true   (user-intent override)
+  //     Continuation + ≥2 turns  →  shouldQueue = true   (explicit click)
+  //     Companion / auto         →  Gemini detect required (best-effort)
+  //
+  //   Personality is a request, the gate is a guarantee.
   let fragmentJobId = null;
+  let fragment = null;            // populated by Gemini detect when it succeeds
+  let shouldQueue = false;
+  let generationReason = '';
+
+  const isContinuation     = !!continuationParentId;
+  const userTurnCount      = history.filter(m => m.role === 'user').length;
+  const userCharCount      = history.filter(m => m.role === 'user')
+                                    .reduce((s, m) => s + (m.content || '').length, 0);
+  const continuationMinTurns = 2;
+  const STORY_MIN_USER_TURNS = 2;
+  const STORY_MIN_USER_CHARS = 100;
+
+  if (isContinuation && userTurnCount >= continuationMinTurns) {
+    shouldQueue = true;
+    generationReason = `continuation user_intent_override turns=${userTurnCount}`;
+  } else if (sessionMode === 'story' &&
+             userTurnCount >= STORY_MIN_USER_TURNS &&
+             userCharCount >= STORY_MIN_USER_CHARS) {
+    shouldQueue = true;
+    generationReason = `STORY user_intent_override turns=${userTurnCount} chars=${userCharCount}`;
+  }
+
+  console.log(`[chat/end] Pre-detect gate: shouldQueue=${shouldQueue} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount} userChars=${userCharCount} reason="${generationReason}"`);
+
   if (apiKey && history.length >= 2) {
     try {
       // 🆕 2026-04-27 (Task 47 #5): replace brittle substring(0, 3000) with
@@ -269,85 +304,43 @@ Rules:
         const data = await geminiRes.json();
         const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
         const parsed = JSON.parse(raw.trim());
-        const fragment = parsed.fragment;
+        fragment = parsed.fragment;
 
-        // 🆕 2026-04-25: Continuation sessions ALWAYS save (skip completeness gate).
-        // Rationale: User explicitly clicked "이어서 말하기" → intent is clear.
-        // The parent fragment already has all 6 elements; additions are
-        // expected to be fragmentary ("그때 그분 이름이 정자씨였어요"). Failing
-        // to save = data loss = broken trust with senior users.
-        // Min 2 user turns guards against accidental clicks / greeting-only sessions.
-        const isContinuation = !!continuationParentId;
-        const userTurnCount = history.filter(m => m.role === 'user').length;
-        const continuationMinTurns = 2;
-
-        // Threshold for non-continuation flows (unchanged):
-        //   story mode is more permissive (completeness >= 2),
-        //   companion / auto modes require stronger signal (completeness >= 3).
-        const completenessThreshold = sessionMode === 'story' ? 2 : 3;
-
-        // 🔥 Task 54 #2 (2026-04-28): paradigm shift — trust user intent.
-        //   Tim's c795ba73 session was STORY mode, 7 user turns, fully
-        //   intelligible — and Gemini's fragment-detect still returned
-        //   detected=false. The user-intent signal (they explicitly chose
-        //   "내 이야기 남기기") outweighs the LLM's heuristic. So:
-        //
-        //   STORY mode  →  ALWAYS save above the safety net (≥ 2 user
-        //                  turns AND ≥ 100 cumulative user chars).
-        //                  We ignore detected/completeness entirely.
-        //   COMPANION   →  keep the gate but lower the bar (2 instead
-        //   / AUTO         of 3) so a thin signal isn't a hard skip.
-        //
-        // Personality is a request, server enforcement is a guarantee.
-        const STORY_MIN_USER_TURNS  = 2;
-        const STORY_MIN_USER_CHARS  = 100;
-        const userCharCount = history
-          .filter(m => m.role === 'user')
-          .reduce((sum, m) => sum + (m.content || '').length, 0);
-
-        let shouldQueue;
-        let generationReason;
-        if (isContinuation) {
-          if (userTurnCount >= continuationMinTurns) {
+        // companion / auto: only path that depends on Gemini detect.
+        // STORY + continuation are already decided above and never
+        // demoted by Gemini's verdict.
+        if (!shouldQueue && !isContinuation && sessionMode !== 'story') {
+          if (fragment?.detected && (fragment?.completeness ?? 0) >= 2) {
             shouldQueue = true;
-            generationReason = `continuation session with ${userTurnCount} user turns (>= ${continuationMinTurns})`;
+            generationReason = `${sessionMode} detected=${fragment.detected} completeness=${fragment.completeness}`;
           } else {
-            shouldQueue = false;
-            generationReason = `continuation session too short (${userTurnCount} < ${continuationMinTurns} user turns)`;
+            generationReason = `${sessionMode} insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0})`;
           }
-        } else if (sessionMode === 'story') {
-          // STORY = explicit user intent. Save almost unconditionally,
-          // gated only by a minimal safety net so accidental "I tested
-          // for 5 seconds" sessions don't generate empty fragments.
-          if (userTurnCount >= STORY_MIN_USER_TURNS && userCharCount >= STORY_MIN_USER_CHARS) {
-            shouldQueue = true;
-            generationReason = `STORY mode — user intent override (turns=${userTurnCount}>=${STORY_MIN_USER_TURNS}, chars=${userCharCount}>=${STORY_MIN_USER_CHARS}); ignoring detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0}`;
-          } else {
-            shouldQueue = false;
-            generationReason = `STORY mode but below safety net (turns=${userTurnCount} chars=${userCharCount})`;
-          }
-        } else {
-          // companion / auto: keep the gate but slightly relax. 3 → 2.
-          shouldQueue = fragment?.detected &&
-            (fragment?.completeness ?? 0) >= 2;
-          generationReason = shouldQueue
-            ? `${sessionMode} session detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0}`
-            : `${sessionMode} session insufficient (detected=${fragment?.detected} completeness=${fragment?.completeness ?? 0})`;
         }
+      }
+    } catch (e) {
+      console.error('[chat/end] fragment-detect failed (non-fatal for STORY/continuation):', e.message);
+      // STORY + continuation already had shouldQueue decided above —
+      // this catch must NOT touch shouldQueue.
+    }
+  }
 
-        console.log(`[chat/end] Fragment analysis → detected=${fragment?.detected} completeness=${fragment?.completeness} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount}`);
-        console.log(`[chat/end] Generation decision: ${shouldQueue ? '✅ GENERATE' : '❌ SKIP'} — ${generationReason}`);
+  console.log(`[chat/end] Final gate decision: ${shouldQueue ? '✅ GENERATE' : '❌ SKIP'} — ${generationReason} (geminiFragment=${!!fragment})`);
 
-        if (shouldQueue) {
-          // Step 1: Mark session as fragment candidate
-          await db.query(
-            `UPDATE chat_sessions
-             SET fragment_candidate = true,
-                 fragment_elements = $1
-             WHERE id = $2`,
-            [JSON.stringify(fragment), sessionId]
-          );
-          console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
+  if (shouldQueue) {
+    try {
+      // Step 1: Mark session as fragment candidate. fragment may be null
+      //   (Gemini failed) — store empty object so downstream introspection
+      //   doesn't NPE; generateFragmentCloud falls back to deriving
+      //   elements from the transcript itself.
+      await db.query(
+        `UPDATE chat_sessions
+           SET fragment_candidate = true,
+               fragment_elements  = $1
+         WHERE id = $2`,
+        [JSON.stringify(fragment || { user_intent: true, mode: sessionMode }), sessionId]
+      );
+      console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
 
           // Step 2: Generate fragment via Gemini Flash in the background.
           // Use Next.js `after()` so Vercel keeps the function alive past the
@@ -472,15 +465,11 @@ Rules:
               console.error(bgErr?.stack);
             }
           });
-        } else if (fragment?.detected) {
-          console.log(`[chat/end] Fragment detected but below threshold (completeness=${fragment?.completeness ?? 0} < ${completenessThreshold}) — skipping queue`);
-        } else {
-          console.log(`[chat/end] No story-worthy content detected (completeness=${fragment?.completeness ?? 0})`);
-        }
-      }
     } catch (e) {
-      console.error('[chat/end] Fragment detection failed:', e.message);
+      console.error('[chat/end] shouldQueue path failed:', e.message);
     }
+  } else {
+    console.log(`[chat/end] No fragment generated for session ${sessionId} — ${generationReason}`);
   }
 
   return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0, fragmentJobQueued: !!fragmentJobId });
