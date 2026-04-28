@@ -243,23 +243,27 @@
   box-shadow: 0 6px 16px rgba(234, 88, 12, 0.35);
 }
 
-/* Companion CTA — emerald green, conveys "casual, friendly chat" while
-   staying clearly distinct from the orange (record) and purple (view)
-   actions. `position: relative` anchors the .privateBadge in the
-   top-right corner. */
+/* Companion CTA — soft emerald tint over a neutral charcoal. Tim asked
+   for the buttons to feel calmer and less saturated; we keep the color
+   identity (emerald = casual chat) but as an 18% overlay so the surface
+   reads as "muted dark with a green hint" instead of fully-saturated.
+   `position: relative` anchors the .privateBadge in the top-right
+   corner. */
 .companionCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  border: none;
+  background: #2a2a2a linear-gradient(135deg,
+    rgba(16, 185, 129, 0.18),
+    rgba(5, 150, 105, 0.18));
+  color: #f1f5f4;
+  border: 1px solid rgba(16, 185, 129, 0.30);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
   position: relative;
 }
@@ -288,23 +292,27 @@
 }
 
 .companionCta:hover {
-  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+  background-color: #313131;
+  border-color: rgba(16, 185, 129, 0.45);
 }
 
-/* Story CTA — same orange palette as the deprecated primaryCta. */
+/* Story CTA — soft orange tint over a neutral charcoal. Same calm
+   treatment as the companion CTA so the three buttons read as a set. */
 .storyCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: linear-gradient(135deg, #fb923c, #ea580c);
-  color: white;
-  border: none;
+  background: #2a2a2a linear-gradient(135deg,
+    rgba(251, 146, 60, 0.18),
+    rgba(234, 88, 12, 0.18));
+  color: #f5efe9;
+  border: 1px solid rgba(234, 88, 12, 0.30);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
 
@@ -313,7 +321,8 @@
 }
 
 .storyCta:hover {
-  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.35);
+  background-color: #313131;
+  border-color: rgba(234, 88, 12, 0.45);
 }
 
 .ctaIcon {
@@ -339,20 +348,22 @@
   font-weight: 400;
 }
 
-/* View Stories CTA — same shape as primaryCta, purple gradient (Task 48 #3) */
+/* View Stories CTA — soft indigo tint over a neutral charcoal. */
 .viewStoriesCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: white;
-  border: none;
+  background: #2a2a2a linear-gradient(135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(79, 70, 229, 0.18));
+  color: #eeeefb;
+  border: 1px solid rgba(99, 102, 241, 0.30);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
 
@@ -361,7 +372,8 @@
 }
 
 .viewStoriesCta:hover {
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  background-color: #313131;
+  border-color: rgba(99, 102, 241, 0.45);
 }
 
 /* Recent Stories card (entire card is a button) */
