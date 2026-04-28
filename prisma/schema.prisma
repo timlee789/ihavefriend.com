@@ -309,6 +309,10 @@ model ChatSession {
   // noisyTurnCount:  count of user turns that contained an ASR repetition burst
   sttQualityScore      Float?           @map("stt_quality_score")
   noisyTurnCount       Int              @default(0) @map("noisy_turn_count")
+  // 🆕 Task 52 #5: count of mid-session WS reconnect events (silentReconnect).
+  // Helps separate "session ended cleanly" from "session was patched together
+  // through transient drops" when reading STT quality telemetry later.
+  reconnectCount       Int              @default(0) @map("reconnect_count")
   createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
 
