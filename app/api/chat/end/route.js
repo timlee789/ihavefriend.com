@@ -222,8 +222,13 @@ export async function POST(request) {
       // 🆕 2026-04-27 (Task 47 #5): replace brittle substring(0, 3000) with
       // a sampler that prioritises user turns and caps any single turn so
       // one giant noisy message can't starve the rest of the context.
+      // 🔥 Task 57 (Fix 1-extra): bumped from 3000 → 6000 so the detect
+      //   prompt actually sees the second half of a 5+ minute Korean
+      //   conversation. The detect call only needs to spot story-shape
+      //   signals, not reproduce the whole transcript, so even 6000 is
+      //   generous; we left headroom under Gemini Flash's input limit.
       const conversationText = buildConversationSample(history, {
-        maxChars: 3000,
+        maxChars: 6000,
         userLabel: '사용자',
         assistantLabel: 'Emma',
       });
