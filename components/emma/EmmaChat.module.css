@@ -277,6 +277,59 @@
   background: rgba(255,255,255,0.06);
 }
 
+/* 🔥 Task 55 #3 — microphone-denied banner. Surfaces inside the chat
+   area when navigator.mediaDevices.getUserMedia() rejected with
+   NotAllowedError, instead of leaving the user stuck on "Connecting…".
+   The retry button is sized for senior tap targets (44 px high). */
+.micDeniedBanner {
+  margin: 16px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.10);
+}
+.micDeniedBannerDay {
+  background: #fff1f1;
+  border-color: rgba(220, 38, 38, 0.30);
+}
+.micDeniedBannerNight {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.micDeniedTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #b91c1c;
+}
+.micDeniedBannerNight .micDeniedTitle { color: #fca5a5; }
+.micDeniedHint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #555;
+}
+.micDeniedBannerNight .micDeniedHint { color: rgba(255, 255, 255, 0.78); }
+.retryMicBtn {
+  align-self: flex-start;
+  margin-top: 6px;
+  min-height: 44px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.30);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.retryMicBtn:active { transform: scale(0.97); }
+.retryMicBtn:hover  { box-shadow: 0 4px 12px rgba(234, 88, 12, 0.45); }
+
 /* ── voice bar ── */
 .voiceBar {
   flex-shrink: 0;

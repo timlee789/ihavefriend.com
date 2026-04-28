@@ -36,12 +36,14 @@ const HOME_MSGS = {
     logout          : '로그아웃',
     companionTagline: '친구와 이야기하는 기록되지 않는 공간',
     companionSubline: '친구와 대화를 나누어요',
-    sharingStoriesTitle: '이야기 보기',
-    sharingStoriesSub  : '다른 사람의 이야기들',
+    sharingStoriesTitle: '다른 사람 이야기 보기',
+    sharingStoriesSub  : '다른 사람의 이야기에서 영감을 얻어요',
     companionCtaTitle  : '그냥 이야기하기',
     companionCtaSub    : '편하게 이야기 나눠요 (기록 안 됨)',
     storyCtaTitle      : '내 이야기 남기기',
     storyCtaSub        : 'Emma가 듣고 기록해드려요',
+    myStoriesCtaTitle  : '내 이야기 보기',
+    myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
   },
   EN: {
@@ -61,12 +63,14 @@ const HOME_MSGS = {
     logout          : 'Log out',
     companionTagline: 'Space to chat with a friend (not kept)',
     companionSubline: 'Have a casual chat',
-    sharingStoriesTitle: 'View Stories',
-    sharingStoriesSub  : "Other people's stories",
+    sharingStoriesTitle: "Read others' stories",
+    sharingStoriesSub  : 'Find inspiration from other voices',
     companionCtaTitle  : 'Just talk',
     companionCtaSub    : 'Casual chat (nothing is kept)',
     storyCtaTitle      : 'Record my story',
     storyCtaSub        : 'Emma will listen and write it down',
+    myStoriesCtaTitle  : 'View my stories',
+    myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
   },
   ES: {
@@ -86,12 +90,14 @@ const HOME_MSGS = {
     logout          : 'Cerrar sesión',
     companionTagline: 'Espacio para charlar con un amigo (no se guarda)',
     companionSubline: 'Conversa de forma casual',
-    sharingStoriesTitle: 'Ver historias',
-    sharingStoriesSub  : 'Historias de otras personas',
+    sharingStoriesTitle: 'Leer historias de otros',
+    sharingStoriesSub  : 'Inspírate con otras voces',
     companionCtaTitle  : 'Solo charlar',
     companionCtaSub    : 'Charla casual (no se guarda)',
     storyCtaTitle      : 'Grabar mi historia',
     storyCtaSub        : 'Emma escuchará y la registrará',
+    myStoriesCtaTitle  : 'Ver mis historias',
+    myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
   },
 };
@@ -111,9 +117,9 @@ export default function Home() {
   const [lang, setLang] = useLang();
   const [userName, setUserName] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
-  const [recentStories, setRecentStories] = useState([]);
-  const [storiesLoading, setStoriesLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
+  // Task 55: recent stories card removed in favor of a dedicated
+  // "내 이야기 보기" button. The fragments fetch + state are gone too.
 
   // Track system color scheme for EmmaAvatar mode
   useEffect(() => {
@@ -151,26 +157,6 @@ export default function Home() {
     }
     setAuthChecked(true);
   }, [router]);
-
-  // Load 12 most-recent stories (root only — API returns roots by default)
-  useEffect(() => {
-    if (!authChecked) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    let cancelled = false;
-    fetch('/api/fragments?limit=12&status=draft,confirmed', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : { fragments: [] })
-      .then(data => {
-        if (cancelled) return;
-        setRecentStories(Array.isArray(data?.fragments) ? data.fragments : []);
-        setStoriesLoading(false);
-      })
-      .catch(() => { if (!cancelled) setStoriesLoading(false); });
-    return () => { cancelled = true; };
-  }, [authChecked]);
 
   function toggleLang() {
     const order = ['KO', 'EN', 'ES'];
@@ -239,48 +225,30 @@ export default function Home() {
         <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
       </button>
 
-      {/* View Stories CTA — promoted to a full-size CTA mirroring Primary CTA
-          shape, with a purple gradient to contrast against the orange (Task 48 #3) */}
+      {/* 🆕 Task 55 #4: dedicated "내 이야기 보기" button replaces the
+          old recentStoriesCard. Cyan/teal so it sits visually between
+          the warm orange/green of the recording actions and the cool
+          purple of the discovery action. */}
+      <button
+        className={s.myStoriesCta}
+        onClick={() => router.push('/my-stories')}
+      >
+        <div className={s.ctaIcon}>📖</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.myStoriesCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.myStoriesCtaSub}</div>
+        </div>
+      </button>
+
+      {/* Other people's stories — purple */}
       <button
         className={s.viewStoriesCta}
         onClick={() => router.push('/sharing-stories')}
       >
-        <div className={s.ctaIcon}>📖</div>
+        <div className={s.ctaIcon}>🌐</div>
         <div className={s.ctaTextWrap}>
           <div className={s.ctaMain}>{msgs.sharingStoriesTitle}</div>
           <div className={s.ctaSub}>{msgs.sharingStoriesSub}</div>
-        </div>
-      </button>
-
-      {/* Recent Stories card (entire card → /my-stories) */}
-      <button
-        className={s.recentStoriesCard}
-        onClick={() => router.push('/my-stories')}
-      >
-        <div className={s.viewAllLabel}>{msgs.viewAllStories}</div>
-
-        <div className={s.recentDivider} />
-
-        <div className={s.recentStoriesLabel}>
-          📖 {msgs.recentStoriesLabel}
-        </div>
-
-        <div className={s.recentStoriesList}>
-          {storiesLoading ? (
-            <div className={s.recentEmpty}>{msgs.loading}</div>
-          ) : recentStories.length === 0 ? (
-            <div className={s.recentEmpty}>
-              <div>{msgs.noStoriesYet}</div>
-              <div className={s.recentEmptyHint}>{msgs.noStoriesHint}</div>
-            </div>
-          ) : (
-            recentStories.map(f => (
-              <div key={f.id} className={s.recentStoryItem}>
-                <span className={s.recentStoryIcon}>📄</span>
-                <span className={s.recentStoryTitle}>{f.title}</span>
-              </div>
-            ))
-          )}
         </div>
       </button>
     </div>

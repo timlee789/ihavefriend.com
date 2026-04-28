@@ -7,6 +7,7 @@ import styles from './EmmaChat.module.css';
 import { pickStarterCards } from '@/lib/storyStarterQuestions';
 import { detectBurst } from '@/lib/transcriptNoise';
 import { filterEmmaResponse } from '@/lib/emmaResponseFilter';
+import { createWakeLockGuard } from '@/lib/wakelockFallback';
 
 // ── Short, varied opening prompts (Task 51 #2 → revised in Task 52 #1) ──
 // Tim's first 4-turn test showed Emma was opening with a QUESTION
@@ -124,6 +125,9 @@ Always respond in English.`,
     captionToggleOn: '👁 Captions on',
     captionToggleOff:'🚫 Captions off',
     sttWarn:         '⚠️ Voice recognition seems stuck. Please pause briefly and say it again.',
+    micDeniedTitle:  '🎤 Microphone access is blocked',
+    micDeniedHint:   'Tap the lock icon in the address bar and allow Microphone, then press Try again.',
+    micRetryBtn:     '🎤 Try again',
   },
   KO: {
     voice: 'Kore',
@@ -196,6 +200,9 @@ TYPE B — 공감 + 부드러운 초대 (20% 정도, 첫 turn에는 절대 사�
     captionToggleOn: '👁 자막 켜기',
     captionToggleOff:'🚫 자막 끄기',
     sttWarn:         '⚠️ 음성 인식이 멈춘 것 같아요. 잠시 멈추고 다시 말씀해 주세요.',
+    micDeniedTitle:  '🎤 마이크 권한이 막혀 있어요',
+    micDeniedHint:   '주소창의 자물쇠 🔒 아이콘을 눌러 "마이크"를 허용한 다음 "다시 시도"를 눌러 주세요.',
+    micRetryBtn:     '🎤 다시 시도',
   },
   ES: {
     voice: 'Leda',
@@ -271,6 +278,9 @@ Responde siempre en español.`,
     captionToggleOn: '👁 Activar subtítulos',
     captionToggleOff:'🚫 Desactivar subtítulos',
     sttWarn:         '⚠️ El reconocimiento de voz parece atascado. Pausa un momento y vuelve a decirlo.',
+    micDeniedTitle:  '🎤 El acceso al micrófono está bloqueado',
+    micDeniedHint:   'Toca el icono del candado en la barra de direcciones y permite el micrófono, luego presiona "Intentar de nuevo".',
+    micRetryBtn:     '🎤 Intentar de nuevo',
   },
 };
 
@@ -881,22 +891,36 @@ export default function EmmaChat({ initialMode }) {
   // keep ref in sync
   useEffect(() => { convModeRef.current = conversationMode; }, [conversationMode]);
 
-  // Hydrate captions toggle from localStorage (default ON).
+  // 🔥 Task 55 #2: captions are no longer user-facing — they're a
+  //   developer-only debugging surface gated by localStorage flag
+  //   `captions_debug`='1'. userLiveText state is still maintained
+  //   so existing burst-detection logic + future debug tooling work.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const v = localStorage.getItem('captionsOn');
-    if (v === '0') setCaptionsOn(false);
+    if (localStorage.getItem('captions_debug') === '1') setDebugCaptions(true);
   }, []);
-  function toggleCaptions() {
-    setCaptionsOn(prev => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('captionsOn', next ? '1' : '0');
-      }
-      // Wipe stale text/warning when turning off so they don't linger.
-      if (!next) { setUserLiveText(''); setSttWarning(''); }
-      return next;
-    });
+
+  // 🔥 Task 55 #3: subscribe to microphone permission state if the
+  //   browser supports it. When the user grants permission via the
+  //   address-bar lock icon (after seeing our denied banner), we want
+  //   to flip the state immediately and let them retry.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.permissions?.query) return;
+    let status;
+    let cancelled = false;
+    navigator.permissions.query({ name: 'microphone' }).then(s => {
+      if (cancelled) return;
+      status = s;
+      setMicPermission(s.state);
+      const onChange = () => setMicPermission(s.state);
+      s.addEventListener('change', onChange);
+      // No removeEventListener — Permissions objects survive for the
+      // page lifetime and the listener is harmless after unmount.
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  function _legacyToggleCaptionsRemoved() {
+    /* removed in Task 55 #2 — kept stub-free: no UI affordance */
   }
 
   function toggleMute() {
@@ -1031,7 +1055,14 @@ export default function EmmaChat({ initialMode }) {
   //                   who find the captions distracting hide them.
   const [userLiveText, setUserLiveText] = useState('');
   const [sttWarning,   setSttWarning]   = useState('');
-  const [captionsOn,   setCaptionsOn]   = useState(true);
+  // 🔥 Task 55 #2: caption visibility is now debug-only. Default OFF.
+  //   The state + STT warning still drive the warning banner.
+  const [debugCaptions, setDebugCaptions] = useState(false);
+  // 🔥 Task 55 #3: microphone permission tracking.
+  //   `micPermission` is one of 'unknown' | 'granted' | 'denied' | 'prompt'.
+  //   When it flips to 'denied' we render a clear banner with a retry
+  //   button instead of leaving the user stuck on "Connecting…".
+  const [micPermission, setMicPermission] = useState('unknown');
   // Mirror sttWarning into a ref so the WS message handler (which closes
   // over the initial render's state) can read the latest value without a
   // stale-closure bug.
@@ -1270,13 +1301,37 @@ export default function EmmaChat({ initialMode }) {
   }, [continueFragmentId, token, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── wake lock ─────────────────────────────────────────────────────────────
+  // 🔥 Task 55 #1: hardened wakelock. Previously a single
+  //   navigator.wakeLock.request() with no listeners — Android Chrome
+  //   silently auto-released on focus loss / AudioContext suspend, and
+  //   iOS Safari has no Wake Lock API at all. New implementation wraps
+  //   both layers (native lock with release-event re-acquire + 30 s
+  //   watchdog, plus a looping silent <video> NoSleep fallback) in
+  //   lib/wakelockFallback.js and tied to isConnected here.
+  if (!wakeLockRef.current && typeof window !== 'undefined') {
+    wakeLockRef.current = createWakeLockGuard();
+  }
   async function acquireWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try { wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch {}
+    if (wakeLockRef.current?.acquire) {
+      await wakeLockRef.current.acquire();
+    }
   }
   function releaseWakeLock() {
-    if (wakeLockRef.current) { wakeLockRef.current.release().catch(() => {}); wakeLockRef.current = null; }
+    if (wakeLockRef.current?.release) {
+      wakeLockRef.current.release();
+    }
   }
+  // Keep the lock state in lockstep with the live-session boolean so a
+  // user who lets a session sit on the welcome screen doesn't get a
+  // mysterious always-on screen.
+  useEffect(() => {
+    if (isConnected) {
+      acquireWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+  }, [isConnected]);
+  // Re-arm on tab return (some platforms revoke on hide).
   useEffect(() => {
     const onVis = async () => {
       if (document.visibilityState === 'visible' && isConnected) await acquireWakeLock();
@@ -2038,10 +2093,35 @@ export default function EmmaChat({ initialMode }) {
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
+      setMicPermission('granted');
       openWS(stream, false);
     } catch (e) {
-      setStatusMsg(`❌ ${e.message}`);
+      // 🔥 Task 55 #3: distinguish permission denial from other errors.
+      //   On most browsers the rejection is a DOMException whose name
+      //   is 'NotAllowedError' (also 'PermissionDeniedError' on older
+      //   WebKit). When that fires, flip micPermission so the banner
+      //   renders, and clear the noisy raw-message status.
+      const denied = e?.name === 'NotAllowedError' ||
+                     e?.name === 'PermissionDeniedError' ||
+                     /denied|permission/i.test(e?.message || '');
+      if (denied) {
+        setMicPermission('denied');
+        setStatusMsg('');
+      } else {
+        setStatusMsg(`❌ ${e.message}`);
+      }
       setMicOn(false);
+    }
+  }
+
+  // 🔥 Task 55 #3: retry button handler. Re-runs connect(); if the user
+  //   has now granted permission via the address-bar lock icon,
+  //   getUserMedia will resolve and the chat session starts.
+  async function retryMicAccess() {
+    setMicPermission('unknown');
+    setStatusMsg('');
+    if (typeof connect === 'function') {
+      try { await connect(); } catch {}
     }
   }
 
@@ -2410,6 +2490,25 @@ export default function EmmaChat({ initialMode }) {
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
 
+        {/* 🔥 Task 55 #3: microphone-denied banner. Shown only when the
+            browser has reported denied permission. The retry button
+            calls getUserMedia again — once the user toggles "Allow"
+            in the address-bar lock icon, the request resolves and we
+            proceed into the session. KO/EN/ES localised. */}
+        {micPermission === 'denied' && !isConnected && (
+          <div className={`${styles.micDeniedBanner} ${isDay ? styles.micDeniedBannerDay : styles.micDeniedBannerNight}`}>
+            <div className={styles.micDeniedTitle}>{emma.micDeniedTitle}</div>
+            <div className={styles.micDeniedHint}>{emma.micDeniedHint}</div>
+            <button
+              className={styles.retryMicBtn}
+              onClick={retryMicAccess}
+              type="button"
+            >
+              {emma.micRetryBtn}
+            </button>
+          </div>
+        )}
+
         {/* ── New Welcome Screen (2026-04-24): 2 fixed cards + scrollable fragment list ── */}
         {/* When ?mode= is present the auto-start effect will connect us in
             a moment — hide the welcome cards so they don't flash. */}
@@ -2512,27 +2611,26 @@ export default function EmmaChat({ initialMode }) {
         )}
       </div>
 
-      {/* ── Live STT diagnostics (Task 47): captions + burst warning ── */}
-      {(isConnected || messages.length > 0) && (
+      {/* ── STT warnings + (debug-only) live caption ──────────────────
+          🔥 Task 55 #2: the user-facing caption was creating anxiety —
+          STT mistranscriptions read as "Emma misheard me" even when
+          Gemini's audio understanding was fine. We now only render
+          the caption in debug mode (localStorage `captions_debug`='1'),
+          but the underlying state + burst detection still drive the
+          warning banner so the user gets told when STT really is stuck.
+          The caption-toggle button is removed entirely — the only
+          surface in this strip now is the warning banner when needed. */}
+      {(isConnected || messages.length > 0) && (sttWarning || debugCaptions) && (
         <div className={`${styles.sttStrip} ${isDay ? styles.sttStripDay : styles.sttStripNight}`}>
-          {/* Warning takes priority over plain caption */}
           {sttWarning ? (
             <div className={`${styles.sttWarn} ${isDay ? styles.sttWarnDay : styles.sttWarnNight}`}>
               {sttWarning}
             </div>
-          ) : captionsOn && (userLiveText || micOn) ? (
+          ) : debugCaptions && (userLiveText || micOn) ? (
             <div className={`${styles.sttCaption} ${isDay ? styles.sttCaptionDay : styles.sttCaptionNight}`}>
               {userLiveText || emma.captionListening}
             </div>
           ) : null}
-          <button
-            type="button"
-            className={`${styles.captionToggle} ${isDay ? styles.captionToggleDay : styles.captionToggleNight}`}
-            onClick={toggleCaptions}
-            aria-pressed={captionsOn}
-          >
-            {captionsOn ? emma.captionToggleOff : emma.captionToggleOn}
-          </button>
         </div>
       )}
 
