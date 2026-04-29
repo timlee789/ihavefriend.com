@@ -1,0 +1,91 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 24px;
+}
+
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fb923c;
+  margin: 0;
+}
+
+.section { margin-bottom: 32px; }
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.bookCard, .templateCard {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(79, 70, 229, 0.18)), #2a2a2a;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 12px;
+  transition: border-color 0.15s ease;
+  font-family: inherit;
+  color: #fdfdfd;
+  gap: 16px;
+}
+.bookCard:hover, .templateCard:hover { border-color: rgba(99, 102, 241, 0.5); }
+.templateCard:disabled { opacity: 0.6; cursor: wait; }
+
+.bookIcon, .templateIcon { font-size: 36px; flex-shrink: 0; }
+.bookInfo, .templateInfo { flex: 1; min-width: 0; }
+.bookTitle, .templateTitle {
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.bookProgress, .templateDesc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 4px;
+}
+.templateMeta {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.bookArrow {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a1410;
+  min-height: 100dvh;
+}
+
+.spinner { font-size: 24px; }

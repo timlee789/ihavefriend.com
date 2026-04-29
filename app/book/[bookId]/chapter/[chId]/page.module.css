@@ -1,0 +1,105 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header { padding: 12px 0; }
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chapterTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 16px 0 12px;
+  color: #fb923c;
+}
+
+.progressBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb923c, #ea580c);
+}
+.progressText {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 16px;
+}
+
+.description {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+}
+
+.questionList { display: flex; flex-direction: column; gap: 8px; }
+.questionRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.status_complete { background: linear-gradient(135deg, rgba(34, 197, 94, 0.10), transparent), #2a2a2a; }
+.status_drafting { background: linear-gradient(135deg, rgba(251, 146, 60, 0.10), transparent), #2a2a2a; }
+
+.questionStatus { font-size: 20px; flex-shrink: 0; }
+.questionInfo { flex: 1; min-width: 0; }
+.questionPrompt { font-size: 16px; line-height: 1.5; margin-bottom: 4px; }
+.questionMeta { font-size: 13px; color: rgba(255, 255, 255, 0.55); }
+.optionalBadge {
+  display: inline-block;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
+.questionBtn {
+  background: rgba(234, 88, 12, 0.15);
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  color: #fb923c;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.questionBtn:hover { background: rgba(234, 88, 12, 0.25); }
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a1410;
+  min-height: 100dvh;
+}

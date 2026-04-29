@@ -1,0 +1,117 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header { display: flex; align-items: center; gap: 12px; padding: 12px 0 16px; }
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.title { font-size: 22px; font-weight: 700; color: #fb923c; margin: 0; }
+
+.progressCard {
+  padding: 20px;
+  background: #2a2a2a;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.progressFraction { color: rgba(255, 255, 255, 0.6); font-size: 15px; font-weight: 400; }
+.progressBar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb923c, #ea580c);
+  transition: width 0.3s ease;
+}
+.previewHint { margin-top: 12px; font-size: 14px; color: #16a34a; font-weight: 500; }
+
+.nextCard {
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(234, 88, 12, 0.18)), #2a2a2a;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  border-radius: 16px;
+  margin-bottom: 28px;
+}
+.nextLabel { font-size: 13px; font-weight: 600; color: #fb923c; margin-bottom: 8px; letter-spacing: 0.5px; }
+.nextChapter { font-size: 14px; color: rgba(255, 255, 255, 0.65); margin-bottom: 8px; }
+.nextPrompt { font-size: 19px; font-weight: 500; line-height: 1.5; margin-bottom: 12px; }
+.nextHint { font-size: 14px; color: rgba(255, 255, 255, 0.6); margin-bottom: 20px; font-style: italic; }
+.nextBtn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: #ea580c;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.nextBtn:hover { background: #c2410c; }
+
+.sectionTitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.chapterList { display: flex; flex-direction: column; gap: 8px; }
+.chapterRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: #fdfdfd;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.chapterRow:hover { background: #303030; }
+.chapterCurrent {
+  border-color: rgba(234, 88, 12, 0.5);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), transparent), #2a2a2a;
+}
+.chapterStatus { font-size: 22px; flex-shrink: 0; }
+.chapterInfo { flex: 1; min-width: 0; }
+.chapterTitle { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+.chapterProgress { font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+.chapterArrow { color: rgba(255, 255, 255, 0.4); font-size: 18px; }
+.customBadge { margin-left: 6px; font-size: 14px; }
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a1410;
+  min-height: 100dvh;
+}

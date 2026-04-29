@@ -1,0 +1,62 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header { padding: 12px 0 24px; }
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 16px 0 32px;
+  text-align: center;
+}
+
+.optionCard {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(234, 88, 12, 0.18)), #2a2a2a;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 16px;
+  font-family: inherit;
+  color: #fdfdfd;
+  gap: 20px;
+  transition: border-color 0.15s ease;
+}
+.optionCard:hover { border-color: rgba(234, 88, 12, 0.5); }
+
+/* Group 2 (purple) — book branch reuses the home page's "view stories"
+   palette so the senior eye sees "this leads to a structured book". */
+.optionCardPurple {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(79, 70, 229, 0.18)), #2a2a2a;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+.optionCardPurple:hover { border-color: rgba(99, 102, 241, 0.5); }
+
+.optionIcon { font-size: 44px; flex-shrink: 0; }
+.optionInfo { flex: 1; min-width: 0; }
+.optionTitle { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.optionDesc {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+}

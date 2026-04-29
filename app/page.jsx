@@ -204,7 +204,7 @@ export default function Home() {
           Order: story (primary recording intent) → companion (light chat). */}
       <button
         className={s.storyCta}
-        onClick={() => router.push('/chat?mode=story')}
+        onClick={() => router.push('/story/select')}
       >
         <div className={s.ctaIcon}>🎙️</div>
         <div className={s.ctaTextWrap}>

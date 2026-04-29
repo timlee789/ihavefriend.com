@@ -1,0 +1,132 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header { padding: 12px 0; }
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.breadcrumb {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 16px 0 4px;
+}
+.questionNum {
+  font-size: 13px;
+  color: #fb923c;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.promptBox {
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(234, 88, 12, 0.12)), #2a2a2a;
+  border: 1px solid rgba(234, 88, 12, 0.25);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.prompt {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.hint {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.meta {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.existingResponses { margin-bottom: 24px; }
+.existingLabel {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+.fragmentCard {
+  padding: 14px 16px;
+  background: #2a2a2a;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.fragmentTitle {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.fragmentPreview {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.actions { margin-top: 32px; }
+.startBtn {
+  display: block;
+  width: 100%;
+  padding: 18px;
+  background: #ea580c;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 16px;
+}
+.startBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.comingSoon {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.secondaryActions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.skipBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.skipBtn:hover { background: rgba(255, 255, 255, 0.05); }
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a1410;
+  min-height: 100dvh;
+}
