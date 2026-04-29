@@ -1649,3 +1649,15 @@
 /* Success */
 .successTitle { color: #86efac; }
 .successDesc  { color: rgba(255, 255, 255, 0.7); }
+
+/* 🆕 Stage 7 — book pill for fragments saved as a book question answer */
+.bookBadge {
+  display: inline-block;
+  font-size: 12px;
+  background: rgba(99, 102, 241, 0.18);
+  color: rgba(196, 181, 253, 0.95);
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(99, 102, 241, 0.30);
+}

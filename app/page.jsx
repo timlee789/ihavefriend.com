@@ -120,6 +120,10 @@ export default function Home() {
   const [isDark, setIsDark] = useState(false);
   // Task 55: recent stories card removed in favor of a dedicated
   // "내 이야기 보기" button. The fragments fetch + state are gone too.
+  // 🆕 Stage 7 — surface in-progress books on the home page so the
+  //   senior can resume in one tap instead of digging through the
+  //   "🎙️ 내 이야기 남기기" branch every time.
+  const [activeBooks, setActiveBooks] = useState([]);
 
   // Track system color scheme for EmmaAvatar mode
   useEffect(() => {
@@ -157,6 +161,24 @@ export default function Home() {
     }
     setAuthChecked(true);
   }, [router]);
+
+  // 🆕 Stage 7 — pull in-progress books for the resume banner.
+  //   Fire-and-forget; failures just leave the banner empty.
+  useEffect(() => {
+    if (!authChecked) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return;
+    let cancelled = false;
+    fetch('/api/book/list', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : { books: [] })
+      .then(d => {
+        if (cancelled) return;
+        const inProgress = (d.books || []).filter(b => b.status === 'in_progress');
+        setActiveBooks(inProgress);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authChecked]);
 
   function toggleLang() {
     const order = ['KO', 'EN', 'ES'];
@@ -197,6 +219,30 @@ export default function Home() {
 
       {/* Greeting */}
       <div className={s.greetingLine}>{msgs.greeting(userName)}</div>
+
+      {/* 🆕 Stage 7 — Resume Banner. When a book is in progress, the
+          senior gets a green pill above the recording CTAs that
+          shoots them straight to the book overview, so "이어서
+          만들기" is one tap from the front door. */}
+      {activeBooks.length > 0 && (() => {
+        const b = activeBooks[0];
+        const total = b.total_questions || 0;
+        const done  = b.completed_questions || 0;
+        return (
+          <button
+            className={s.resumeBookCard}
+            onClick={() => router.push(`/book/${b.id}`)}
+          >
+            <div className={s.resumeIcon}>📚</div>
+            <div className={s.resumeBody}>
+              <div className={s.resumeLabel}>이어서 만들기</div>
+              <div className={s.resumeTitle}>{b.title || '나의 책'}</div>
+              <div className={s.resumeProgress}>진행: {done} / {total}</div>
+            </div>
+            <div className={s.resumeArrow}>→</div>
+          </button>
+        );
+      })()}
 
       {/* Mode-specific CTAs (Task 49) — split the single "이야기 하기" button
           into two so users can pick companion vs story up front. /chat

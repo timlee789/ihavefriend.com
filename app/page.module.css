@@ -628,3 +628,46 @@
     background: #0f0c0a;
   }
 }
+
+/* 🆕 Stage 7 — home Resume Banner for in-progress books */
+.resumeBookCard {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 18px 20px;
+  background: #2a2a2a linear-gradient(135deg,
+    rgba(34, 197, 94, 0.18),
+    rgba(22, 163, 74, 0.18));
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  margin-bottom: 14px;
+  gap: 14px;
+  color: #fdfdfd;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.resumeBookCard:hover {
+  border-color: rgba(34, 197, 94, 0.55);
+  background-color: #313131;
+}
+.resumeIcon { font-size: 32px; flex-shrink: 0; }
+.resumeBody { flex: 1; min-width: 0; }
+.resumeLabel {
+  font-size: 12px;
+  color: rgba(134, 239, 172, 1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.resumeTitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resumeProgress { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.resumeArrow { font-size: 22px; color: rgba(255, 255, 255, 0.5); flex-shrink: 0; }

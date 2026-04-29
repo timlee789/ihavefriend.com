@@ -109,6 +109,25 @@ export default function BookOverviewPage() {
         )}
       </div>
 
+      {/* 🆕 Stage 7 — milestone encouragement cards. Senior gets a
+          warm nudge at 50% and 80% so the long climb to a finished
+          book feels less open-ended. */}
+      {book.completion_percent >= 50 && book.completion_percent < 80 && (
+        <div className={s.milestoneCard}>
+          🎉 절반 넘으셨어요! 이제 책 미리보기를 만들 수 있어요.
+        </div>
+      )}
+      {book.completion_percent >= 80 && book.completion_percent < 100 && (
+        <div className={s.milestoneCard}>
+          ✨ 거의 다 오셨어요! 책 만들기 준비가 됐어요.
+        </div>
+      )}
+      {book.completion_percent >= 100 && (
+        <div className={s.milestoneCard}>
+          🏆 모든 질문에 답하셨어요! 정말 수고하셨어요.
+        </div>
+      )}
+
       {/* 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, full
           generate at 50%. The generate path is heavier (Gemini chapter
           intros) so we lead the senior with a "1~2분 정도 걸려요"

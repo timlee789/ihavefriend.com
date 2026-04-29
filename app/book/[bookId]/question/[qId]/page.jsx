@@ -115,6 +115,34 @@ export default function QuestionDetailPage() {
     }
   }
 
+  async function selectFragment(fragmentId, type = 'direct') {
+    const token = localStorage.getItem('token');
+    try {
+      await fetch(`/api/book/${bookId}/question/${qId}/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fragmentId, type }),
+      });
+      await loadDetail();
+    } catch {}
+  }
+
+  // 🆕 Stage 7 — read the question prompt aloud. Senior eyes get
+  //   tired, so we offer a "🔊" button that uses the browser
+  //   SpeechSynthesis API at a slightly slower rate. We do NOT lean on
+  //   our broken Task 46 TTS path — this is a one-shot read of a short
+  //   prompt, not the whole conversation.
+  function speakPrompt() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const text = (data?.question?.prompt && pickKo(data.question.prompt)) || '';
+    if (!text) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    u.rate = 0.85;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }
+
   async function removeImport(fragmentId) {
     if (!confirm('이 이야기를 책에서 제외할까요? (자유 이야기로는 그대로 남아 있어요.)')) return;
     const token = localStorage.getItem('token');
@@ -152,6 +180,17 @@ export default function QuestionDetailPage() {
       <div className={s.questionNum}>질문 {question.order}</div>
 
       <div className={s.promptBox}>
+        {/* 🆕 Stage 7 — read the prompt aloud for senior eyes. Top-right
+            so it doesn't push the prompt down on narrow screens. */}
+        <button
+          type="button"
+          className={s.speakBtn}
+          onClick={speakPrompt}
+          title="질문 듣기"
+          aria-label="질문 음성으로 듣기"
+        >
+          🔊
+        </button>
         <div className={s.prompt}>{promptText}</div>
         {hintText && (
           <div className={s.hint}>💡 떠올려보면 좋은 것: {hintText}</div>
@@ -161,8 +200,13 @@ export default function QuestionDetailPage() {
         )}
       </div>
 
-      {/* Direct answers (saved by /chat?mode=book sessions) */}
-      {response.status === 'complete' && directList.length > 0 && (
+      {/* Direct answers (saved by /chat?mode=book sessions).
+          🆕 Stage 7: when there's only one answer we keep the simple
+          read-only card. When there are multiple we render the radio-
+          select UI so the senior can pick which one ends up in the
+          printed book. The select API mirrors the choice into
+          response.selected_fragment_id (or selected_imported_id). */}
+      {response.status === 'complete' && directList.length === 1 && (
         <div className={s.existingResponses}>
           <div className={s.existingLabel}>📝 이전 답변</div>
           {directList.map(f => (
@@ -174,6 +218,35 @@ export default function QuestionDetailPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {directList.length > 1 && (
+        <div className={s.multipleResponses}>
+          <div className={s.multipleLabel}>
+            📝 답변이 여러 개 있어요. 책에 어떤 것을 사용할까요?
+          </div>
+          {directList.map((f, i) => {
+            const isSelected = response.selected_fragment_id === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                className={`${s.fragmentSelectCard} ${isSelected ? s.fragmentSelected : ''}`}
+                onClick={() => selectFragment(f.id, 'direct')}
+              >
+                <span className={s.fragmentRadio}>{isSelected ? '🔘' : '⚪'}</span>
+                <span className={s.fragmentBody}>
+                  <span className={s.fragmentDate}>
+                    답변 {i + 1} · {f.created_at ? new Date(f.created_at).toLocaleDateString('ko-KR') : ''}
+                  </span>
+                  <span className={s.fragmentText}>
+                    {(f.content || '').substring(0, 200)}
+                    {(f.content || '').length > 200 ? '…' : ''}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -199,15 +272,58 @@ export default function QuestionDetailPage() {
         </div>
       )}
 
+      {/* 🆕 Stage 7 — completed section. Lights up after a fragment is
+          saved (or imported). Big primary button to the next question
+          + secondary button back to the book home. The primary
+          recording button below this becomes "✏️ 다시 답변하기" so
+          the senior can record an alternate take without losing the
+          first one. */}
+      {response.status === 'complete' && (
+        <div className={s.completedSection}>
+          <div className={s.completedLabel}>✨ 답변이 저장됐어요!</div>
+          {navigation.next_question_id ? (
+            <button
+              className={s.nextBigBtn}
+              onClick={() =>
+                router.push(`/book/${bookId}/question/${navigation.next_question_id}`)
+              }
+            >
+              🎙️ 다음 질문 →
+            </button>
+          ) : (
+            <div className={s.completedHint}>마지막 질문까지 다 답하셨어요!</div>
+          )}
+          <button
+            className={s.bookHomeBtn}
+            onClick={() => router.push(`/book/${bookId}`)}
+          >
+            🏠 책 홈으로
+          </button>
+        </div>
+      )}
+
       <div className={s.actions}>
-        <button
-          className={s.startBtn}
-          onClick={() =>
-            router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`)
-          }
-        >
-          🎙️ 답변 시작하기 →
-        </button>
+        {response.status === 'complete' ? (
+          <button
+            className={s.redoBtn}
+            onClick={() => {
+              if (confirm('이전 답변은 그대로 저장되고, 새 답변이 추가돼요. 책 만들 때 둘 중 선택할 수 있어요. 계속할까요?')) {
+                router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`);
+              }
+            }}
+          >
+            ✏️ 다시 답변하기
+          </button>
+        ) : (
+          <button
+            className={s.startBtn}
+            onClick={() =>
+              router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`)
+            }
+          >
+            🎙️ 답변 시작하기 →
+          </button>
+        )}
 
         {/* 🆕 Stage 5 — open the importer */}
         <button className={s.importBtn} onClick={openImporter}>
@@ -215,10 +331,10 @@ export default function QuestionDetailPage() {
         </button>
 
         <div className={s.secondaryActions}>
-          {question.is_optional && (
+          {question.is_optional && response.status !== 'complete' && (
             <button className={s.skipBtn} onClick={skip}>⏭️ 건너뛰기</button>
           )}
-          {navigation.next_question_id && (
+          {navigation.next_question_id && response.status !== 'complete' && (
             <button
               className={s.skipBtn}
               onClick={() => router.push(`/book/${bookId}/question/${navigation.next_question_id}`)}

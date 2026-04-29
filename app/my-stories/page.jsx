@@ -1761,6 +1761,12 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
 
       <div className={s.cardFooter}>
         <span className={s.cardDate}>{fmtDateShort(f.created_at)}</span>
+        {/* 🆕 Stage 7 — fragments saved as a book question answer get a
+            small purple "책에 포함됨" pill so the senior can tell at a
+            glance which entries are wired into a book vs free-form. */}
+        {f.book_id && (
+          <span className={s.bookBadge}>📚 책에 포함됨</span>
+        )}
       </div>
 
       {f.truncated && (
