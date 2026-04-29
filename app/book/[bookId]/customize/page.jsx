@@ -14,12 +14,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { getUserLang, titleOf as i18nTitleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
-const titleOf = (v) => {
-  if (v && typeof v === 'object') return v.ko || v.en || v.es || '';
-  return v || '';
-};
+// Module-scoped wrapper so both the main component and the modal
+// sub-components below can call titleOf(v) without each one having to
+// pipe `lang` through props. getUserLang() reads from localStorage on
+// the client; on the server it falls back to 'ko' which is fine because
+// this page is 'use client'.
+const titleOf = (v) => i18nTitleOf(v, getUserLang());
 
 export default function CustomizePage() {
   const router = useRouter();

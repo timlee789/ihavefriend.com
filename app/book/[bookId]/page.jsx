@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
 // 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, real generate at
@@ -51,16 +52,13 @@ async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, s
   }
 }
 
-function pickKo(value) {
-  if (value && typeof value === 'object') return value.ko || value.en || value.es || '';
-  return value || '';
-}
-
 export default function BookOverviewPage() {
   const router = useRouter();
   const { bookId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lang, setLang] = useState('ko');
+  useEffect(() => { setLang(getUserLang()); }, []);
   // 🆕 Stage 6 — pdf flow state. busy = which action is in flight
   // (avoid double-clicks during the 30–60s book generate path).
   const [pdfBusy, setPdfBusy] = useState(null); // 'preview' | 'generate' | null
@@ -175,10 +173,10 @@ export default function BookOverviewPage() {
       {suggested_next && (
         <div className={s.nextCard}>
           <div className={s.nextLabel}>다음 질문</div>
-          <div className={s.nextChapter}>📖 {pickKo(suggested_next.chapter_title)}</div>
-          <div className={s.nextPrompt}>{pickKo(suggested_next.prompt)}</div>
+          <div className={s.nextChapter}>📖 {titleOf(suggested_next.chapter_title, lang)}</div>
+          <div className={s.nextPrompt}>{titleOf(suggested_next.prompt, lang)}</div>
           {suggested_next.hint && (
-            <div className={s.nextHint}>💡 {pickKo(suggested_next.hint)}</div>
+            <div className={s.nextHint}>💡 {titleOf(suggested_next.hint, lang)}</div>
           )}
           <button
             className={s.nextBtn}
@@ -203,7 +201,7 @@ export default function BookOverviewPage() {
             </div>
             <div className={s.chapterInfo}>
               <div className={s.chapterTitle}>
-                {ch.order}. {pickKo(ch.title)}
+                {ch.order}. {titleOf(ch.title, lang)}
                 {ch.is_custom && <span className={s.customBadge}>✏️</span>}
               </div>
               <div className={s.chapterProgress}>{ch.completed} / {ch.total}</div>

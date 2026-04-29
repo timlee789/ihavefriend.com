@@ -157,7 +157,7 @@ const MEMOIR_KO_STRUCTURE = {
 
   await sql`
     INSERT INTO book_template_definitions (
-      id, name, description, category, default_structure,
+      id, name, description, category, language, default_structure,
       estimated_chapters, estimated_questions, estimated_pages, estimated_days,
       is_active, is_premium, sort_order
     ) VALUES (
@@ -165,6 +165,7 @@ const MEMOIR_KO_STRUCTURE = {
       ${JSON.stringify({ ko: '내 자서전', en: 'My Memoir', es: 'Mis memorias' })}::jsonb,
       ${JSON.stringify({ ko: '내 인생을 9개 챕터로 정리하는 자서전' })}::jsonb,
       'memoir',
+      'ko',
       ${JSON.stringify(MEMOIR_KO_STRUCTURE)}::jsonb,
       ${totalChapters}, ${totalQuestions}, 120, 90,
       true, false, 1
@@ -175,6 +176,7 @@ const MEMOIR_KO_STRUCTURE = {
       estimated_chapters  = EXCLUDED.estimated_chapters,
       name                = EXCLUDED.name,
       description         = EXCLUDED.description,
+      language            = EXCLUDED.language,
       updated_at          = NOW()
   `;
 

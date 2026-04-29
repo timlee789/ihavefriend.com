@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
 const STATUS_ICON = {
@@ -25,16 +26,13 @@ const STATUS_LABEL = {
   skipped:  '건너뜀',
 };
 
-function pickKo(value) {
-  if (value && typeof value === 'object') return value.ko || value.en || value.es || '';
-  return value || '';
-}
-
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { bookId, chId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lang, setLang] = useState('ko');
+  useEffect(() => { setLang(getUserLang()); }, []);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -60,7 +58,7 @@ export default function ChapterDetailPage() {
       </header>
 
       <h1 className={s.chapterTitle}>
-        📖 챕터 {chapter.order}: {pickKo(chapter.title)}
+        📖 챕터 {chapter.order}: {titleOf(chapter.title, lang)}
       </h1>
 
       <div className={s.progressBar}>
@@ -69,7 +67,7 @@ export default function ChapterDetailPage() {
       <div className={s.progressText}>{percent}% ({completed} / {total})</div>
 
       {chapter.description && (
-        <p className={s.description}>{pickKo(chapter.description)}</p>
+        <p className={s.description}>{titleOf(chapter.description, lang)}</p>
       )}
 
       <h2 className={s.sectionTitle}>질문 목록</h2>
@@ -82,7 +80,7 @@ export default function ChapterDetailPage() {
               <div className={s.questionStatus}>{STATUS_ICON[status] || '🍃'}</div>
               <div className={s.questionInfo}>
                 <div className={s.questionPrompt}>
-                  {q.order}. {pickKo(q.prompt)}
+                  {q.order}. {titleOf(q.prompt, lang)}
                 </div>
                 {q.fragment_count > 0 && (
                   <div className={s.questionMeta}>

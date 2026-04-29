@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
 export default function BookSelectPage() {
@@ -19,12 +20,18 @@ export default function BookSelectPage() {
   const [myBooks, setMyBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(null);
+  const [lang, setLang] = useState('ko');
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) { router.replace('/login'); return; }
+    // Stage 8 (i18n) — show only the templates that match the user's
+    // language. The API falls back to "all templates" if the lang param
+    // is missing, so the worst case is over-inclusive, never empty.
+    const userLang = getUserLang();
+    setLang(userLang);
     Promise.all([
-      fetch('/api/book/templates', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`/api/book/templates?lang=${encodeURIComponent(userLang)}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       fetch('/api/book/list',      { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     ]).then(([t, b]) => {
       setTemplates(t.templates || []);
@@ -83,8 +90,8 @@ export default function BookSelectPage() {
           {myBooks.length > 0 ? '새 책 만들기' : '어떤 책을 만들고 싶으세요?'}
         </h2>
         {templates.map(t => {
-          const name = t.name?.ko || t.name?.en || t.id;
-          const desc = t.description?.ko || t.description?.en || '';
+          const name = titleOf(t.name, lang) || t.id;
+          const desc = titleOf(t.description, lang);
           const icon =
             t.category === 'memoir' ? '📖' :
             t.category === 'family' ? '👨‍👩‍👧' :

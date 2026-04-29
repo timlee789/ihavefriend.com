@@ -15,18 +15,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
-
-function pickKo(value) {
-  if (value && typeof value === 'object') return value.ko || value.en || value.es || '';
-  return value || '';
-}
 
 export default function QuestionDetailPage() {
   const router = useRouter();
   const { bookId, qId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lang, setLang] = useState('ko');
+  useEffect(() => { setLang(getUserLang()); }, []);
 
   // 🆕 Stage 5 — fragment importer state
   const [importerOpen,        setImporterOpen]        = useState(false);
@@ -134,10 +132,10 @@ export default function QuestionDetailPage() {
   //   prompt, not the whole conversation.
   function speakPrompt() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const text = (data?.question?.prompt && pickKo(data.question.prompt)) || '';
+    const text = (data?.question?.prompt && titleOf(data.question.prompt, lang)) || '';
     if (!text) return;
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR';
+    u.lang = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'ko-KR';
     u.rate = 0.85;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
@@ -159,9 +157,9 @@ export default function QuestionDetailPage() {
   if (!data?.question) return <div className={s.loading}>질문을 찾을 수 없어요.</div>;
 
   const { question, chapter, response, navigation } = data;
-  const promptText   = pickKo(question.prompt);
-  const hintText     = pickKo(question.hint);
-  const chapterText  = pickKo(chapter.title);
+  const promptText   = titleOf(question.prompt, lang);
+  const hintText     = titleOf(question.hint, lang);
+  const chapterText  = titleOf(chapter.title, lang);
   const directList   = response.fragments || [];
   const importedList = response.imported_fragments || [];
 
