@@ -133,3 +133,48 @@
   background: #1a1410;
   min-height: 100dvh;
 }
+
+/* 🆕 Stage 6 — PDF actions */
+.bookActions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.previewBtn,
+.generateBtn {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.previewBtn {
+  background: rgba(99, 102, 241, 0.15);
+  color: rgba(196, 181, 253, 0.95);
+  border-color: rgba(99, 102, 241, 0.30);
+}
+.previewBtn:hover { background: rgba(99, 102, 241, 0.25); }
+.generateBtn {
+  background: #ea580c;
+  color: white;
+  border-color: #ea580c;
+}
+.generateBtn:hover { background: #c2410c; }
+.previewBtn:disabled,
+.generateBtn:disabled { opacity: 0.6; cursor: wait; }
+
+.bookActionsError {
+  margin: -12px 0 24px;
+  padding: 10px 12px;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  color: #fca5a5;
+  border-radius: 8px;
+  font-size: 13px;
+}

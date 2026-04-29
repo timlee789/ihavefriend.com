@@ -12,6 +12,45 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import s from './page.module.css';
 
+// 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, real generate at
+//   50%. Both stream the PDF body back from the API and the browser
+//   either opens it in a new tab (preview) or saves it as a download
+//   (generate). Errors are surfaced inline because the senior never
+//   sees a Vercel toast — they need to know if the click did anything.
+async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, setErr }) {
+  setBusy(true);
+  setErr('');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setErr(j.message || j.error || '실패했어요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    if (asDownload) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = downloadName || 'book.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.open(blobUrl, '_blank');
+    }
+    // Free the blob URL after a beat — gives the new tab time to load.
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
+  } catch (e) {
+    setErr(e?.message || '실패했어요.');
+  } finally {
+    setBusy(false);
+  }
+}
+
 function pickKo(value) {
   if (value && typeof value === 'object') return value.ko || value.en || value.es || '';
   return value || '';
@@ -22,6 +61,10 @@ export default function BookOverviewPage() {
   const { bookId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  // 🆕 Stage 6 — pdf flow state. busy = which action is in flight
+  // (avoid double-clicks during the 30–60s book generate path).
+  const [pdfBusy, setPdfBusy] = useState(null); // 'preview' | 'generate' | null
+  const [pdfError, setPdfError] = useState('');
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -65,6 +108,50 @@ export default function BookOverviewPage() {
           <div className={s.previewHint}>🎉 책 미리보기를 만들 수 있어요!</div>
         )}
       </div>
+
+      {/* 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, full
+          generate at 50%. The generate path is heavier (Gemini chapter
+          intros) so we lead the senior with a "1~2분 정도 걸려요"
+          confirm before kicking off. */}
+      {book.completion_percent >= 30 && (
+        <div className={s.bookActions}>
+          <button
+            className={s.previewBtn}
+            disabled={!!pdfBusy}
+            onClick={() => pdfPostAndOpen({
+              url: `/api/book/${bookId}/preview`,
+              token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
+              asDownload: false,
+              setBusy: (b) => setPdfBusy(b ? 'preview' : null),
+              setErr: setPdfError,
+            })}
+          >
+            {pdfBusy === 'preview' ? '미리보기 만드는 중…' :
+              book.completion_percent < 50 ? '📄 미리보기 (간단 버전)' : '📄 미리보기'}
+          </button>
+
+          {book.completion_percent >= 50 && (
+            <button
+              className={s.generateBtn}
+              disabled={!!pdfBusy}
+              onClick={async () => {
+                if (!confirm('책을 만드시겠어요? 1~2분 정도 걸려요.')) return;
+                await pdfPostAndOpen({
+                  url: `/api/book/${bookId}/generate`,
+                  token: localStorage.getItem('token'),
+                  asDownload: true,
+                  downloadName: `${book.title || 'book'}.pdf`,
+                  setBusy: (b) => setPdfBusy(b ? 'generate' : null),
+                  setErr: setPdfError,
+                });
+              }}
+            >
+              {pdfBusy === 'generate' ? '책 만드는 중…' : '📚 책 만들기 (정식)'}
+            </button>
+          )}
+        </div>
+      )}
+      {pdfError && <div className={s.bookActionsError}>⚠️ {pdfError}</div>}
 
       {suggested_next && (
         <div className={s.nextCard}>
