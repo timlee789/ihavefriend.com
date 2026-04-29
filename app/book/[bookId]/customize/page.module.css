@@ -1,0 +1,228 @@
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+}
+
+.header { padding: 12px 0; }
+.backBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fdfdfd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: #fb923c;
+}
+.intro {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.chapterList { display: flex; flex-direction: column; gap: 12px; }
+
+.chapterBlock {
+  background: #2a2520;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chapterHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: rgba(99, 102, 241, 0.08);
+}
+.chapterToggle {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fdfdfd;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+}
+.customBadge {
+  font-size: 11px;
+  background: rgba(99, 102, 241, 0.30);
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: 8px;
+}
+.chapterActions { display: flex; gap: 4px; }
+.chapterActions button,
+.qActions button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fdfdfd;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+.chapterActions button:hover,
+.qActions button:hover { background: rgba(255, 255, 255, 0.05); }
+
+.questionList {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 16px 12px;
+}
+.questionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.questionRow:last-child { border-bottom: none; }
+.qOrder { color: rgba(255, 255, 255, 0.5); font-size: 14px; min-width: 20px; }
+.qPrompt { flex: 1; font-size: 15px; line-height: 1.4; }
+.qActions { display: flex; gap: 4px; }
+
+.addQuestionBtn,
+.addChapterBtn {
+  background: rgba(99, 102, 241, 0.10);
+  border: 1px dashed rgba(99, 102, 241, 0.40);
+  color: rgba(196, 181, 253, 0.92);
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: inherit;
+}
+.addChapterBtn { padding: 16px; font-size: 15px; margin-top: 16px; }
+.addQuestionBtn:hover,
+.addChapterBtn:hover { background: rgba(99, 102, 241, 0.20); }
+
+.bottomActions { margin-top: 32px; padding: 16px 0; }
+.doneBtn {
+  width: 100%;
+  padding: 16px;
+  background: #ea580c;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.doneBtn:hover { background: #c2410c; }
+
+/* Modals */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+.modal {
+  background: #2a2520;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.modal h3 { margin: 0 0 16px; font-size: 18px; }
+.modal label {
+  display: block;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 12px 0 4px;
+}
+.modal input,
+.modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fdfdfd;
+  font-size: 15px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.modal textarea { resize: vertical; min-height: 60px; }
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.modalActions button {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fdfdfd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+.modalActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.primaryBtn {
+  background: #ea580c !important;
+  border-color: #ea580c !important;
+}
+.dangerBtn {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.deletePrompt { font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
+.warningBox {
+  padding: 12px;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.preserveNote {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background: #1a1410;
+  min-height: 100dvh;
+}

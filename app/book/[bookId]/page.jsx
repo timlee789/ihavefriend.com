@@ -42,6 +42,13 @@ export default function BookOverviewPage() {
       <header className={s.header}>
         <button className={s.backBtn} onClick={() => router.push('/book/select')}>← 책 목록</button>
         <h1 className={s.title}>📚 {book.title}</h1>
+        <button
+          className={s.customizeBtn}
+          onClick={() => router.push(`/book/${bookId}/customize`)}
+          title="챕터/질문 추가·수정·삭제"
+        >
+          ✏️ 구조 수정
+        </button>
       </header>
 
       <div className={s.progressCard}>

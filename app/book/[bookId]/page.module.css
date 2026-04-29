@@ -18,7 +18,25 @@
   cursor: pointer;
   font-family: inherit;
 }
-.title { font-size: 22px; font-weight: 700; color: #fb923c; margin: 0; }
+.title { font-size: 22px; font-weight: 700; color: #fb923c; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Stage 4 — entry to /book/[id]/customize */
+.customizeBtn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  color: rgba(196, 181, 253, 0.92);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.customizeBtn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.45);
+}
 
 .progressCard {
   padding: 20px;
