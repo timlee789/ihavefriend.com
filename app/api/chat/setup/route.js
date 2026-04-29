@@ -26,11 +26,23 @@ export async function POST(request) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
 
-  const { message = '', lang = 'en', conversationMode = 'auto', continueFragmentId = null } =
-    await request.json().catch(() => ({}));
+  const {
+    message = '',
+    lang = 'en',
+    conversationMode = 'auto',
+    continueFragmentId = null,
+    // 🆕 Task 60 (Stage 3) — Book mode params
+    bookId = null,
+    bookQuestionId = null,
+  } = await request.json().catch(() => ({}));
   // 🆕 2026-04-25: Continuation sessions are always story mode.
   let effectiveMode = conversationMode;
   if (continueFragmentId) effectiveMode = 'story';
+  // 🆕 Book mode is conceptually a story session — same chat_sessions
+  //   conversation_mode='STORY' so chat/end's STORY universal save
+  //   path applies — but the book_id column on the row + the Helper
+  //   system prompt are what differentiate it.
+  if (bookId && bookQuestionId) effectiveMode = 'story';
   const safeMode = ['companion', 'story', 'auto'].includes(effectiveMode) ? effectiveMode : 'auto';
 
   const db = createDb();
@@ -74,6 +86,51 @@ export async function POST(request) {
     }
   });
 
+  // 🆕 Task 60 (Stage 3) — Book context resolution.
+  //   When bookId + bookQuestionId are present, we look up the user's
+  //   book, find the question in its structure, and capture the prompt
+  //   + hint text for the Helper system prompt. Ownership is enforced
+  //   by the user_id filter; an unknown book / question hard-fails so
+  //   the client can't accidentally persist garbage.
+  let bookContext = null;
+  if (bookId && bookQuestionId) {
+    try {
+      const bookRes = await db.query(
+        `SELECT structure FROM user_books WHERE id = $1 AND user_id = $2`,
+        [bookId, user.id]
+      );
+      if (bookRes.rows.length === 0) {
+        return Response.json({ error: 'book not found' }, { status: 404 });
+      }
+      const structure = bookRes.rows[0].structure || { chapters: [] };
+      let foundQ = null, foundCh = null;
+      for (const ch of structure.chapters || []) {
+        for (const q of ch.questions || []) {
+          if (q.id === bookQuestionId) { foundQ = q; foundCh = ch; break; }
+        }
+        if (foundQ) break;
+      }
+      if (!foundQ) {
+        return Response.json({ error: 'book question not found' }, { status: 404 });
+      }
+      const pickI18n = (v) => {
+        if (v && typeof v === 'object') return v[lang] || v.ko || v.en || v.es || '';
+        return v || '';
+      };
+      bookContext = {
+        bookId,
+        bookQuestionId,
+        questionPrompt: pickI18n(foundQ.prompt),
+        questionHint:   foundQ.hint ? pickI18n(foundQ.hint) : null,
+        chapterTitle:   pickI18n(foundCh.title),
+        chapterId:      foundCh.id,
+      };
+    } catch (e) {
+      console.error('[chat/setup] book lookup failed:', e.message);
+      return Response.json({ error: 'book lookup failed' }, { status: 500 });
+    }
+  }
+
   // 🆕 2026-04-25: If continuing an existing root fragment, validate ownership +
   // root-only constraint, then persist the link on the new chat_sessions row.
   let validContinuationParentId = null;
@@ -99,9 +156,21 @@ export async function POST(request) {
   console.time('[chat/setup] insert-session');
   try {
     const res = await db.query(
-      `INSERT INTO chat_sessions (user_id, started_at, conversation_mode, continuation_parent_id)
-       VALUES ($1, NOW(), $2, $3) RETURNING id`,
-      [user.id, conversationModeToDb(safeMode), validContinuationParentId]
+      `INSERT INTO chat_sessions
+         (user_id, started_at, conversation_mode, continuation_parent_id,
+          book_id, book_question_id, topic_anchor)
+       VALUES ($1, NOW(), $2, $3, $4, $5, $6) RETURNING id`,
+      [
+        user.id,
+        conversationModeToDb(safeMode),
+        validContinuationParentId,
+        bookContext?.bookId || null,
+        bookContext?.bookQuestionId || null,
+        // For book sessions, the question prompt acts as the topic
+        //   anchor so chat/end's STORY-mode logic + downstream
+        //   processing have a sensible anchor string.
+        bookContext?.questionPrompt || null,
+      ]
     );
     sessionId = res.rows[0]?.id;
   } catch (e) {
@@ -110,24 +179,38 @@ export async function POST(request) {
   }
   console.timeEnd('[chat/setup] insert-session');
 
-  // 2. Build memory-enriched system prompt (language-aware)
+  // 2. Build system prompt — Helper for book sessions, Emma otherwise.
   let systemPrompt = '';
   let debugInfo = null;
-  console.time('[chat/setup] buildEmmaPrompt');
-  try {
-    const { buildEmmaPrompt } = require('@/lib/recallEngine');
-    const result = await buildEmmaPrompt(db, user.id, user, message, lang, sessionId, safeMode);
-    systemPrompt = result.prompt;
-    debugInfo = result.debugInfo;
-  } catch (e) {
-    console.error('[chat/setup] buildEmmaPrompt failed:', e.message);
-    const { EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO, EMMA_BASE_PROMPT_ES } = require('@/lib/recallEngine');
-    systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO
-                 : lang === 'es' ? EMMA_BASE_PROMPT_ES
-                 : EMMA_BASE_PROMPT;
+  if (bookContext) {
+    // 🆕 Task 60 (Stage 3) — Helper mode is intentionally austere:
+    //   no memory, no story progress, no emotion injection. Just the
+    //   single question + its hint. The user is the protagonist of
+    //   their book; Helper is the listener.
+    const { buildHelperPrompt } = require('@/lib/recallEngine');
+    systemPrompt = buildHelperPrompt({
+      lang,
+      questionPrompt: bookContext.questionPrompt,
+      questionHint:   bookContext.questionHint,
+    });
+    debugInfo = { mode: 'helper', bookId: bookContext.bookId, bookQuestionId: bookContext.bookQuestionId };
+  } else {
+    console.time('[chat/setup] buildEmmaPrompt');
+    try {
+      const { buildEmmaPrompt } = require('@/lib/recallEngine');
+      const result = await buildEmmaPrompt(db, user.id, user, message, lang, sessionId, safeMode);
+      systemPrompt = result.prompt;
+      debugInfo = result.debugInfo;
+    } catch (e) {
+      console.error('[chat/setup] buildEmmaPrompt failed:', e.message);
+      const { EMMA_BASE_PROMPT, EMMA_BASE_PROMPT_KO, EMMA_BASE_PROMPT_ES } = require('@/lib/recallEngine');
+      systemPrompt = lang === 'ko' ? EMMA_BASE_PROMPT_KO
+                   : lang === 'es' ? EMMA_BASE_PROMPT_ES
+                   : EMMA_BASE_PROMPT;
+    }
+    console.timeEnd('[chat/setup] buildEmmaPrompt');
   }
-  console.timeEnd('[chat/setup] buildEmmaPrompt');
-  console.log(`[chat/setup] systemPromptLen=${systemPrompt.length} (warn if >10000)`);
+  console.log(`[chat/setup] systemPromptLen=${systemPrompt.length} mode=${bookContext ? 'helper' : safeMode} (warn if >10000)`);
   if (systemPrompt.length > 10_000) {
     console.warn(`[chat/setup] ⚠️ system prompt is ${systemPrompt.length} chars — Gemini Live latency will suffer. Consider tightening recallEngine memory cap.`);
   }

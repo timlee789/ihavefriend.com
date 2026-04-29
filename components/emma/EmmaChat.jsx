@@ -725,9 +725,19 @@ function base64ToPcm(b64) {
 // shows the View-stories CTA. If the timeout elapses we show a softer
 // "taking a little longer" message — the fragment may still arrive,
 // the user just doesn't get an instant confirmation.
-function SessionEndBanner({ lang, isDay }) {
+function SessionEndBanner({ lang, isDay, bookContext }) {
   const m = SESSION_END_MSGS[lang] || SESSION_END_MSGS.KO;
   const [phase, setPhase] = useState('waiting'); // 'waiting' | 'ready' | 'timeout'
+
+  // 🆕 Task 60 (Stage 3) — book mode CTA points back to the question
+  //   detail page so the user can see their answer card update +
+  //   move to the next question, instead of dropping into /my-stories.
+  const ctaHref = bookContext
+    ? `/book/${bookContext.bookId}/question/${bookContext.bookQuestionId}`
+    : '/my-stories';
+  const ctaLabel = bookContext
+    ? (lang === 'EN' ? 'Back to my book →' : lang === 'ES' ? 'Volver a mi libro →' : '책으로 돌아가기 →')
+    : m.cta;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -792,10 +802,10 @@ function SessionEndBanner({ lang, isDay }) {
         <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>{m.waiting}</div>
       )}
       <a
-        href="/my-stories"
+        href={ctaHref}
         className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
       >
-        {m.cta}
+        {ctaLabel}
       </a>
     </div>
   );
@@ -807,12 +817,22 @@ export default function EmmaChat({ initialMode }) {
   const searchParams = useSearchParams();
   const topic        = searchParams.get('topic');
   const continueFragmentId = searchParams.get('continueFragment'); // 🆕 2026-04-25
+  // 🆕 Task 60 (Stage 3) — Book mode params. /chat?mode=book&bookId=
+  //   &bookQuestionId= is reached from the book question detail page's
+  //   "🎙️ 답변 시작하기" button. We treat book mode as a story-shaped
+  //   session under the hood (same chat_sessions enum), but with the
+  //   book_id pointer the server uses Helper prompts and the session
+  //   maps back to the book question on save.
+  const bookId         = searchParams.get('bookId');
+  const bookQuestionId = searchParams.get('bookQuestionId');
+  const isBookMode     = !!(bookId && bookQuestionId);
   // 🆕 Task 49 — Home page sends ?mode=companion or ?mode=story so the
   // mode-selection welcome screen is auto-skipped and the user lands
   // straight in their chosen conversation. Unknown / missing values fall
   // back to the existing welcome cards.
   const initialModeFromUrl = (() => {
     const v = searchParams.get('mode');
+    if (v === 'book' && isBookMode) return 'story'; // book sessions ARE story sessions under the hood
     return v === 'companion' || v === 'story' ? v : null;
   })();
 
@@ -899,6 +919,36 @@ export default function EmmaChat({ initialMode }) {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem('captions_debug') === '1') setDebugCaptions(true);
   }, []);
+
+  // 🆕 Task 60 (Stage 3) — fetch book question context for the progress
+  //   strip (chapter title + question order). Pure read; safe to fail.
+  useEffect(() => {
+    if (!isBookMode) return;
+    const t = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!t) return;
+    let cancelled = false;
+    fetch(`/api/book/${bookId}/question/${bookQuestionId}`, {
+      headers: { Authorization: `Bearer ${t}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (cancelled || !d?.question) return;
+        const pickKo = (v) => {
+          if (v && typeof v === 'object') return v.ko || v.en || v.es || '';
+          return v || '';
+        };
+        setBookContext({
+          bookId,
+          bookQuestionId,
+          chapterTitle: pickKo(d.chapter?.title),
+          chapterOrder: d.chapter?.order ?? null,
+          questionOrder: d.question?.order ?? null,
+          questionPrompt: pickKo(d.question?.prompt),
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isBookMode, bookId, bookQuestionId]);
 
   // 🔥 Task 55 #3: subscribe to microphone permission state if the
   //   browser supports it. When the user grants permission via the
@@ -1058,6 +1108,10 @@ export default function EmmaChat({ initialMode }) {
   // 🔥 Task 55 #2: caption visibility is now debug-only. Default OFF.
   //   The state + STT warning still drive the warning banner.
   const [debugCaptions, setDebugCaptions] = useState(false);
+  // 🆕 Task 60 (Stage 3) — Book progress bar context. Populated on mount
+  //   when bookId+bookQuestionId are present; powers the small
+  //   "📖 챕터 N: 제목 / 질문 N" strip above the chat area.
+  const [bookContext, setBookContext] = useState(null);
   // 🔥 Task 55 #3: microphone permission tracking.
   //   `micPermission` is one of 'unknown' | 'granted' | 'denied' | 'prompt'.
   //   When it flips to 'denied' we render a clear banner with a retry
@@ -2058,6 +2112,11 @@ export default function EmmaChat({ initialMode }) {
           lang               : currentLang.toLowerCase(),
           conversationMode   : convModeRef.current,
           continueFragmentId : continueFragmentId || null, // 🆕 2026-04-25
+          // 🆕 Task 60 (Stage 3) — Book mode handoff. When set, the server
+          //   returns the Helper system prompt instead of the Emma one
+          //   and stamps book_id + book_question_id on chat_sessions.
+          bookId             : bookId || null,
+          bookQuestionId     : bookQuestionId || null,
         }),
       });
       if (res.ok) {
@@ -2507,6 +2566,21 @@ export default function EmmaChat({ initialMode }) {
         </div>
       </header>
 
+      {/* 🆕 Task 60 (Stage 3) — book progress strip. Compact horizontal
+          row above the chat area when /chat?mode=book is active. Tells
+          the senior at a glance which question they are on. */}
+      {isBookMode && bookContext && (
+        <div className={styles.bookContextBar}>
+          <span className={styles.bookContextChapter}>
+            📖 {bookContext.chapterOrder ? `챕터 ${bookContext.chapterOrder}: ` : ''}
+            {bookContext.chapterTitle}
+          </span>
+          <span className={styles.bookContextProgress}>
+            질문 {bookContext.questionOrder ?? '?'}
+          </span>
+        </div>
+      )}
+
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
 
@@ -2627,6 +2701,7 @@ export default function EmmaChat({ initialMode }) {
             lang={lang}
             isDay={isDay}
             sessionStartedAt={sessionStartRef.current /* may be null after reset */}
+            bookContext={isBookMode ? { bookId, bookQuestionId } : null}
           />
         )}
       </div>

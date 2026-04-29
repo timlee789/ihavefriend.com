@@ -103,9 +103,18 @@ export default function QuestionDetailPage() {
       )}
 
       <div className={s.actions}>
-        <button className={s.startBtn} disabled title="Stage 3에서 활성화">
+        {/* 🆕 Task 60 (Stage 3) — Helper Chat is live. Hand off to
+            /chat with mode=book and the book/question ids; EmmaChat
+            reads those, posts them to /api/chat/setup, and the server
+            returns the Helper system prompt. The session ends back on
+            this page via the SessionEndBanner CTA. */}
+        <button
+          className={s.startBtn}
+          onClick={() =>
+            router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`)
+          }
+        >
           🎙️ 답변 시작하기 →
-          <span className={s.comingSoon}>(곧 추가됩니다)</span>
         </button>
 
         <div className={s.secondaryActions}>

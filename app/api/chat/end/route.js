@@ -93,14 +93,18 @@ export async function POST(request) {
   if (!['companion', 'story', 'auto'].includes(sessionMode)) sessionMode = 'auto';
   let topicAnchor = null; // 🆕 2026-04-24
   let continuationParentId = null; // 🆕 2026-04-25
+  let bookId = null;          // 🆕 Task 60 (Stage 3) — book mode marker
+  let bookQuestionId = null;  // 🆕 Task 60
   try {
     const modeRow = await db.query(
-      `SELECT conversation_mode, topic_anchor, continuation_parent_id FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+      `SELECT conversation_mode, topic_anchor, continuation_parent_id, book_id, book_question_id FROM chat_sessions WHERE id = $1 AND user_id = $2`,
       [sessionId, user.id]
     );
     const dbMode = modeRow.rows[0]?.conversation_mode;
     topicAnchor = modeRow.rows[0]?.topic_anchor || null; // 🆕
     continuationParentId = modeRow.rows[0]?.continuation_parent_id || null; // 🆕 2026-04-25
+    bookId = modeRow.rows[0]?.book_id || null;                              // 🆕 Task 60
+    bookQuestionId = modeRow.rows[0]?.book_question_id || null;             // 🆕 Task 60
     // v2: conversation_mode is now ConversationMode enum → DB returns UPPERCASE.
     // Convert to lowercase for case-insensitive biz-logic comparison.
     const dbModeLower = dbMode?.toLowerCase();
@@ -454,12 +458,14 @@ Rules:
                     source_session_ids, source_conversation_date,
                     tags_era, tags_people, tags_place, tags_theme, tags_emotion,
                     word_count, language, status, generated_by, truncated,
-                    parent_fragment_id, thread_order)
+                    parent_fragment_id, thread_order,
+                    book_id, book_question_id)
                  VALUES ($1, $2, $3, $4, $5,
                          $6::uuid[], $7,
                          $8, $9, $10, $11, $12,
                          $13, $14, $15, $16, $17,
-                         $18, $19)
+                         $18, $19,
+                         $20, $21)
                  RETURNING id`,
                 [
                   userId,
@@ -481,11 +487,47 @@ Rules:
                   truncatedFlag,                     // $17
                   continuationParentId,              // $18 🆕 2026-04-25
                   nextThreadOrder,                   // $19 🆕 2026-04-25
+                  bookId,                            // $20 🆕 Task 60 Stage 3
+                  bookQuestionId,                    // $21 🆕 Task 60 Stage 3
                 ]
               );
 
               const newFragmentId = insertRes.rows[0]?.id;
-              console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" truncated=${truncatedFlag} bgTotal=${Date.now() - bgStart}ms`);
+              console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" truncated=${truncatedFlag} bookId=${bookId || '-'} bgTotal=${Date.now() - bgStart}ms`);
+
+              // 🆕 Task 60 (Stage 3) — Book question mapping.
+              //   Append fragmentId to the response row, flip its status
+              //   from 'empty' to 'complete' on first save (preserve any
+              //   custom status set by Stage 4 customisation), set
+              //   selected_fragment_id if not already chosen, and bump
+              //   the parent book's completed_questions counter.
+              if (newFragmentId && bookId && bookQuestionId) {
+                try {
+                  await db.query(
+                    `UPDATE user_book_responses
+                        SET fragment_ids         = array_append(fragment_ids, $1::uuid),
+                            status               = CASE WHEN status = 'empty' THEN 'complete' ELSE status END,
+                            selected_fragment_id = COALESCE(selected_fragment_id, $1::uuid),
+                            first_answered_at    = COALESCE(first_answered_at, NOW()),
+                            last_updated_at      = NOW()
+                      WHERE book_id = $2 AND question_id = $3`,
+                    [newFragmentId, bookId, bookQuestionId]
+                  );
+                  await db.query(
+                    `UPDATE user_books
+                        SET completed_questions = (
+                              SELECT COUNT(*) FROM user_book_responses
+                               WHERE book_id = $1 AND status = 'complete'
+                            ),
+                            last_active_at = NOW()
+                      WHERE id = $1`,
+                    [bookId]
+                  );
+                  console.log(`[chat/end:bg] 📚 Book response mapped — book=${bookId} q=${bookQuestionId} fragment=${newFragmentId}`);
+                } catch (mapErr) {
+                  console.error('[chat/end:bg] book response mapping failed:', mapErr.message);
+                }
+              }
             } catch (bgErr) {
               // 🔥 Task 56 (c): unique-constraint hit means a sibling
               //   request already INSERTed a fragment for this session
