@@ -69,18 +69,29 @@ export async function GET(request, { params }) {
         imported_fragment_ids: [],
       };
 
-    const allIds = [
-      ...(response.fragment_ids || []),
-      ...(response.imported_fragment_ids || []),
-    ];
-    let fragments = [];
+    // 🆕 Stage 5: split direct answers vs imported free-form fragments.
+    //   Direct = fragments produced by a /chat?mode=book session
+    //            (saved with book_id set on insert).
+    //   Imported = free-form fragments the user pulled in via
+    //              /api/book/[id]/question/[qId]/import — book_id
+    //              stays NULL on those rows so they keep showing in
+    //              /my-stories.
+    const directIds   = response.fragment_ids || [];
+    const importedIds = response.imported_fragment_ids || [];
+    const allIds      = [...directIds, ...importedIds];
+    let directFragments   = [];
+    let importedFragments = [];
     if (allIds.length > 0) {
       const fragRes = await db.query(
         `SELECT id, title, content, created_at FROM story_fragments
           WHERE id = ANY($1::uuid[]) ORDER BY created_at DESC`,
         [allIds]
       );
-      fragments = fragRes.rows;
+      const directSet = new Set(directIds.map(x => String(x)));
+      for (const f of fragRes.rows) {
+        if (directSet.has(String(f.id))) directFragments.push(f);
+        else importedFragments.push(f);
+      }
     }
 
     return Response.json({
@@ -102,8 +113,13 @@ export async function GET(request, { params }) {
       },
       response: {
         status: response.status,
-        fragments,
+        // direct answers (kept under `fragments` for back-compat with
+        //   the Stage 2/3 page that reads response.fragments)
+        fragments: directFragments,
+        // 🆕 Stage 5
+        imported_fragments: importedFragments,
         selected_fragment_id: response.selected_fragment_id,
+        selected_imported_id: response.selected_imported_id,
       },
       navigation: {
         previous_question_id: prevQId,
