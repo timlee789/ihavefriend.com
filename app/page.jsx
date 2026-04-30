@@ -48,6 +48,7 @@ const HOME_MSGS = {
     bookResumeTitle    : '이어서 만들기 — {title}',
     bookResumeSub      : '진행: {done} / {total}',
     bookDefaultTitle   : '내 자서전',
+    bookTemplatesFooter: '책 템플릿 보기',
     myStoriesCtaTitle  : '내 이야기 보기',
     myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
@@ -80,6 +81,7 @@ const HOME_MSGS = {
     bookResumeTitle    : 'Continue — {title}',
     bookResumeSub      : 'Progress: {done} / {total}',
     bookDefaultTitle   : 'My Memoir',
+    bookTemplatesFooter: 'Browse book templates',
     myStoriesCtaTitle  : 'View my stories',
     myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
@@ -112,6 +114,7 @@ const HOME_MSGS = {
     bookResumeTitle    : 'Continuar — {title}',
     bookResumeSub      : 'Progreso: {done} / {total}',
     bookDefaultTitle   : 'Mis memorias',
+    bookTemplatesFooter: 'Ver plantillas de libros',
     myStoriesCtaTitle  : 'Ver mis historias',
     myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
@@ -332,8 +335,19 @@ export default function Home() {
           there). Opacity 0.65 by default so they don't compete with
           the primary CTAs above. */}
       <footer className={s.homeFooter}>
-        <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
-        <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
+        {/* 🔥 Task 71 — book templates link, always present so the
+            senior can discover other book types beyond whatever's
+            currently showing on the bookCta above. */}
+        <button
+          className={s.footerTemplatesBtn}
+          onClick={() => router.push('/book/templates')}
+        >
+          📚 {msgs.bookTemplatesFooter}
+        </button>
+        <div className={s.footerRow}>
+          <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
+          <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
+        </div>
       </footer>
     </div>
   );

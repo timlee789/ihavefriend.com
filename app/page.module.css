@@ -408,11 +408,32 @@
    dominate. */
 .homeFooter {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 20px 0 8px;
   margin-top: auto;
+}
+.footerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.footerTemplatesBtn {
+  background: transparent;
+  border: 1px solid rgba(99, 102, 241, 0.40);
+  color: rgba(196, 181, 253, 0.95);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.footerTemplatesBtn:hover {
+  border-color: rgba(99, 102, 241, 0.70);
+  background: rgba(99, 102, 241, 0.08);
 }
 .footerLangPill {
   background: transparent;

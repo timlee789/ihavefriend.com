@@ -157,6 +157,28 @@ export async function POST(request) {
       title: finalTitle,
     });
   } catch (e) {
+    // 🔥 Task 71 — partial unique index (idx_user_books_one_in_progress)
+    //   guarantees one in_progress book per (user_id, template_id).
+    //   The resume SELECT above usually catches that case, but a
+    //   concurrent double-tap can race past it; if it does, surface a
+    //   409 with the existing book id so the client can route there
+    //   instead of throwing a generic 500 at the senior.
+    if (e.code === '23505' && /idx_user_books_one_in_progress/.test(String(e.message))) {
+      try {
+        const r = await createDb().query(
+          `SELECT id FROM user_books
+            WHERE user_id = $1 AND template_id = $2 AND status = 'in_progress'
+            LIMIT 1`,
+          [user.id, templateId]
+        );
+        if (r.rows.length > 0) {
+          return Response.json(
+            { bookId: r.rows[0].id, resumed: true, message: 'already in progress' },
+            { status: 409 }
+          );
+        }
+      } catch { /* fall through to generic 500 */ }
+    }
     console.error('[POST /api/book/start]', e.message);
     return Response.json({ error: e.message }, { status: 500 });
   }
