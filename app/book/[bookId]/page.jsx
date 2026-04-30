@@ -86,7 +86,10 @@ export default function BookOverviewPage() {
     <div className={s.container}>
       <header className={s.header}>
         <button className={s.backBtn} onClick={() => router.push('/book/select')}>{m.backToList}</button>
-        <h1 className={s.title}>📚 {book.title}</h1>
+        {/* 🔥 Task 69 — localize the title via the template's i18n
+            name when present, falling back to whatever was stored
+            at start time. */}
+        <h1 className={s.title}>📚 {titleOf(book.title_i18n, lang) || book.title}</h1>
         <button
           className={s.customizeBtn}
           onClick={() => router.push(`/book/${bookId}/customize`)}

@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EmmaAvatar from '@/components/emma/EmmaAvatar';
+import { titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
 // ── Localization ─────────────────────────────────────────────────
@@ -274,7 +275,13 @@ export default function Home() {
       {(() => {
         const activeBook = activeBooks[0];
         if (activeBook) {
-          const title = activeBook.title || msgs.bookDefaultTitle;
+          // 🔥 Task 69 — prefer the template's localized name so the
+          // resume label reads "Continue — My Memoir" in EN even on
+          // a book that was started under memoir-ko.
+          const title =
+            titleOf(activeBook.template_name, lang.toLowerCase()) ||
+            activeBook.title ||
+            msgs.bookDefaultTitle;
           const done  = activeBook.completed_questions || 0;
           const total = activeBook.total_questions || 0;
           return (

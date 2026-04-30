@@ -16,8 +16,17 @@ export async function GET(request, { params }) {
   const db = createDb();
 
   try {
+    // 🔥 Task 69: pull the template's localized name alongside the
+    //   book row so the client can render the title via titleOf()
+    //   instead of the static `book.title` string captured at start
+    //   time. Existing books were created when /api/book/start picked
+    //   `name.ko` ("내 자서전") regardless of user lang — this lets
+    //   them display correctly in EN/ES without a backfill.
     const bookRes = await db.query(
-      `SELECT * FROM user_books WHERE id = $1 AND user_id = $2`,
+      `SELECT b.*, t.name AS template_name
+         FROM user_books b
+         LEFT JOIN book_template_definitions t ON t.id = b.template_id
+        WHERE b.id = $1 AND b.user_id = $2`,
       [bookId, user.id]
     );
     if (bookRes.rows.length === 0) {
@@ -106,6 +115,11 @@ export async function GET(request, { params }) {
         id: book.id,
         template_id: book.template_id,
         title: book.title,
+        // 🔥 Task 69 — localized title source. The client should
+        // render titleOf(title_i18n, lang) || title so the same row
+        // reads "My Memoir" / "Mis memorias" / "내 자서전" depending
+        // on the active lang.
+        title_i18n: book.template_name || null,
         status: book.status,
         view_mode: book.view_mode,
         started_at: book.started_at,

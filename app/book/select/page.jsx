@@ -77,7 +77,9 @@ export default function BookSelectPage() {
             <button key={b.id} className={s.bookCard} onClick={() => router.push(`/book/${b.id}`)}>
               <div className={s.bookIcon}>📖</div>
               <div className={s.bookInfo}>
-                <div className={s.bookTitle}>{b.title}</div>
+                {/* 🔥 Task 69 — localize via the template's i18n
+                    name; falls back to whatever was stored. */}
+                <div className={s.bookTitle}>{titleOf(b.template_name, lang) || b.title}</div>
                 <div className={s.bookProgress}>
                   {m.progressLabel}: {b.completed_questions || 0} / {b.total_questions || 0}
                 </div>
