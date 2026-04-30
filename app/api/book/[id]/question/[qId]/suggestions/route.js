@@ -25,6 +25,13 @@ export async function GET(request, { params }) {
   const { id: bookId, qId } = await params;
   const db = createDb();
 
+  // 🆕 Task 66 — quota gate before the Gemini ranking call.
+  {
+    const { checkQuota } = require('@/lib/quotaCheck');
+    const quota = await checkQuota(db, user.id);
+    if (quota.blocked) return Response.json(quota.response, { status: 402 });
+  }
+
   try {
     // 1. Resolve question prompt from the book's structure.
     const bookRes = await db.query(

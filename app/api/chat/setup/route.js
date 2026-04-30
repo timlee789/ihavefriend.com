@@ -47,6 +47,16 @@ export async function POST(request) {
 
   const db = createDb();
 
+  // 🆕 Task 66 — Quota gate. Free-tier users who've used their lifetime
+  //   token budget get a 402 with a launching-soon message; the senior
+  //   never sees a numeric limit. Tim (tier='unlimited') and any future
+  //   premium tier sail through. Failures inside checkQuota fail OPEN.
+  {
+    const { checkQuota } = require('@/lib/quotaCheck');
+    const quota = await checkQuota(db, user.id);
+    if (quota.blocked) return Response.json(quota.response, { status: 402 });
+  }
+
   // 0. Close any abandoned sessions for this user (no ended_at, older than 5 min).
   //    MOVED TO after() so it NEVER blocks prompt assembly / session creation —
   //    this used to add several seconds to the very first Gemini response while

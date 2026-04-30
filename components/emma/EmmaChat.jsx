@@ -8,6 +8,7 @@ import { pickStarterCards } from '@/lib/storyStarterQuestions';
 import { detectBurst } from '@/lib/transcriptNoise';
 import { filterEmmaResponse } from '@/lib/emmaResponseFilter';
 import { createWakeLockGuard } from '@/lib/wakelockFallback';
+import QuotaBlockedModal from '@/components/QuotaBlockedModal';
 
 // ── Short, varied opening prompts (Task 51 #2 → revised in Task 52 #1) ──
 // Tim's first 4-turn test showed Emma was opening with a QUESTION
@@ -857,6 +858,9 @@ export default function EmmaChat({ initialMode }) {
   const convModeRef = useRef('auto');
   // ── session-ended state: show "내 이야기 확인하기" banner ─────────────────
   const [sessionEnded, setSessionEnded] = useState(false);
+  // 🆕 Task 66 — populated when chat/setup or chat/turn returns 402.
+  //   Renders QuotaBlockedModal which routes the senior back to /.
+  const [quotaBlocked, setQuotaBlocked] = useState(null);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -2119,6 +2123,14 @@ export default function EmmaChat({ initialMode }) {
           bookQuestionId     : bookQuestionId || null,
         }),
       });
+      if (res.status === 402) {
+        // 🆕 Task 66 — quota exceeded. Stop the session boot, show
+        // "곧 출시 예정" modal, never light up the mic.
+        const data = await res.json().catch(() => ({}));
+        setQuotaBlocked(data);
+        setMicOn(false);
+        return;
+      }
       if (res.ok) {
         const d = await res.json();
         systemPrompt = d.systemPrompt || '';
@@ -2921,6 +2933,15 @@ export default function EmmaChat({ initialMode }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* 🆕 Task 66 — quota-block modal. Lazy-rendered so it costs
+          nothing on the happy path. */}
+      {quotaBlocked && (
+        <QuotaBlockedModal
+          data={quotaBlocked}
+          onClose={() => { setQuotaBlocked(null); router.push('/'); }}
+        />
       )}
 
     </div>

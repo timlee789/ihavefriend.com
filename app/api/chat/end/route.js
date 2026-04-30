@@ -219,6 +219,26 @@ export async function POST(request) {
     generationReason = `STORY user_intent_override turns=${userTurnCount} chars=${userCharCount}`;
   }
 
+  // 🆕 Task 66 — Quota gate. We always let chat/end run so the wrap-up
+  //   bookkeeping (transcript save, ended_at stamp) happens, but if the
+  //   user has crossed their lifetime token budget we suppress the
+  //   expensive fragment-generation path. Any LLM detect work below is
+  //   wrapped by `if (apiKey && history.length >= 2)` so dropping
+  //   shouldQueue is enough to keep this turn cheap.
+  if (shouldQueue) {
+    try {
+      const { checkQuota } = require('@/lib/quotaCheck');
+      const quota = await checkQuota(db, user.id);
+      if (quota.blocked) {
+        console.log(`[chat/end] quota exceeded — skip fragment gen for user=${user.id}`);
+        shouldQueue = false;
+        generationReason = `quota_blocked (${quota.used}/${quota.limit})`;
+      }
+    } catch (e) {
+      console.warn('[chat/end] quota check failed (allowing through):', e?.message);
+    }
+  }
+
   console.log(`[chat/end] Pre-detect gate: shouldQueue=${shouldQueue} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount} userChars=${userCharCount} reason="${generationReason}"`);
 
   if (apiKey && history.length >= 2) {

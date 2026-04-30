@@ -25,6 +25,16 @@ export async function POST(request) {
     return Response.json({ ok: true });
   }
 
+  // 🆕 Task 66 — Quota gate at every turn so a session that crosses
+  //   the limit mid-conversation doesn't keep burning Gemini calls in
+  //   the background IIFE. Failures fail OPEN (see quotaCheck header).
+  {
+    const { checkQuota } = require('@/lib/quotaCheck');
+    const dbCheck = createDb();
+    const quota = await checkQuota(dbCheck, user.id);
+    if (quota.blocked) return Response.json(quota.response, { status: 402 });
+  }
+
   console.log(`[Turn] t=${t0} turn=${turnNumber} session=${sessionId} user=${user.id} msgLen=${userMessage?.length ?? 0}`);
 
   // ─── Return immediately — ALL heavy work is fire-and-forget ───────────────
