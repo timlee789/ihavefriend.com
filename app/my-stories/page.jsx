@@ -1491,7 +1491,12 @@ export default function MyStoriesPage() {
   // ── Data loading ─────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     const token = getToken();
-    if (!token) { router.replace('/login'); return; }
+    if (!token) {
+      // 🔥 Task 74 — stash redirect for the post-login bounce.
+      try { sessionStorage.setItem('postLoginRedirect', '/my-stories'); } catch {}
+      router.replace('/login');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -1502,6 +1507,7 @@ export default function MyStoriesPage() {
       ]);
 
       if (fragRes.status === 401 || bookRes.status === 401) {
+        try { sessionStorage.setItem('postLoginRedirect', '/my-stories'); } catch {}
         router.replace('/login');
         return;
       }

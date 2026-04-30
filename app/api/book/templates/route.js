@@ -10,15 +10,14 @@
  * filter is omitted (or invalid) the endpoint returns every active template
  * for backwards compatibility.
  */
-import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
 
 const ALLOWED_LANGS = new Set(['ko', 'en', 'es']);
 
+// 🔥 Task 74 — public endpoint. Visitors can browse the available
+//   templates without an account; the start path (/api/book/start)
+//   still requires auth, so this is read-only catalog data.
 export async function GET(request) {
-  const { user, error } = await requireAuth(request);
-  if (error) return error;
-
   const url = new URL(request.url);
   const langParam = (url.searchParams.get('lang') || '').toLowerCase();
   const lang = ALLOWED_LANGS.has(langParam) ? langParam : null;

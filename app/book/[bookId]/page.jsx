@@ -67,7 +67,12 @@ export default function BookOverviewPage() {
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) { router.replace('/login'); return; }
+    if (!token) {
+      // 🔥 Task 74 — bounce back here after login.
+      try { sessionStorage.setItem('postLoginRedirect', window.location.pathname); } catch {}
+      router.replace('/login');
+      return;
+    }
     fetch(`/api/book/${bookId}/progress`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })

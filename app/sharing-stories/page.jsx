@@ -160,7 +160,18 @@ export default function SharingStoriesPage() {
           story={selected}
           lang={lang}
           onClose={() => setSelected(null)}
-          onStartMyStory={() => router.push('/chat')}
+          onStartMyStory={() => {
+            // 🔥 Task 74 — soft paywall. Visitors get bounced to
+            //   /login with the recording path stashed; /login then
+            //   replaces() them straight into the chat after sign-in.
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            if (!token) {
+              try { sessionStorage.setItem('postLoginRedirect', '/chat?mode=story'); } catch {}
+              router.push('/login');
+            } else {
+              router.push('/chat?mode=story');
+            }
+          }}
         />
       )}
     </div>

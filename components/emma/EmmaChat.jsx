@@ -866,7 +866,18 @@ export default function EmmaChat({ initialMode }) {
   useEffect(() => {
     const t = localStorage.getItem('token');
     const u = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!t || !u) { router.push('/login'); return; }
+    if (!t || !u) {
+      // 🔥 Task 74 — soft paywall: stash where we were so /login can
+      //   bounce us back here after a successful sign-in.
+      try {
+        sessionStorage.setItem(
+          'postLoginRedirect',
+          window.location.pathname + window.location.search
+        );
+      } catch {}
+      router.push('/login');
+      return;
+    }
     setToken(t);
     setUser(u);
     // Load saved language preference

@@ -49,6 +49,8 @@ const HOME_MSGS = {
     bookResumeSub      : '진행: {done} / {total}',
     bookDefaultTitle   : '내 자서전',
     bookTemplatesFooter: '책 템플릿 보기',
+    tagline            : '내 이야기를 평생 보관하는 공간',
+    loginBtn           : '로그인',
     myStoriesCtaTitle  : '내 이야기 보기',
     myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
@@ -82,6 +84,8 @@ const HOME_MSGS = {
     bookResumeSub      : 'Progress: {done} / {total}',
     bookDefaultTitle   : 'My Memoir',
     bookTemplatesFooter: 'Browse book templates',
+    tagline            : 'A place to keep your stories for a lifetime',
+    loginBtn           : 'Sign in',
     myStoriesCtaTitle  : 'View my stories',
     myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
@@ -115,6 +119,8 @@ const HOME_MSGS = {
     bookResumeSub      : 'Progreso: {done} / {total}',
     bookDefaultTitle   : 'Mis memorias',
     bookTemplatesFooter: 'Ver plantillas de libros',
+    tagline            : 'Un lugar para guardar tus historias para toda la vida',
+    loginBtn           : 'Iniciar sesión',
     myStoriesCtaTitle  : 'Ver mis historias',
     myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
@@ -160,31 +166,42 @@ export default function Home() {
 
   const msgs = HOME_MSGS[lang] || HOME_MSGS.KO;
 
-  // Auth check + user name from localStorage
+  // 🔥 Task 74 — soft paywall. The home is now PUBLIC: anyone can
+  //   land here, see the tagline, browse the layout, and click into
+  //   "Read others' stories" without a token. Protected CTAs (record,
+  //   chat, my-stories, books) call requireLogin() which stashes the
+  //   target path in sessionStorage and routes to /login. /login then
+  //   bounces them back to that path on success.
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('token');
+    const token   = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-
-    if (!token || !userStr) {
-      router.replace('/login');
-      return;
-    }
-
-    try {
-      const user = JSON.parse(userStr);
-      setUserName(user?.name || '');
-    } catch {
-      router.replace('/login');
-      return;
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserName(user?.name || '');
+        setIsLoggedIn(true);
+      } catch { /* fall through to logged-out */ }
     }
     setAuthChecked(true);
-  }, [router]);
+  }, []);
+
+  // Stash the target path and route to /login. /login will pick the
+  // path up from sessionStorage on success and replace().
+  function requireLogin(targetPath) {
+    if (typeof window !== 'undefined' && targetPath) {
+      try { sessionStorage.setItem('postLoginRedirect', targetPath); } catch {}
+    }
+    router.push('/login');
+  }
 
   // 🆕 Stage 7 — pull in-progress books for the resume banner.
   //   Fire-and-forget; failures just leave the banner empty.
+  //   Task 74: only fires for logged-in users; the public landing
+  //   never sees the resume cards.
   useEffect(() => {
-    if (!authChecked) return;
+    if (!authChecked || !isLoggedIn) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
     let cancelled = false;
@@ -197,7 +214,7 @@ export default function Home() {
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [authChecked]);
+  }, [authChecked, isLoggedIn]);
 
   function toggleLang() {
     const order = ['KO', 'EN', 'ES'];
@@ -214,7 +231,12 @@ export default function Home() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
-    router.replace('/login');
+    // Task 74: stay on the (now-public) home rather than bouncing to
+    // /login — the senior just wanted to sign out, not "do something
+    // that needed login".
+    setIsLoggedIn(false);
+    setUserName('');
+    setActiveBooks([]);
   }
 
   if (!authChecked) {
@@ -232,7 +254,12 @@ export default function Home() {
       </div>
 
       {/* Greeting */}
-      <div className={s.greetingLine}>{msgs.greeting(userName)}</div>
+      {/* 🔥 Task 74 — logged-in users see "안녕하세요, <name>";
+          visitors see the tagline so the / page reads as a landing
+          page rather than an empty greeting. */}
+      <div className={s.greetingLine}>
+        {isLoggedIn ? msgs.greeting(userName) : msgs.tagline}
+      </div>
 
       {/* 🔥 Task 70 — Button order. Book first (resume / make), then
           the two chat modes, then library. */}
@@ -247,6 +274,9 @@ export default function Home() {
           className={s.bookCta}
           onClick={() => router.push('/book/templates')}
         >
+          {/* /book/templates is also public (Task 74) — visitors can
+              browse the cards; the actual "start" tap there is what
+              triggers the login prompt. */}
           <div className={s.ctaIcon}>📚</div>
           <div className={s.ctaTextWrap}>
             <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
@@ -287,7 +317,7 @@ export default function Home() {
       {/* 2. Story CTA — direct /chat?mode=story */}
       <button
         className={s.storyCta}
-        onClick={() => router.push('/chat?mode=story')}
+        onClick={() => isLoggedIn ? router.push('/chat?mode=story') : requireLogin('/chat?mode=story')}
       >
         <div className={s.ctaIcon}>🎙️</div>
         <div className={s.ctaTextWrap}>
@@ -299,7 +329,7 @@ export default function Home() {
       {/* 3. Companion CTA — Private chat */}
       <button
         className={s.companionCta}
-        onClick={() => router.push('/chat?mode=companion')}
+        onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
       >
         <div className={s.ctaIcon}>💬</div>
         <div className={s.ctaTextWrap}>
@@ -312,7 +342,7 @@ export default function Home() {
       {/* 4. My Stories */}
       <button
         className={s.myStoriesCta}
-        onClick={() => router.push('/my-stories')}
+        onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
       >
         <div className={s.ctaIcon}>📖</div>
         <div className={s.ctaTextWrap}>
@@ -349,7 +379,13 @@ export default function Home() {
         </button>
         <div className={s.footerRow}>
           <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
-          <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
+          {isLoggedIn ? (
+            <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
+          ) : (
+            <button className={s.footerLogoutBtn} onClick={() => router.push('/login')}>
+              {msgs.loginBtn}
+            </button>
+          )}
         </div>
       </footer>
     </div>

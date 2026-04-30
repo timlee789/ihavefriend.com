@@ -31,7 +31,18 @@ export default function LoginPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      if (data.user.role === 'admin') {
+      // 🔥 Task 74 — post-login bounce. If a protected CTA on the
+      //   home page (or another protected route) stashed where the
+      //   user was trying to go, route them straight there. Otherwise
+      //   land on /admin (admins) or / (everyone else).
+      let redirect = null;
+      try {
+        redirect = sessionStorage.getItem('postLoginRedirect');
+        sessionStorage.removeItem('postLoginRedirect');
+      } catch {}
+      if (redirect) {
+        router.replace(redirect);
+      } else if (data.user.role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/');

@@ -25,18 +25,21 @@ export default function BookTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(null);
 
+  // 🔥 Task 74 — public browsing. Visitors can see the cards; the
+  //   "start" tap is what triggers the login prompt. We always fetch
+  //   /api/book/templates (now public). /api/book/list is only
+  //   fetched when a token is present, so logged-out users skip it.
   useEffect(() => {
     const userLang = getUserLang();
     setLang(userLang);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) { router.replace('/login'); return; }
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const listFetch = token
+      ? fetch('/api/book/list', { headers }).then(r => r.json())
+      : Promise.resolve({ books: [] });
     Promise.all([
-      fetch(`/api/book/templates?lang=${encodeURIComponent(userLang)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
-      fetch('/api/book/list', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
+      fetch(`/api/book/templates?lang=${encodeURIComponent(userLang)}`, { headers }).then(r => r.json()),
+      listFetch,
     ])
       .then(([tpl, list]) => {
         setTemplates(tpl.templates || []);
@@ -56,6 +59,14 @@ export default function BookTemplatesPage() {
     activeBooks.find(b => b.template_category === category);
 
   async function startBook(template) {
+    // 🔥 Task 74 — visitors get bounced to /login here (the page
+    //   itself is public so they can browse).
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      try { sessionStorage.setItem('postLoginRedirect', '/book/templates'); } catch {}
+      router.push('/login');
+      return;
+    }
     // Client guard — server backstops with the partial unique index.
     const existing = findActiveForCategory(template.category);
     if (existing) {
@@ -64,7 +75,6 @@ export default function BookTemplatesPage() {
     }
     const templateId = template.id;
     setStarting(templateId);
-    const token = localStorage.getItem('token');
     try {
       const res = await fetch('/api/book/start', {
         method: 'POST',
