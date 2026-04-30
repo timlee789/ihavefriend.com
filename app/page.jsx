@@ -44,6 +44,9 @@ const HOME_MSGS = {
     storyCtaSub        : 'Emma가 듣고 기록해드려요',
     bookCtaTitle       : '내 책 만들기',
     bookCtaSub         : '내 이야기를 책으로 정리해요',
+    bookResumeTitle    : '이어서 만들기 — {title}',
+    bookResumeSub      : '진행: {done} / {total}',
+    bookDefaultTitle   : '내 자서전',
     myStoriesCtaTitle  : '내 이야기 보기',
     myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
@@ -73,6 +76,9 @@ const HOME_MSGS = {
     storyCtaSub        : 'Emma will listen and write it down',
     bookCtaTitle       : 'Make my book',
     bookCtaSub         : 'Turn your stories into a book',
+    bookResumeTitle    : 'Continue — {title}',
+    bookResumeSub      : 'Progress: {done} / {total}',
+    bookDefaultTitle   : 'My Memoir',
     myStoriesCtaTitle  : 'View my stories',
     myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
@@ -102,6 +108,9 @@ const HOME_MSGS = {
     storyCtaSub        : 'Emma escuchará y la registrará',
     bookCtaTitle       : 'Hacer mi libro',
     bookCtaSub         : 'Convierte tus historias en un libro',
+    bookResumeTitle    : 'Continuar — {title}',
+    bookResumeSub      : 'Progreso: {done} / {total}',
+    bookDefaultTitle   : 'Mis memorias',
     myStoriesCtaTitle  : 'Ver mis historias',
     myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
@@ -226,30 +235,6 @@ export default function Home() {
       {/* Greeting */}
       <div className={s.greetingLine}>{msgs.greeting(userName)}</div>
 
-      {/* 🆕 Stage 7 — Resume Banner. When a book is in progress, the
-          senior gets a green pill above the recording CTAs that
-          shoots them straight to the book overview, so "이어서
-          만들기" is one tap from the front door. */}
-      {activeBooks.length > 0 && (() => {
-        const b = activeBooks[0];
-        const total = b.total_questions || 0;
-        const done  = b.completed_questions || 0;
-        return (
-          <button
-            className={s.resumeBookCard}
-            onClick={() => router.push(`/book/${b.id}`)}
-          >
-            <div className={s.resumeIcon}>📚</div>
-            <div className={s.resumeBody}>
-              <div className={s.resumeLabel}>이어서 만들기</div>
-              <div className={s.resumeTitle}>{b.title || '나의 책'}</div>
-              <div className={s.resumeProgress}>진행: {done} / {total}</div>
-            </div>
-            <div className={s.resumeArrow}>→</div>
-          </button>
-        );
-      })()}
-
       {/* Mode-specific CTAs (Task 49) — split the single "이야기 하기" button
           into two so users can pick companion vs story up front. /chat
           auto-skips its mode-selection screen when ?mode= is present.
@@ -280,19 +265,48 @@ export default function Home() {
         <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
       </button>
 
-      {/* 🆕 Task 67 — Book builder entry point. Same warm orange family
-          as storyCta because it's the same creative-action group, just
-          longer-form. */}
-      <button
-        className={s.bookCta}
-        onClick={() => router.push('/book/select')}
-      >
-        <div className={s.ctaIcon}>📚</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
-        </div>
-      </button>
+      {/* 🔥 Task 68 — bookCta absorbs the old resume banner. When the
+          senior has an in-progress book, this same button reads
+          "Continue — <title>" and routes straight to /book/[id]; with
+          no in-progress book it lands on /book/select. Either way the
+          button is green so it's visually distinct from the orange
+          story / companion creative-action group. */}
+      {(() => {
+        const activeBook = activeBooks[0];
+        if (activeBook) {
+          const title = activeBook.title || msgs.bookDefaultTitle;
+          const done  = activeBook.completed_questions || 0;
+          const total = activeBook.total_questions || 0;
+          return (
+            <button
+              className={s.bookCta}
+              onClick={() => router.push(`/book/${activeBook.id}`)}
+            >
+              <div className={s.ctaIcon}>📚</div>
+              <div className={s.ctaTextWrap}>
+                <div className={s.ctaMain}>
+                  {msgs.bookResumeTitle.replace('{title}', title)}
+                </div>
+                <div className={s.ctaSub}>
+                  {msgs.bookResumeSub.replace('{done}', done).replace('{total}', total)}
+                </div>
+              </div>
+            </button>
+          );
+        }
+        return (
+          <button
+            className={s.bookCta}
+            onClick={() => router.push('/book/select')}
+          >
+            <div className={s.ctaIcon}>📚</div>
+            <div className={s.ctaTextWrap}>
+              <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
+              <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
+            </div>
+          </button>
+        );
+      })()}
 
       {/* 🆕 Task 55 #4: dedicated "내 이야기 보기" button replaces the
           old recentStoriesCard. Cyan/teal so it sits visually between

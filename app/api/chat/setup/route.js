@@ -28,13 +28,22 @@ export async function POST(request) {
 
   const {
     message = '',
-    lang = 'en',
+    lang: rawLang,
     conversationMode = 'auto',
     continueFragmentId = null,
     // 🆕 Task 60 (Stage 3) — Book mode params
     bookId = null,
     bookQuestionId = null,
   } = await request.json().catch(() => ({}));
+  // 🔥 Task 68: Validate lang strictly. Client may send anything; we
+  //   coerce to lowercase, accept only 'ko' / 'en' / 'es', and fall
+  //   back to 'ko'. The previous default of 'en' was responsible for
+  //   Emma greeting Korean seniors in English when the client briefly
+  //   forgot to attach the lang field — see Tim's bug report.
+  const lang = (() => {
+    const v = String(rawLang || '').toLowerCase();
+    return v === 'en' || v === 'es' ? v : 'ko';
+  })();
   // 🆕 2026-04-25: Continuation sessions are always story mode.
   let effectiveMode = conversationMode;
   if (continueFragmentId) effectiveMode = 'story';

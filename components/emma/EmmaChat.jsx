@@ -870,7 +870,10 @@ export default function EmmaChat({ initialMode }) {
     setToken(t);
     setUser(u);
     // Load saved language preference
-    const storedLang = (u.lang || localStorage.getItem('lang') || 'ko').toUpperCase();
+    // 🔥 Task 68: localStorage takes priority over the stale u.lang
+    //   captured at signup. The home page lang pill writes to
+    //   localStorage; that's always the freshest signal.
+    const storedLang = (localStorage.getItem('lang') || u.lang || 'ko').toUpperCase();
     if (LANGS.includes(storedLang)) setLang(storedLang);
     // Load saved mute preference
     const muted = localStorage.getItem('emmaMuted') === 'true';
@@ -2096,7 +2099,23 @@ export default function EmmaChat({ initialMode }) {
 
   // ── connect ───────────────────────────────────────────────────────────────
   async function connect() {
-    const currentLang = langRef.current;
+    // 🔥 Task 68: read lang FRESH from localStorage right before we
+    //   hit /api/chat/setup. langRef.current can be stale if the user
+    //   arrived via ?mode=story before the lang init effect finished
+    //   running, or if u.lang in localStorage was captured at signup
+    //   time and predates a later lang change on the home page.
+    //   localStorage.lang is the single source of truth that the home
+    //   pill writes to.
+    let currentLang = 'KO';
+    try {
+      const fromLs = (typeof window !== 'undefined' ? localStorage.getItem('lang') : '') || '';
+      const upper = fromLs.toUpperCase();
+      if (upper === 'EN' || upper === 'ES' || upper === 'KO') currentLang = upper;
+    } catch {}
+    if (lang !== currentLang) {
+      setLang(currentLang);
+      langRef.current = currentLang;
+    }
     const emma = getEmma(currentLang);
     setStatusMsg(emma.status_connecting);
     sessionStartRef.current = Date.now();
