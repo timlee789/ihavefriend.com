@@ -73,6 +73,35 @@ export async function POST(request) {
       })),
     };
 
+    // 🔥 Task 69 — defensive i18n completeness check on the snapshot.
+    //   Doesn't block creation; just surfaces a server-side warning so
+    //   we catch incomplete seeds in production before users ever see
+    //   English leaking into a Korean book. The backfill script
+    //   (scripts/backfill-book-structure-i18n.js) is the cure for
+    //   already-broken books.
+    {
+      const issues = [];
+      for (const ch of structure.chapters || []) {
+        if (ch.is_custom) continue;
+        for (const lang of ['ko', 'en', 'es']) {
+          if (!ch.title?.[lang]) issues.push(`ch=${ch.id} title.${lang}`);
+        }
+        for (const q of ch.questions || []) {
+          if (q.is_custom) continue;
+          for (const lang of ['ko', 'en', 'es']) {
+            if (!q.prompt?.[lang]) issues.push(`q=${q.id} prompt.${lang}`);
+          }
+        }
+      }
+      if (issues.length > 0) {
+        console.warn(
+          `[book/start] ⚠️ template=${templateId} incomplete i18n (${issues.length}):`,
+          issues.slice(0, 5).join(', '),
+          issues.length > 5 ? `… +${issues.length - 5} more` : ''
+        );
+      }
+    }
+
     const totalQuestions = structure.chapters
       .reduce((sum, ch) => sum + (ch.questions?.length || 0), 0);
     const firstChapter   = structure.chapters[0];
