@@ -249,30 +249,48 @@
    reads as "muted dark with a green hint" instead of fully-saturated.
    `position: relative` anchors the .privateBadge in the top-right
    corner. */
+/* 🔥 Task 70 — Brand header (logo, large, top-center). */
+.brandHeader {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+.logoLarge {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ea580c;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* 🔥 Task 70 — All five CTAs use 100% opaque solid colors. Previously
+   they were #2a2a2a + 0.18 alpha gradients, which Tim's screenshot
+   showed reading as washed-out grey. Hue identity stays:
+     orange   = chat actions (story / companion)
+     green    = book (resume / make)
+     indigo   = library (my-stories / sharing-stories)  */
 .companionCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  /* 🔥 Task 56 #4: matches .storyCta orange (Group 1 = conversational
-     actions). Both buttons start a chat — they share a hue. */
-  background: #2a2a2a linear-gradient(135deg,
-    rgba(251, 146, 60, 0.18),
-    rgba(234, 88, 12, 0.18));
-  color: #f5efe9;
-  border: 1px solid rgba(234, 88, 12, 0.30);
+  background: #c2410c;
+  color: #fff;
+  border: 1px solid #9a3412;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
   position: relative;
 }
+.companionCta:active { transform: scale(0.98); }
+.companionCta:hover  { background: #9a3412; }
 
-/* Private-mode badge in the top-right of the companion CTA — small,
-   semi-transparent, white text. Reassures the user that nothing said
-   here is recorded, mirroring the in-chat banner. */
+/* Private-mode badge in the top-right of the companion CTA. Now sits
+   on a fully-opaque orange surface so we use a darkened pill (vs.
+   white-on-translucent) for legible contrast. */
 .privateBadge {
   position: absolute;
   top: 10px;
@@ -282,85 +300,46 @@
   letter-spacing: 0.02em;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.30);
+  color: #fff;
   pointer-events: none;
 }
 
-.companionCta:active {
-  transform: scale(0.98);
-}
-
-.companionCta:hover {
-  background-color: #313131;
-  border-color: rgba(234, 88, 12, 0.45);
-}
-
-/* Story CTA — soft orange tint over a neutral charcoal. Same calm
-   treatment as the companion CTA so the three buttons read as a set. */
-/* Story CTA — warm orange creative-action group. Task 67 originally
-   shared this ruleset with .bookCta; Task 68 split bookCta off into
-   its own green "my book" group (sits alongside resume semantics). */
 .storyCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: #2a2a2a linear-gradient(135deg,
-    rgba(251, 146, 60, 0.18),
-    rgba(234, 88, 12, 0.18));
-  color: #f5efe9;
-  border: 1px solid rgba(234, 88, 12, 0.30);
+  background: #c2410c;
+  color: #fff;
+  border: 1px solid #9a3412;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
+.storyCta:active { transform: scale(0.98); }
+.storyCta:hover  { background: #9a3412; }
 
-.storyCta:active {
-  transform: scale(0.98);
-}
-
-.storyCta:hover {
-  background-color: #313131;
-  border-color: rgba(234, 88, 12, 0.45);
-}
-
-/* 🔥 Task 68 — bookCta now lives in the green family. Same shape as
-   .storyCta so the row of CTAs reads as a set, but the colour
-   communicates "this is your book" — a separate intent from the
-   ephemeral chat actions above it. The same button does double duty
-   for "Continue" (active book) and "Make my book" (none yet). */
 .bookCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: #2a2a2a linear-gradient(135deg,
-    rgba(34, 197, 94, 0.18),
-    rgba(16, 185, 129, 0.18));
-  color: #d1fae5;
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: #15803d;
+  color: #fff;
+  border: 1px solid #166534;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
-
-.bookCta:active {
-  transform: scale(0.98);
-}
-
-.bookCta:hover {
-  background-color: #313131;
-  border-color: rgba(34, 197, 94, 0.50);
-}
+.bookCta:active { transform: scale(0.98); }
+.bookCta:hover  { background: #166534; }
 
 .ctaIcon {
   font-size: 28px;
@@ -381,62 +360,86 @@
 
 .ctaSub {
   font-size: 13px;
-  opacity: 0.9;
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.88);
   font-weight: 400;
 }
 
-/* 🔥 Task 56 #4: matches .viewStoriesCta indigo (Group 2 = viewing
-   actions). Both surface stories — they share a hue. */
+/* Library group — solid indigo (my-stories + sharing-stories). */
 .myStoriesCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: #2a2a2a linear-gradient(135deg,
-    rgba(99, 102, 241, 0.18),
-    rgba(79, 70, 229, 0.18));
-  color: #eeeefb;
-  border: 1px solid rgba(99, 102, 241, 0.30);
+  background: #4338ca;
+  color: #fff;
+  border: 1px solid #3730a3;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
 .myStoriesCta:active { transform: scale(0.98); }
-.myStoriesCta:hover {
-  background-color: #313131;
-  border-color: rgba(99, 102, 241, 0.45);
-}
+.myStoriesCta:hover  { background: #3730a3; }
 
-/* View Stories CTA — soft indigo tint over a neutral charcoal. */
 .viewStoriesCta {
   display: flex;
   align-items: center;
   width: 100%;
   padding: 32px 24px;
-  background: #2a2a2a linear-gradient(135deg,
-    rgba(99, 102, 241, 0.18),
-    rgba(79, 70, 229, 0.18));
-  color: #eeeefb;
-  border: 1px solid rgba(99, 102, 241, 0.30);
+  background: #4338ca;
+  color: #fff;
+  border: 1px solid #3730a3;
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   font-family: inherit;
 }
+.viewStoriesCta:active { transform: scale(0.98); }
+.viewStoriesCta:hover  { background: #3730a3; }
 
-.viewStoriesCta:active {
-  transform: scale(0.98);
+/* 🔥 Task 70 — Footer: lang toggle + logout, demoted to small row at
+   bottom of viewport. margin-top:auto inside the flex column pushes
+   it to the bottom; opacity 0.65 lets the primary CTAs above
+   dominate. */
+.homeFooter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0 8px;
+  margin-top: auto;
 }
-
-.viewStoriesCta:hover {
-  background-color: #313131;
-  border-color: rgba(99, 102, 241, 0.45);
+.footerLangPill {
+  background: transparent;
+  border: 1px solid rgba(251, 146, 60, 0.40);
+  color: #fb923c;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0.65;
+  transition: opacity 0.15s;
 }
+.footerLangPill:hover { opacity: 1; }
+.footerLogoutBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.40);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.footerLogoutBtn:hover { color: rgba(255, 255, 255, 0.85); }
 
 /* Recent Stories card (entire card is a button) */
 .recentStoriesCard {

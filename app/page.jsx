@@ -220,62 +220,25 @@ export default function Home() {
 
   return (
     <div className={s.homeContainer}>
-      {/* Header */}
-      <header className={s.homeHeader}>
-        <span className={s.logo}>SayAndKeep.com</span>
-        <div className={s.headerRight}>
-          <button className={s.langPill} onClick={toggleLang}>
-            {lang}
-          </button>
-          <button className={s.logoutBtn} onClick={handleLogout}>
-            {msgs.logout}
-          </button>
-        </div>
-      </header>
+      {/* 🔥 Task 70 — Brand header. The lang pill + logout moved to a
+          small footer at the bottom of the screen because seniors set
+          them once and rarely touch them again. The logo gets the
+          full top of the viewport instead. */}
+      <div className={s.brandHeader}>
+        <h1 className={s.logoLarge}>SayAndKeep.com</h1>
+      </div>
 
       {/* Greeting */}
       <div className={s.greetingLine}>{msgs.greeting(userName)}</div>
 
-      {/* Mode-specific CTAs (Task 49) — split the single "이야기 하기" button
-          into two so users can pick companion vs story up front. /chat
-          auto-skips its mode-selection screen when ?mode= is present.
-          Order: story (primary recording intent) → companion (light chat). */}
-      {/* 🆕 Task 67 — story button now goes straight to /chat?mode=story
-          (the /story/select branch page is bypassed for the home flow,
-          but the route still exists for any external links). */}
-      <button
-        className={s.storyCta}
-        onClick={() => router.push('/chat?mode=story')}
-      >
-        <div className={s.ctaIcon}>🎙️</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.storyCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.storyCtaSub}</div>
-        </div>
-      </button>
+      {/* 🔥 Task 70 — Button order. Book first (resume / make), then
+          the two chat modes, then library. */}
 
-      <button
-        className={s.companionCta}
-        onClick={() => router.push('/chat?mode=companion')}
-      >
-        <div className={s.ctaIcon}>💬</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
-        </div>
-        <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
-      </button>
-
-      {/* 🔥 Task 68 — bookCta absorbs the old resume banner. When the
-          senior has an in-progress book, this same button reads
-          "Continue — <title>" and routes straight to /book/[id]; with
-          no in-progress book it lands on /book/select. Either way the
-          button is green so it's visually distinct from the orange
-          story / companion creative-action group. */}
+      {/* 1. Book CTA (resume or make-new, conditional) */}
       {(() => {
         const activeBook = activeBooks[0];
         if (activeBook) {
-          // 🔥 Task 69 — prefer the template's localized name so the
+          // Task 69 — prefer the template's localized name so the
           // resume label reads "Continue — My Memoir" in EN even on
           // a book that was started under memoir-ko.
           const title =
@@ -315,10 +278,32 @@ export default function Home() {
         );
       })()}
 
-      {/* 🆕 Task 55 #4: dedicated "내 이야기 보기" button replaces the
-          old recentStoriesCard. Cyan/teal so it sits visually between
-          the warm orange/green of the recording actions and the cool
-          purple of the discovery action. */}
+      {/* 2. Story CTA — direct /chat?mode=story */}
+      <button
+        className={s.storyCta}
+        onClick={() => router.push('/chat?mode=story')}
+      >
+        <div className={s.ctaIcon}>🎙️</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.storyCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.storyCtaSub}</div>
+        </div>
+      </button>
+
+      {/* 3. Companion CTA — Private chat */}
+      <button
+        className={s.companionCta}
+        onClick={() => router.push('/chat?mode=companion')}
+      >
+        <div className={s.ctaIcon}>💬</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
+        </div>
+        <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
+      </button>
+
+      {/* 4. My Stories */}
       <button
         className={s.myStoriesCta}
         onClick={() => router.push('/my-stories')}
@@ -330,7 +315,7 @@ export default function Home() {
         </div>
       </button>
 
-      {/* Other people's stories — purple */}
+      {/* 5. Other people's stories */}
       <button
         className={s.viewStoriesCta}
         onClick={() => router.push('/sharing-stories')}
@@ -341,6 +326,15 @@ export default function Home() {
           <div className={s.ctaSub}>{msgs.sharingStoriesSub}</div>
         </div>
       </button>
+
+      {/* 🔥 Task 70 — Footer. lang toggle + logout demoted to a small
+          row at the bottom of the screen (margin-top:auto pushes it
+          there). Opacity 0.65 by default so they don't compete with
+          the primary CTAs above. */}
+      <footer className={s.homeFooter}>
+        <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
+        <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
+      </footer>
     </div>
   );
 }
