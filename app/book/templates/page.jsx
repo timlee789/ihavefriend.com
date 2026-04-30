@@ -48,18 +48,21 @@ export default function BookTemplatesPage() {
 
   const m = BOOK_MSGS[lang] || BOOK_MSGS.ko;
 
-  const findActive = (templateId) =>
-    activeBooks.find(b => b.template_id === templateId);
+  // 🔥 Task 73 — match by category, not template_id. Memoir-ko and
+  //   memoir-en share category='memoir'; if the senior already has
+  //   one in flight (in any language), all three memoir cards render
+  //   with the "In progress" badge and tap through to that book.
+  const findActiveForCategory = (category) =>
+    activeBooks.find(b => b.template_category === category);
 
-  async function startBook(templateId) {
-    // 🔥 Task 71 — client guard against accidental double-start.
-    //   The DB also enforces this via a partial unique index added
-    //   by scripts/apply-book-dedup-index.js.
-    const existing = findActive(templateId);
+  async function startBook(template) {
+    // Client guard — server backstops with the partial unique index.
+    const existing = findActiveForCategory(template.category);
     if (existing) {
       router.push(`/book/${existing.id}`);
       return;
     }
+    const templateId = template.id;
     setStarting(templateId);
     const token = localStorage.getItem('token');
     try {
@@ -94,7 +97,7 @@ export default function BookTemplatesPage() {
 
       <div className={s.templateList}>
         {templates.map(t => {
-          const active = findActive(t.id);
+          const active = findActiveForCategory(t.category);
           const inProgress = !!active;
           const icon =
             t.category === 'memoir' ? '📖' :
@@ -105,7 +108,7 @@ export default function BookTemplatesPage() {
             <button
               key={t.id}
               className={`${s.templateCard} ${inProgress ? s.templateInProgress : ''}`}
-              onClick={() => startBook(t.id)}
+              onClick={() => startBook(t)}
               disabled={starting === t.id}
             >
               <div className={s.templateIcon}>{icon}</div>

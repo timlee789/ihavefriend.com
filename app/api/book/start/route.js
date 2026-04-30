@@ -32,9 +32,9 @@ export async function POST(request) {
 
   const db = createDb();
   try {
-    // 1. Template lookup
+    // 1. Template lookup — pull category too (Task 73 dedups per category).
     const tmpl = await db.query(
-      `SELECT id, name, default_structure
+      `SELECT id, name, category, default_structure
          FROM book_template_definitions
         WHERE id = $1 AND is_active = true`,
       [templateId]
@@ -44,15 +44,23 @@ export async function POST(request) {
     }
     const template = tmpl.rows[0];
 
-    // 2. Already in_progress? resume.
+    // 2. 🔥 Task 73 — Resume by CATEGORY, not template_id. A senior
+    //    who started memoir-ko then toggles to EN and taps "Make my
+    //    book" should resume the same memoir, not start a new one.
     const existing = await db.query(
-      `SELECT id
+      `SELECT id, template_id
          FROM user_books
-        WHERE user_id = $1 AND template_id = $2 AND status = 'in_progress'`,
-      [user.id, templateId]
+        WHERE user_id = $1
+          AND template_category = $2
+          AND status = 'in_progress'`,
+      [user.id, template.category]
     );
     if (existing.rows.length > 0) {
-      return Response.json({ bookId: existing.rows[0].id, resumed: true });
+      return Response.json({
+        bookId:   existing.rows[0].id,
+        resumed:  true,
+        crossLang: existing.rows[0].template_id !== templateId,
+      });
     }
 
     // 3. Build the user-specific structure snapshot.
@@ -112,15 +120,18 @@ export async function POST(request) {
     const finalTitle = (customTitle && customTitle.trim()) || titleFromTemplate;
 
     // 4. Insert user_books row.
+    //    🔥 Task 73 — denormalize template.category onto user_books
+    //    so the partial unique index can dedup at category level.
     const bookRow = await db.query(
       `INSERT INTO user_books
-         (user_id, template_id, title, structure,
+         (user_id, template_id, template_category, title, structure,
           total_questions, current_chapter_id, current_question_id, last_question_id)
-       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $7)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $8)
        RETURNING id`,
       [
         user.id,
         templateId,
+        template.category,
         finalTitle,
         JSON.stringify(structure),
         totalQuestions,
@@ -157,19 +168,32 @@ export async function POST(request) {
       title: finalTitle,
     });
   } catch (e) {
-    // 🔥 Task 71 — partial unique index (idx_user_books_one_in_progress)
-    //   guarantees one in_progress book per (user_id, template_id).
+    // 🔥 Task 73 — partial unique index now lives on
+    //   (user_id, template_category) (idx_user_books_one_per_category).
     //   The resume SELECT above usually catches that case, but a
     //   concurrent double-tap can race past it; if it does, surface a
     //   409 with the existing book id so the client can route there
-    //   instead of throwing a generic 500 at the senior.
-    if (e.code === '23505' && /idx_user_books_one_in_progress/.test(String(e.message))) {
+    //   instead of throwing a generic 500 at the senior. We accept
+    //   either the new or the legacy index name in the error message
+    //   for safety during the rollout window.
+    if (
+      e.code === '23505' &&
+      /idx_user_books_one_(?:in_progress|per_category)/.test(String(e.message))
+    ) {
       try {
+        // Look up by category — that's the dedup unit now. We need
+        // template.category, which lives on the row we tried to
+        // insert; pull it from the template again.
+        const tmplLookup = await createDb().query(
+          `SELECT category FROM book_template_definitions WHERE id = $1`,
+          [templateId]
+        );
+        const cat = tmplLookup.rows[0]?.category;
         const r = await createDb().query(
           `SELECT id FROM user_books
-            WHERE user_id = $1 AND template_id = $2 AND status = 'in_progress'
+            WHERE user_id = $1 AND template_category = $2 AND status = 'in_progress'
             LIMIT 1`,
-          [user.id, templateId]
+          [user.id, cat]
         );
         if (r.rows.length > 0) {
           return Response.json(
