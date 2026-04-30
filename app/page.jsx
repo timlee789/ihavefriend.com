@@ -237,23 +237,38 @@ export default function Home() {
       {/* 🔥 Task 70 — Button order. Book first (resume / make), then
           the two chat modes, then library. */}
 
-      {/* 1. Book CTA (resume or make-new, conditional) */}
-      {(() => {
-        const activeBook = activeBooks[0];
-        if (activeBook) {
+      {/* 🔥 Task 72 — show every active book (capped at 3 to stay
+          within the iPhone-SE viewport budget for the 6-button row).
+          Each card jumps straight to that book; if there are zero
+          active books we fall back to the "Make my book" single
+          button that lands on /book/templates. */}
+      {activeBooks.length === 0 ? (
+        <button
+          className={s.bookCta}
+          onClick={() => router.push('/book/templates')}
+        >
+          <div className={s.ctaIcon}>📚</div>
+          <div className={s.ctaTextWrap}>
+            <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
+            <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
+          </div>
+        </button>
+      ) : (
+        activeBooks.slice(0, 3).map(b => {
           // Task 69 — prefer the template's localized name so the
           // resume label reads "Continue — My Memoir" in EN even on
           // a book that was started under memoir-ko.
           const title =
-            titleOf(activeBook.template_name, lang.toLowerCase()) ||
-            activeBook.title ||
+            titleOf(b.template_name, lang.toLowerCase()) ||
+            b.title ||
             msgs.bookDefaultTitle;
-          const done  = activeBook.completed_questions || 0;
-          const total = activeBook.total_questions || 0;
+          const done  = b.completed_questions || 0;
+          const total = b.total_questions || 0;
           return (
             <button
+              key={b.id}
               className={s.bookCta}
-              onClick={() => router.push(`/book/${activeBook.id}`)}
+              onClick={() => router.push(`/book/${b.id}`)}
             >
               <div className={s.ctaIcon}>📚</div>
               <div className={s.ctaTextWrap}>
@@ -266,20 +281,8 @@ export default function Home() {
               </div>
             </button>
           );
-        }
-        return (
-          <button
-            className={s.bookCta}
-            onClick={() => router.push('/book/select')}
-          >
-            <div className={s.ctaIcon}>📚</div>
-            <div className={s.ctaTextWrap}>
-              <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
-              <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
-            </div>
-          </button>
-        );
-      })()}
+        })
+      )}
 
       {/* 2. Story CTA — direct /chat?mode=story */}
       <button
