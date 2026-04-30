@@ -15,14 +15,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf as i18nTitleOf } from '@/lib/i18nHelper';
+import { BOOK_MSGS, fmt } from '@/lib/bookI18n';
 import s from './page.module.css';
 
 // Module-scoped wrapper so both the main component and the modal
-// sub-components below can call titleOf(v) without each one having to
-// pipe `lang` through props. getUserLang() reads from localStorage on
-// the client; on the server it falls back to 'ko' which is fine because
-// this page is 'use client'.
+// sub-components below can call titleOf(v) / msgs() without each one
+// having to pipe `lang` through props. getUserLang() reads from
+// localStorage on the client; the page is 'use client' so the SSR
+// fallback ('ko') is never visible.
 const titleOf = (v) => i18nTitleOf(v, getUserLang());
+const msgs    = ()  => BOOK_MSGS[getUserLang()] || BOOK_MSGS.ko;
 
 export default function CustomizePage() {
   const router = useRouter();
@@ -105,18 +107,20 @@ export default function CustomizePage() {
     load();
   };
 
-  if (loading) return <div className={s.loading}>불러오는 중…</div>;
+  const m = msgs();
+
+  if (loading) return <div className={s.loading}>{m.loading}</div>;
 
   return (
     <div className={s.container}>
       <header className={s.header}>
-        <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>← 책 홈</button>
+        <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>{m.backToBook}</button>
       </header>
 
-      <h1 className={s.title}>✏️ 책 구조 만들기</h1>
+      <h1 className={s.title}>{m.customizeHeader}</h1>
       <p className={s.intro}>
-        챕터와 질문을 자유롭게 추가, 수정, 삭제할 수 있어요.<br />
-        답변이 있는 질문을 삭제하면 답변은 자유 이야기로 보존돼요.
+        {m.customizeIntro}<br />
+        {m.customizeIntro2}
       </p>
 
       <div className={s.chapterList}>
@@ -131,7 +135,7 @@ export default function CustomizePage() {
                 {ch.is_custom && <span className={s.customBadge}>✏️ Custom</span>}
               </button>
               <div className={s.chapterActions}>
-                <button onClick={() => setEditingCh(ch)} title="수정">✏️</button>
+                <button onClick={() => setEditingCh(ch)} title={m.edit}>✏️</button>
                 <button
                   onClick={() => setConfirmDel({
                     type: 'chapter',
@@ -140,7 +144,7 @@ export default function CustomizePage() {
                     questionCount: (ch.questions || []).length,
                     answeredCount: (ch.questions || []).filter(q => q.response_status && q.response_status !== 'empty').length,
                   })}
-                  title="삭제"
+                  title={m.delete}
                 >🗑️</button>
               </div>
             </div>
@@ -152,7 +156,7 @@ export default function CustomizePage() {
                     <span className={s.qOrder}>{q.order}.</span>
                     <span className={s.qPrompt}>{titleOf(q.prompt)}</span>
                     <div className={s.qActions}>
-                      <button onClick={() => setEditingQ({ ...q, chapterId: ch.id })} title="수정">✏️</button>
+                      <button onClick={() => setEditingQ({ ...q, chapterId: ch.id })} title={m.edit}>✏️</button>
                       <button
                         onClick={() => setConfirmDel({
                           type: 'question',
@@ -160,7 +164,7 @@ export default function CustomizePage() {
                           title: titleOf(q.prompt),
                           fragmentCount: q.fragment_count || 0,
                         })}
-                        title="삭제"
+                        title={m.delete}
                       >🗑️</button>
                     </div>
                   </div>
@@ -169,7 +173,7 @@ export default function CustomizePage() {
                   className={s.addQuestionBtn}
                   onClick={() => setAdding({ type: 'question', chapterId: ch.id })}
                 >
-                  + 질문 추가
+                  {m.addQuestion}
                 </button>
               </div>
             )}
@@ -177,13 +181,13 @@ export default function CustomizePage() {
         ))}
 
         <button className={s.addChapterBtn} onClick={() => setAdding({ type: 'chapter' })}>
-          ⬇️ 챕터 추가
+          {m.addChapter}
         </button>
       </div>
 
       <div className={s.bottomActions}>
         <button className={s.doneBtn} onClick={() => router.push(`/book/${bookId}`)}>
-          ✓ 저장하고 책 홈으로
+          {m.saveAndBack}
         </button>
       </div>
 
@@ -229,17 +233,18 @@ export default function CustomizePage() {
 function ChapterAddModal({ onAdd, onClose }) {
   const [title, setTitle] = useState('');
   const [firstQ, setFirstQ] = useState('');
+  const m = msgs();
   return (
     <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
-        <h3>📖 챕터 추가</h3>
-        <label>챕터 이름 *</label>
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="예: 내 여행 이야기" autoFocus />
-        <label>첫 질문 (선택)</label>
-        <input value={firstQ} onChange={e => setFirstQ(e.target.value)} placeholder="예: 가장 기억에 남는 여행은?" />
+        <h3>{m.addChapterTitle}</h3>
+        <label>{m.chapterNameLabel}</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder={m.chapterNameHolder} autoFocus />
+        <label>{m.firstQuestionOpt}</label>
+        <input value={firstQ} onChange={e => setFirstQ(e.target.value)} placeholder={m.firstQuestionHolder} />
         <div className={s.modalActions}>
-          <button onClick={onClose}>취소</button>
-          <button className={s.primaryBtn} disabled={!title.trim()} onClick={() => onAdd(title, firstQ)}>추가</button>
+          <button onClick={onClose}>{m.cancel}</button>
+          <button className={s.primaryBtn} disabled={!title.trim()} onClick={() => onAdd(title, firstQ)}>{m.add}</button>
         </div>
       </div>
     </div>
@@ -248,15 +253,16 @@ function ChapterAddModal({ onAdd, onClose }) {
 
 function ChapterEditModal({ chapter, onSave, onClose }) {
   const [title, setTitle] = useState(titleOf(chapter.title));
+  const m = msgs();
   return (
     <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
-        <h3>✏️ 챕터 수정</h3>
-        <label>챕터 이름</label>
+        <h3>{m.editChapterTitle}</h3>
+        <label>{m.chapterName}</label>
         <input value={title} onChange={e => setTitle(e.target.value)} autoFocus />
         <div className={s.modalActions}>
-          <button onClick={onClose}>취소</button>
-          <button className={s.primaryBtn} disabled={!title.trim()} onClick={() => onSave(title)}>저장</button>
+          <button onClick={onClose}>{m.cancel}</button>
+          <button className={s.primaryBtn} disabled={!title.trim()} onClick={() => onSave(title)}>{m.save}</button>
         </div>
       </div>
     </div>
@@ -266,17 +272,18 @@ function ChapterEditModal({ chapter, onSave, onClose }) {
 function QuestionAddModal({ onAdd, onClose }) {
   const [prompt, setPrompt] = useState('');
   const [hint,   setHint]   = useState('');
+  const m = msgs();
   return (
     <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
-        <h3>📝 질문 추가</h3>
-        <label>질문 *</label>
-        <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="예: 첫 차에 대한 추억은?" rows={3} autoFocus />
-        <label>힌트 (선택)</label>
-        <input value={hint} onChange={e => setHint(e.target.value)} placeholder="예: 색깔, 어떻게 샀는지" />
+        <h3>{m.addQuestionTitle}</h3>
+        <label>{m.questionLabel}</label>
+        <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={m.questionHolder} rows={3} autoFocus />
+        <label>{m.hintOptional}</label>
+        <input value={hint} onChange={e => setHint(e.target.value)} placeholder={m.hintHolder} />
         <div className={s.modalActions}>
-          <button onClick={onClose}>취소</button>
-          <button className={s.primaryBtn} disabled={!prompt.trim()} onClick={() => onAdd(prompt, hint)}>추가</button>
+          <button onClick={onClose}>{m.cancel}</button>
+          <button className={s.primaryBtn} disabled={!prompt.trim()} onClick={() => onAdd(prompt, hint)}>{m.add}</button>
         </div>
       </div>
     </div>
@@ -286,17 +293,18 @@ function QuestionAddModal({ onAdd, onClose }) {
 function QuestionEditModal({ question, onSave, onClose }) {
   const [prompt, setPrompt] = useState(titleOf(question.prompt));
   const [hint,   setHint]   = useState(titleOf(question.hint));
+  const m = msgs();
   return (
     <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
-        <h3>✏️ 질문 수정</h3>
-        <label>질문</label>
+        <h3>{m.editQuestionTitle}</h3>
+        <label>{m.questionLabelLite}</label>
         <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} autoFocus />
-        <label>힌트</label>
+        <label>{m.hintLabel}</label>
         <input value={hint} onChange={e => setHint(e.target.value)} />
         <div className={s.modalActions}>
-          <button onClick={onClose}>취소</button>
-          <button className={s.primaryBtn} disabled={!prompt.trim()} onClick={() => onSave(prompt, hint)}>저장</button>
+          <button onClick={onClose}>{m.cancel}</button>
+          <button className={s.primaryBtn} disabled={!prompt.trim()} onClick={() => onSave(prompt, hint)}>{m.save}</button>
         </div>
       </div>
     </div>
@@ -305,41 +313,44 @@ function QuestionEditModal({ question, onSave, onClose }) {
 
 function DeleteConfirmModal({ item, onDelete, onClose }) {
   const isChapter = item.type === 'chapter';
+  const m = msgs();
   // Chapters reveal answered count separately; questions just check fragment_count.
   const hasContent = isChapter
     ? (item.answeredCount && item.answeredCount > 0)
     : (item.fragmentCount && item.fragmentCount > 0);
+  const kind   = isChapter ? m.deleteChapter : m.deleteQuestion;
+  const suffix = isChapter ? m.deleteSuffixCh : '';
 
   return (
     <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={s.modal}>
-        <h3>🗑️ {isChapter ? '챕터' : '질문'} 삭제</h3>
+        <h3>{fmt(m.deleteTitle, { kind })}</h3>
         <p className={s.deletePrompt}>
-          <strong>"{item.title}"</strong>{isChapter ? ' 챕터' : ''}을(를) 삭제하시겠어요?
+          {fmt(m.deleteConfirmA, { title: item.title, suffix })}
         </p>
         {hasContent && (
           <div className={s.warningBox}>
             ⚠️ {isChapter
-              ? `이 챕터에 답변된 질문이 ${item.answeredCount}개 있어요.`
-              : `이 질문에 ${item.fragmentCount}개의 답변이 있어요.`}
+              ? fmt(m.deleteHasAnsweredCh, { n: item.answeredCount })
+              : fmt(m.deleteHasFragments,  { n: item.fragmentCount })}
             <br />
-            답변을 어떻게 처리할까요?
+            {m.deleteHowToHandle}
           </div>
         )}
         <div className={s.modalActions}>
-          <button onClick={onClose}>취소</button>
+          <button onClick={onClose}>{m.cancel}</button>
           {hasContent ? (
             <>
-              <button onClick={() => onDelete(true)}>📥 답변 보존하고 삭제</button>
-              <button className={s.dangerBtn} onClick={() => onDelete(false)}>🗑️ 답변과 함께 삭제</button>
+              <button onClick={() => onDelete(true)}>{m.deletePreserve}</button>
+              <button className={s.dangerBtn} onClick={() => onDelete(false)}>{m.deleteWithAnswers}</button>
             </>
           ) : (
-            <button className={s.dangerBtn} onClick={() => onDelete(false)}>삭제</button>
+            <button className={s.dangerBtn} onClick={() => onDelete(false)}>{m.delete}</button>
           )}
         </div>
         {hasContent && (
           <p className={s.preserveNote}>
-            "답변 보존"을 선택하면 답변은 자유 이야기 (My Stories)로 옮겨져요.
+            {m.deletePreserveHint}
           </p>
         )}
       </div>

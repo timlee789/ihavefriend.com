@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
+import { BOOK_MSGS } from '@/lib/bookI18n';
 import s from './page.module.css';
 
 const STATUS_ICON = {
@@ -19,12 +20,14 @@ const STATUS_ICON = {
   complete: '🍂',
   skipped:  '⏭️',
 };
-const STATUS_LABEL = {
-  empty:    '시작 안 함',
-  drafting: '진행 중',
-  complete: '완성',
-  skipped:  '건너뜀',
-};
+function statusLabel(m, status) {
+  return ({
+    empty:    m.statusEmpty,
+    drafting: m.statusDrafting,
+    complete: m.statusComplete,
+    skipped:  m.statusSkipped,
+  })[status] || m.statusEmpty;
+}
 
 export default function ChapterDetailPage() {
   const router = useRouter();
@@ -43,8 +46,10 @@ export default function ChapterDetailPage() {
       .catch(() => setLoading(false));
   }, [bookId, chId, router]);
 
-  if (loading) return <div className={s.loading}>불러오는 중…</div>;
-  if (!data?.chapter) return <div className={s.loading}>챕터를 찾을 수 없어요.</div>;
+  const m = BOOK_MSGS[lang] || BOOK_MSGS.ko;
+
+  if (loading) return <div className={s.loading}>{m.loading}</div>;
+  if (!data?.chapter) return <div className={s.loading}>{m.chapterNotFound}</div>;
 
   const { chapter } = data;
   const completed = chapter.questions.filter(q => q.response_status === 'complete').length;
@@ -54,11 +59,11 @@ export default function ChapterDetailPage() {
   return (
     <div className={s.container}>
       <header className={s.header}>
-        <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>← 책 홈</button>
+        <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>{m.backToBook}</button>
       </header>
 
       <h1 className={s.chapterTitle}>
-        📖 챕터 {chapter.order}: {titleOf(chapter.title, lang)}
+        {m.chapterPrefix} {chapter.order}: {titleOf(chapter.title, lang)}
       </h1>
 
       <div className={s.progressBar}>
@@ -70,7 +75,7 @@ export default function ChapterDetailPage() {
         <p className={s.description}>{titleOf(chapter.description, lang)}</p>
       )}
 
-      <h2 className={s.sectionTitle}>질문 목록</h2>
+      <h2 className={s.sectionTitle}>{m.questionList}</h2>
       <div className={s.questionList}>
         {chapter.questions.map(q => {
           const status = q.response_status || 'empty';
@@ -84,18 +89,20 @@ export default function ChapterDetailPage() {
                 </div>
                 {q.fragment_count > 0 && (
                   <div className={s.questionMeta}>
-                    답변 {q.fragment_count}개 · {STATUS_LABEL[status]}
+                    {lang === 'ko'
+                      ? `${m.answerCount} ${q.fragment_count}${m.answerCountUnit}`
+                      : `${q.fragment_count} ${m.answerCount}`} · {statusLabel(m, status)}
                   </div>
                 )}
                 {q.is_optional && status === 'empty' && (
-                  <div className={s.optionalBadge}>선택</div>
+                  <div className={s.optionalBadge}>{m.optionalBadge}</div>
                 )}
               </div>
               <button
                 className={s.questionBtn}
                 onClick={() => router.push(`/book/${bookId}/question/${q.id}`)}
               >
-                {status === 'complete' ? '📖 보기' : '🎙️ 시작'}
+                {status === 'complete' ? m.seeAnswer : m.startAnswer}
               </button>
             </div>
           );

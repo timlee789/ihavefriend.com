@@ -42,6 +42,8 @@ const HOME_MSGS = {
     companionCtaSub    : '편하게 이야기 나눠요 (기록 안 됨)',
     storyCtaTitle      : '내 이야기 남기기',
     storyCtaSub        : 'Emma가 듣고 기록해드려요',
+    bookCtaTitle       : '내 책 만들기',
+    bookCtaSub         : '내 이야기를 책으로 정리해요',
     myStoriesCtaTitle  : '내 이야기 보기',
     myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
@@ -69,6 +71,8 @@ const HOME_MSGS = {
     companionCtaSub    : 'Casual chat (nothing is kept)',
     storyCtaTitle      : 'Record my story',
     storyCtaSub        : 'Emma will listen and write it down',
+    bookCtaTitle       : 'Make my book',
+    bookCtaSub         : 'Turn your stories into a book',
     myStoriesCtaTitle  : 'View my stories',
     myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
@@ -96,6 +100,8 @@ const HOME_MSGS = {
     companionCtaSub    : 'Charla casual (no se guarda)',
     storyCtaTitle      : 'Grabar mi historia',
     storyCtaSub        : 'Emma escuchará y la registrará',
+    bookCtaTitle       : 'Hacer mi libro',
+    bookCtaSub         : 'Convierte tus historias en un libro',
     myStoriesCtaTitle  : 'Ver mis historias',
     myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
@@ -248,9 +254,12 @@ export default function Home() {
           into two so users can pick companion vs story up front. /chat
           auto-skips its mode-selection screen when ?mode= is present.
           Order: story (primary recording intent) → companion (light chat). */}
+      {/* 🆕 Task 67 — story button now goes straight to /chat?mode=story
+          (the /story/select branch page is bypassed for the home flow,
+          but the route still exists for any external links). */}
       <button
         className={s.storyCta}
-        onClick={() => router.push('/story/select')}
+        onClick={() => router.push('/chat?mode=story')}
       >
         <div className={s.ctaIcon}>🎙️</div>
         <div className={s.ctaTextWrap}>
@@ -269,6 +278,20 @@ export default function Home() {
           <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
         </div>
         <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
+      </button>
+
+      {/* 🆕 Task 67 — Book builder entry point. Same warm orange family
+          as storyCta because it's the same creative-action group, just
+          longer-form. */}
+      <button
+        className={s.bookCta}
+        onClick={() => router.push('/book/select')}
+      >
+        <div className={s.ctaIcon}>📚</div>
+        <div className={s.ctaTextWrap}>
+          <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
+          <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
+        </div>
       </button>
 
       {/* 🆕 Task 55 #4: dedicated "내 이야기 보기" button replaces the

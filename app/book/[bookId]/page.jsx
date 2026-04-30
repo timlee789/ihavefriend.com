@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
+import { BOOK_MSGS } from '@/lib/bookI18n';
 import s from './page.module.css';
 
 // 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, real generate at
@@ -18,7 +19,7 @@ import s from './page.module.css';
 //   either opens it in a new tab (preview) or saves it as a download
 //   (generate). Errors are surfaced inline because the senior never
 //   sees a Vercel toast — they need to know if the click did anything.
-async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, setErr }) {
+async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, setErr, errFallback }) {
   setBusy(true);
   setErr('');
   try {
@@ -28,7 +29,7 @@ async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, s
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.message || j.error || '실패했어요. 잠시 후 다시 시도해 주세요.');
+      setErr(j.message || j.error || (errFallback?.retry || 'Something went wrong. Please try again.'));
       return;
     }
     const blob = await res.blob();
@@ -46,7 +47,7 @@ async function pdfPostAndOpen({ url, token, asDownload, downloadName, setBusy, s
     // Free the blob URL after a beat — gives the new tab time to load.
     setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
   } catch (e) {
-    setErr(e?.message || '실패했어요.');
+    setErr(e?.message || (errFallback?.generic || 'Something went wrong.'));
   } finally {
     setBusy(false);
   }
@@ -73,28 +74,31 @@ export default function BookOverviewPage() {
       .catch(() => setLoading(false));
   }, [bookId, router]);
 
-  if (loading) return <div className={s.loading}>불러오는 중…</div>;
-  if (!data?.book) return <div className={s.loading}>책을 찾을 수 없어요.</div>;
+  const m = BOOK_MSGS[lang] || BOOK_MSGS.ko;
+
+  if (loading) return <div className={s.loading}>{m.loading}</div>;
+  if (!data?.book) return <div className={s.loading}>{m.bookNotFound}</div>;
 
   const { book, suggested_next, chapters } = data;
+  const errFallback = { retry: m.failedRetry, generic: m.failedGeneric };
 
   return (
     <div className={s.container}>
       <header className={s.header}>
-        <button className={s.backBtn} onClick={() => router.push('/book/select')}>← 책 목록</button>
+        <button className={s.backBtn} onClick={() => router.push('/book/select')}>{m.backToList}</button>
         <h1 className={s.title}>📚 {book.title}</h1>
         <button
           className={s.customizeBtn}
           onClick={() => router.push(`/book/${bookId}/customize`)}
-          title="챕터/질문 추가·수정·삭제"
+          title={m.customizeTitle}
         >
-          ✏️ 구조 수정
+          {m.customizeBtn}
         </button>
       </header>
 
       <div className={s.progressCard}>
         <div className={s.progressLabel}>
-          {book.completion_percent}% 완성
+          {book.completion_percent}% {m.completed}
           <span className={s.progressFraction}>
             {book.completed_questions} / {book.total_questions}
           </span>
@@ -103,27 +107,19 @@ export default function BookOverviewPage() {
           <div className={s.progressFill} style={{ width: `${book.completion_percent}%` }} />
         </div>
         {book.book_eligible && (
-          <div className={s.previewHint}>🎉 책 미리보기를 만들 수 있어요!</div>
+          <div className={s.previewHint}>{m.bookEligible}</div>
         )}
       </div>
 
-      {/* 🆕 Stage 7 — milestone encouragement cards. Senior gets a
-          warm nudge at 50% and 80% so the long climb to a finished
-          book feels less open-ended. */}
+      {/* 🆕 Stage 7 — milestone encouragement cards. Task 67 i18n. */}
       {book.completion_percent >= 50 && book.completion_percent < 80 && (
-        <div className={s.milestoneCard}>
-          🎉 절반 넘으셨어요! 이제 책 미리보기를 만들 수 있어요.
-        </div>
+        <div className={s.milestoneCard}>{m.milestone50}</div>
       )}
       {book.completion_percent >= 80 && book.completion_percent < 100 && (
-        <div className={s.milestoneCard}>
-          ✨ 거의 다 오셨어요! 책 만들기 준비가 됐어요.
-        </div>
+        <div className={s.milestoneCard}>{m.milestone80}</div>
       )}
       {book.completion_percent >= 100 && (
-        <div className={s.milestoneCard}>
-          🏆 모든 질문에 답하셨어요! 정말 수고하셨어요.
-        </div>
+        <div className={s.milestoneCard}>{m.milestone100}</div>
       )}
 
       {/* 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, full
@@ -141,10 +137,11 @@ export default function BookOverviewPage() {
               asDownload: false,
               setBusy: (b) => setPdfBusy(b ? 'preview' : null),
               setErr: setPdfError,
+              errFallback,
             })}
           >
-            {pdfBusy === 'preview' ? '미리보기 만드는 중…' :
-              book.completion_percent < 50 ? '📄 미리보기 (간단 버전)' : '📄 미리보기'}
+            {pdfBusy === 'preview' ? m.previewing :
+              book.completion_percent < 50 ? m.previewSimpleBtn : m.previewBtn}
           </button>
 
           {book.completion_percent >= 50 && (
@@ -152,7 +149,7 @@ export default function BookOverviewPage() {
               className={s.generateBtn}
               disabled={!!pdfBusy}
               onClick={async () => {
-                if (!confirm('책을 만드시겠어요? 1~2분 정도 걸려요.')) return;
+                if (!confirm(m.confirmGenerate)) return;
                 await pdfPostAndOpen({
                   url: `/api/book/${bookId}/generate`,
                   token: localStorage.getItem('token'),
@@ -160,10 +157,11 @@ export default function BookOverviewPage() {
                   downloadName: `${book.title || 'book'}.pdf`,
                   setBusy: (b) => setPdfBusy(b ? 'generate' : null),
                   setErr: setPdfError,
+                  errFallback,
                 });
               }}
             >
-              {pdfBusy === 'generate' ? '책 만드는 중…' : '📚 책 만들기 (정식)'}
+              {pdfBusy === 'generate' ? m.generating : m.generateBtn}
             </button>
           )}
         </div>
@@ -172,7 +170,7 @@ export default function BookOverviewPage() {
 
       {suggested_next && (
         <div className={s.nextCard}>
-          <div className={s.nextLabel}>다음 질문</div>
+          <div className={s.nextLabel}>{m.nextQuestion}</div>
           <div className={s.nextChapter}>📖 {titleOf(suggested_next.chapter_title, lang)}</div>
           <div className={s.nextPrompt}>{titleOf(suggested_next.prompt, lang)}</div>
           {suggested_next.hint && (
@@ -182,12 +180,12 @@ export default function BookOverviewPage() {
             className={s.nextBtn}
             onClick={() => router.push(`/book/${bookId}/question/${suggested_next.question_id}`)}
           >
-            🎙️ 이 이야기 시작하기 →
+            {m.startThisStory}
           </button>
         </div>
       )}
 
-      <h2 className={s.sectionTitle}>챕터별 진행 상황</h2>
+      <h2 className={s.sectionTitle}>{m.chapterProgress}</h2>
       <div className={s.chapterList}>
         {chapters.map(ch => (
           <button

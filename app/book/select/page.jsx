@@ -12,6 +12,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
+import { BOOK_MSGS } from '@/lib/bookI18n';
 import s from './page.module.css';
 
 export default function BookSelectPage() {
@@ -58,25 +59,27 @@ export default function BookSelectPage() {
     setStarting(null);
   }
 
-  if (loading) return <div className={s.loading}>불러오는 중…</div>;
+  const m = BOOK_MSGS[lang] || BOOK_MSGS.ko;
+
+  if (loading) return <div className={s.loading}>{m.loading}</div>;
 
   return (
     <div className={s.container}>
       <header className={s.header}>
-        <button className={s.backBtn} onClick={() => router.push('/')}>← 홈</button>
-        <h1 className={s.title}>📚 책 만들기</h1>
+        <button className={s.backBtn} onClick={() => router.push('/')}>{m.backHome}</button>
+        <h1 className={s.title}>{m.selectTitle}</h1>
       </header>
 
       {myBooks.length > 0 && (
         <section className={s.section}>
-          <h2 className={s.sectionTitle}>진행 중인 책</h2>
+          <h2 className={s.sectionTitle}>{m.inProgress}</h2>
           {myBooks.map(b => (
             <button key={b.id} className={s.bookCard} onClick={() => router.push(`/book/${b.id}`)}>
               <div className={s.bookIcon}>📖</div>
               <div className={s.bookInfo}>
                 <div className={s.bookTitle}>{b.title}</div>
                 <div className={s.bookProgress}>
-                  진행: {b.completed_questions || 0} / {b.total_questions || 0}
+                  {m.progressLabel}: {b.completed_questions || 0} / {b.total_questions || 0}
                 </div>
               </div>
               <div className={s.bookArrow}>→</div>
@@ -87,7 +90,7 @@ export default function BookSelectPage() {
 
       <section className={s.section}>
         <h2 className={s.sectionTitle}>
-          {myBooks.length > 0 ? '새 책 만들기' : '어떤 책을 만들고 싶으세요?'}
+          {myBooks.length > 0 ? m.newBook : m.pickPrompt}
         </h2>
         {templates.map(t => {
           const name = titleOf(t.name, lang) || t.id;
@@ -108,7 +111,7 @@ export default function BookSelectPage() {
                 <div className={s.templateTitle}>{name}</div>
                 {desc && <div className={s.templateDesc}>{desc}</div>}
                 <div className={s.templateMeta}>
-                  {t.estimated_chapters}챕터 · {t.estimated_questions}질문 · 약 {t.estimated_pages}페이지
+                  {t.estimated_chapters} {m.metaChapters} · {t.estimated_questions} {m.metaQuestions} · {m.metaAbout} {t.estimated_pages} {m.metaPages}
                 </div>
               </div>
               {starting === t.id && <div className={s.spinner}>…</div>}

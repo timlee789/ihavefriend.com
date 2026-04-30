@@ -9,6 +9,7 @@ import { detectBurst } from '@/lib/transcriptNoise';
 import { filterEmmaResponse } from '@/lib/emmaResponseFilter';
 import { createWakeLockGuard } from '@/lib/wakelockFallback';
 import QuotaBlockedModal from '@/components/QuotaBlockedModal';
+import { BOOK_MSGS } from '@/lib/bookI18n';
 
 // ── Short, varied opening prompts (Task 51 #2 → revised in Task 52 #1) ──
 // Tim's first 4-turn test showed Emma was opening with a QUESTION
@@ -2565,33 +2566,33 @@ export default function EmmaChat({ initialMode }) {
           >
             {isDay ? '🌙' : '☀️'}
           </button>
-          {/* language cycle: EN → KO → ES → EN — disabled while connected */}
-          <button
-            className={`${styles.navLangBtn} ${isDay ? styles.navLangBtnDay : styles.navLangBtnNight}`}
-            onClick={cycleLang}
-            disabled={isConnected}
-            title={isConnected ? 'End conversation to change language' : 'EN → KO → ES'}
-            aria-label="언어 변경"
-          >
-            {lang}
-          </button>
+          {/* 🆕 Task 67 — language toggle removed from this nav.
+              The single source of truth is the home page's lang pill;
+              every other page reads localStorage.lang via getUserLang(). */}
         </div>
       </header>
 
       {/* 🆕 Task 60 (Stage 3) — book progress strip. Compact horizontal
           row above the chat area when /chat?mode=book is active. Tells
           the senior at a glance which question they are on. */}
-      {isBookMode && bookContext && (
-        <div className={styles.bookContextBar}>
-          <span className={styles.bookContextChapter}>
-            📖 {bookContext.chapterOrder ? `챕터 ${bookContext.chapterOrder}: ` : ''}
-            {bookContext.chapterTitle}
-          </span>
-          <span className={styles.bookContextProgress}>
-            질문 {bookContext.questionOrder ?? '?'}
-          </span>
-        </div>
-      )}
+      {isBookMode && bookContext && (() => {
+        // 🆕 Task 67 — i18n the chapter/question prefix in the book
+        // progress strip. lang here is 'KO'/'EN'/'ES'; BOOK_MSGS keys
+        // are lowercase.
+        const bm = BOOK_MSGS[String(lang).toLowerCase()] || BOOK_MSGS.ko;
+        const chPrefix = bm.bookProgressPrefix.replace('📖 ', '');
+        return (
+          <div className={styles.bookContextBar}>
+            <span className={styles.bookContextChapter}>
+              📖 {bookContext.chapterOrder ? `${chPrefix} ${bookContext.chapterOrder}: ` : ''}
+              {bookContext.chapterTitle}
+            </span>
+            <span className={styles.bookContextProgress}>
+              {bm.questionPrefix} {bookContext.questionOrder ?? '?'}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>

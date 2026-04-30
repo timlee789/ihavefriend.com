@@ -16,6 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
+import { BOOK_MSGS } from '@/lib/bookI18n';
 import s from './page.module.css';
 
 export default function QuestionDetailPage() {
@@ -142,7 +143,8 @@ export default function QuestionDetailPage() {
   }
 
   async function removeImport(fragmentId) {
-    if (!confirm('이 이야기를 책에서 제외할까요? (자유 이야기로는 그대로 남아 있어요.)')) return;
+    const mLocal = BOOK_MSGS[lang] || BOOK_MSGS.ko;
+    if (!confirm(mLocal.confirmCancelImport)) return;
     const token = localStorage.getItem('token');
     try {
       await fetch(`/api/book/${bookId}/question/${qId}/import?fragmentId=${fragmentId}`, {
@@ -153,8 +155,11 @@ export default function QuestionDetailPage() {
     } catch {}
   }
 
-  if (loading) return <div className={s.loading}>불러오는 중…</div>;
-  if (!data?.question) return <div className={s.loading}>질문을 찾을 수 없어요.</div>;
+  const m = BOOK_MSGS[lang] || BOOK_MSGS.ko;
+  const dateLocale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'ko-KR';
+
+  if (loading) return <div className={s.loading}>{m.loading}</div>;
+  if (!data?.question) return <div className={s.loading}>{m.questionNotFound}</div>;
 
   const { question, chapter, response, navigation } = data;
   const promptText   = titleOf(question.prompt, lang);
@@ -170,31 +175,30 @@ export default function QuestionDetailPage() {
           className={s.backBtn}
           onClick={() => router.push(`/book/${bookId}/chapter/${chapter.id}`)}
         >
-          ← 챕터 {chapter.order}
+          {m.backToChapter} {chapter.order}
         </button>
       </header>
 
-      <div className={s.breadcrumb}>📖 챕터 {chapter.order}: {chapterText}</div>
-      <div className={s.questionNum}>질문 {question.order}</div>
+      <div className={s.breadcrumb}>{m.chapterPrefix} {chapter.order}: {chapterText}</div>
+      <div className={s.questionNum}>{m.questionPrefix} {question.order}</div>
 
       <div className={s.promptBox}>
-        {/* 🆕 Stage 7 — read the prompt aloud for senior eyes. Top-right
-            so it doesn't push the prompt down on narrow screens. */}
+        {/* 🆕 Stage 7 — read the prompt aloud for senior eyes. */}
         <button
           type="button"
           className={s.speakBtn}
           onClick={speakPrompt}
-          title="질문 듣기"
-          aria-label="질문 음성으로 듣기"
+          title={m.speakHint}
+          aria-label={m.speakAria}
         >
           🔊
         </button>
         <div className={s.prompt}>{promptText}</div>
         {hintText && (
-          <div className={s.hint}>💡 떠올려보면 좋은 것: {hintText}</div>
+          <div className={s.hint}>{m.hintPrefix} {hintText}</div>
         )}
         {question.estimated_minutes && (
-          <div className={s.meta}>📝 권장 시간: 약 {question.estimated_minutes}분</div>
+          <div className={s.meta}>{m.minutesLabel} {question.estimated_minutes} {m.minutesUnit}</div>
         )}
       </div>
 
@@ -206,10 +210,10 @@ export default function QuestionDetailPage() {
           response.selected_fragment_id (or selected_imported_id). */}
       {response.status === 'complete' && directList.length === 1 && (
         <div className={s.existingResponses}>
-          <div className={s.existingLabel}>📝 이전 답변</div>
+          <div className={s.existingLabel}>{m.previousAnswers}</div>
           {directList.map(f => (
             <div key={f.id} className={s.fragmentCard}>
-              <div className={s.fragmentTitle}>{f.title || '답변'}</div>
+              <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
               <div className={s.fragmentPreview}>
                 {(f.content || '').substring(0, 150)}
                 {(f.content || '').length > 150 ? '…' : ''}
@@ -220,9 +224,7 @@ export default function QuestionDetailPage() {
       )}
       {directList.length > 1 && (
         <div className={s.multipleResponses}>
-          <div className={s.multipleLabel}>
-            📝 답변이 여러 개 있어요. 책에 어떤 것을 사용할까요?
-          </div>
+          <div className={s.multipleLabel}>{m.multipleAnswers}</div>
           {directList.map((f, i) => {
             const isSelected = response.selected_fragment_id === f.id;
             return (
@@ -235,7 +237,7 @@ export default function QuestionDetailPage() {
                 <span className={s.fragmentRadio}>{isSelected ? '🔘' : '⚪'}</span>
                 <span className={s.fragmentBody}>
                   <span className={s.fragmentDate}>
-                    답변 {i + 1} · {f.created_at ? new Date(f.created_at).toLocaleDateString('ko-KR') : ''}
+                    {m.answerNum} {i + 1} · {f.created_at ? new Date(f.created_at).toLocaleDateString(dateLocale) : ''}
                   </span>
                   <span className={s.fragmentText}>
                     {(f.content || '').substring(0, 200)}
@@ -251,10 +253,10 @@ export default function QuestionDetailPage() {
       {/* 🆕 Stage 5 — imported free-form fragments */}
       {importedList.length > 0 && (
         <div className={s.importedSection}>
-          <div className={s.importedLabel}>📥 가져온 이야기</div>
+          <div className={s.importedLabel}>{m.importedLabel}</div>
           {importedList.map(f => (
             <div key={f.id} className={`${s.fragmentCard} ${s.importedCard}`}>
-              <div className={s.fragmentTitle}>{f.title || '답변'}</div>
+              <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
               <div className={s.fragmentPreview}>
                 {(f.content || '').substring(0, 150)}
                 {(f.content || '').length > 150 ? '…' : ''}
@@ -263,7 +265,7 @@ export default function QuestionDetailPage() {
                 className={s.removeImportBtn}
                 onClick={() => removeImport(f.id)}
               >
-                🗑️ 가져오기 취소
+                {m.cancelImport}
               </button>
             </div>
           ))}
@@ -278,7 +280,7 @@ export default function QuestionDetailPage() {
           first one. */}
       {response.status === 'complete' && (
         <div className={s.completedSection}>
-          <div className={s.completedLabel}>✨ 답변이 저장됐어요!</div>
+          <div className={s.completedLabel}>{m.saved}</div>
           {navigation.next_question_id ? (
             <button
               className={s.nextBigBtn}
@@ -286,16 +288,16 @@ export default function QuestionDetailPage() {
                 router.push(`/book/${bookId}/question/${navigation.next_question_id}`)
               }
             >
-              🎙️ 다음 질문 →
+              {m.nextQuestionBig}
             </button>
           ) : (
-            <div className={s.completedHint}>마지막 질문까지 다 답하셨어요!</div>
+            <div className={s.completedHint}>{m.lastQuestionDone}</div>
           )}
           <button
             className={s.bookHomeBtn}
             onClick={() => router.push(`/book/${bookId}`)}
           >
-            🏠 책 홈으로
+            {m.backToBookHome}
           </button>
         </div>
       )}
@@ -305,12 +307,12 @@ export default function QuestionDetailPage() {
           <button
             className={s.redoBtn}
             onClick={() => {
-              if (confirm('이전 답변은 그대로 저장되고, 새 답변이 추가돼요. 책 만들 때 둘 중 선택할 수 있어요. 계속할까요?')) {
+              if (confirm(m.confirmRedo)) {
                 router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`);
               }
             }}
           >
-            ✏️ 다시 답변하기
+            {m.redoAnswer}
           </button>
         ) : (
           <button
@@ -319,25 +321,25 @@ export default function QuestionDetailPage() {
               router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`)
             }
           >
-            🎙️ 답변 시작하기 →
+            {m.startAnswerBig}
           </button>
         )}
 
         {/* 🆕 Stage 5 — open the importer */}
         <button className={s.importBtn} onClick={openImporter}>
-          📥 기존 이야기 가져오기
+          {m.importExisting}
         </button>
 
         <div className={s.secondaryActions}>
           {question.is_optional && response.status !== 'complete' && (
-            <button className={s.skipBtn} onClick={skip}>⏭️ 건너뛰기</button>
+            <button className={s.skipBtn} onClick={skip}>{m.skip}</button>
           )}
           {navigation.next_question_id && response.status !== 'complete' && (
             <button
               className={s.skipBtn}
               onClick={() => router.push(`/book/${bookId}/question/${navigation.next_question_id}`)}
             >
-              💭 다음 질문 보기
+              {m.seeNext}
             </button>
           )}
         </div>
@@ -347,24 +349,24 @@ export default function QuestionDetailPage() {
       {importerOpen && (
         <div className={s.modalBackdrop} onClick={e => e.target === e.currentTarget && setImporterOpen(false)}>
           <div className={s.modal}>
-            <h3>📥 가져올 이야기 선택</h3>
+            <h3>{m.pickImport}</h3>
             <p className={s.modalIntro}>
-              "내 이야기 남기기"에서 한 이야기 중 이 질문에 사용할 수 있는 것을 보여드려요.
-              <br />가져와도 자유 이야기 (My Stories)에는 그대로 남아 있어요.
+              {m.importerHelp}
+              <br />{m.importerHelp2}
             </p>
 
             {importError && <div className={s.importError}>⚠️ {importError}</div>}
 
             {loadingSuggestions ? (
-              <div className={s.modalLoading}>관련 이야기 찾는 중…</div>
+              <div className={s.modalLoading}>{m.findingRelated}</div>
             ) : suggestions.length === 0 ? (
               <div className={s.modalEmpty}>
-                가져올 수 있는 자유 이야기가 없어요.<br />
+                {m.noFreeStories}<br />
                 <button
                   className={s.linkBtn}
                   onClick={() => router.push('/chat?mode=story')}
                 >
-                  새 이야기 시작하기 →
+                  {m.startNewStory}
                 </button>
               </div>
             ) : (
@@ -372,11 +374,11 @@ export default function QuestionDetailPage() {
                 {suggestions.map(f => (
                   <div key={f.id} className={s.suggestionCard}>
                     <div className={s.suggestionTitle}>
-                      {f.title || '제목 없음'}
-                      {f.relevance >= 7 && <span className={s.relevanceBadge}>⭐ 관련 높음</span>}
+                      {f.title || m.untitled}
+                      {f.relevance >= 7 && <span className={s.relevanceBadge}>{m.relevanceHigh}</span>}
                     </div>
                     <div className={s.suggestionDate}>
-                      {f.created_at ? new Date(f.created_at).toLocaleDateString('ko-KR') : ''}
+                      {f.created_at ? new Date(f.created_at).toLocaleDateString(dateLocale) : ''}
                     </div>
                     <div className={s.suggestionPreview}>{f.preview}</div>
                     <button
@@ -384,14 +386,14 @@ export default function QuestionDetailPage() {
                       onClick={() => importFragment(f.id)}
                       disabled={importing === f.id}
                     >
-                      {importing === f.id ? '가져오는 중…' : '✓ 이 이야기 사용'}
+                      {importing === f.id ? m.importing : m.useThisStory}
                     </button>
                   </div>
                 ))}
               </div>
             )}
 
-            <button className={s.modalClose} onClick={() => setImporterOpen(false)}>닫기</button>
+            <button className={s.modalClose} onClick={() => setImporterOpen(false)}>{m.close}</button>
           </div>
         </div>
       )}

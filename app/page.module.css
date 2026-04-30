@@ -300,7 +300,11 @@
 
 /* Story CTA — soft orange tint over a neutral charcoal. Same calm
    treatment as the companion CTA so the three buttons read as a set. */
-.storyCta {
+/* Story / Book CTAs — same warm-orange family because both are
+   creative-action buttons. Task 67 added .bookCta and folded the
+   ruleset into a shared list to keep them visually aligned. */
+.storyCta,
+.bookCta {
   display: flex;
   align-items: center;
   width: 100%;
@@ -318,11 +322,13 @@
   font-family: inherit;
 }
 
-.storyCta:active {
+.storyCta:active,
+.bookCta:active {
   transform: scale(0.98);
 }
 
-.storyCta:hover {
+.storyCta:hover,
+.bookCta:hover {
   background-color: #313131;
   border-color: rgba(234, 88, 12, 0.45);
 }
