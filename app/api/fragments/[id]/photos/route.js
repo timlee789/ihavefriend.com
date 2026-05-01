@@ -103,6 +103,23 @@ export async function POST(request, { params }) {
     await db.query(`DELETE FROM fragment_photos WHERE id = $1`, [oldRow.id]);
   }
 
+  // Pre-flight: BLOB_READ_WRITE_TOKEN must be set, otherwise put()
+  // throws a confusing generic error. Catch this up front with a
+  // message the operator can act on.
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error('[photos POST] BLOB_READ_WRITE_TOKEN env var is missing');
+    return NextResponse.json(
+      {
+        error: 'photo storage not configured',
+        detail:
+          'BLOB_READ_WRITE_TOKEN is missing. In the Vercel dashboard, ' +
+          'create a Blob store (Storage → Create → Blob) and connect ' +
+          'it to this project; the token is added automatically.',
+      },
+      { status: 500 }
+    );
+  }
+
   // Upload to Vercel Blob.
   let blob;
   const safeName = (file.name || `photo-${displayOrder}.jpg`).replace(/[^\w.-]+/g, '_');
@@ -113,8 +130,17 @@ export async function POST(request, { params }) {
       addRandomSuffix: true,
     });
   } catch (e) {
-    console.error('[photos POST] blob put failed:', e?.message);
-    return NextResponse.json({ error: 'blob upload failed' }, { status: 500 });
+    // Surface the real error message — generic "blob upload failed"
+    // hid the actual cause (usually a missing/invalid token or a
+    // size/region issue at the Vercel edge).
+    console.error('[photos POST] blob put failed:', e);
+    return NextResponse.json(
+      {
+        error: 'blob upload failed',
+        detail: e?.message || String(e),
+      },
+      { status: 500 }
+    );
   }
 
   // Insert the row. On failure, roll back the blob.

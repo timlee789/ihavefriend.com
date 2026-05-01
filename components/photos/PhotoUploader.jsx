@@ -194,7 +194,13 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           console.error('[PhotoUploader] POST failed:', res.status, data);
-          throw new Error(data?.error || `Upload failed (${res.status})`);
+          // Tim test: when BLOB_READ_WRITE_TOKEN is missing the server
+          // returns { error, detail }; show both so the operator sees
+          // the actual setup hint instead of "Upload failed".
+          const msg = data?.detail
+            ? `${data.error || 'Upload failed'}: ${data.detail}`
+            : (data?.error || `Upload failed (${res.status})`);
+          throw new Error(msg);
         }
         // 🔥 Tim re-report — the second GET (loadPhotos) was sometimes
         //   returning a stale list (Vercel/CDN caching of an
