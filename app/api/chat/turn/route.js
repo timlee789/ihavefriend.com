@@ -35,7 +35,17 @@ export async function POST(request) {
     if (quota.blocked) return Response.json(quota.response, { status: 402 });
   }
 
-  console.log(`[Turn] t=${t0} turn=${turnNumber} session=${sessionId} user=${user.id} msgLen=${userMessage?.length ?? 0}`);
+  // 🔥 Task 79 diagnostic — print every length the server sees on
+  //   this turn. If the EmmaChat console shows a long userMsg but the
+  //   server prints a short userMessage, the request body is being
+  //   trimmed in flight (gzip / network / proxy). If both ends agree,
+  //   the trim is happening downstream in fragment generation.
+  console.log(
+    `[Turn] t=${t0} turn=${turnNumber} session=${sessionId} user=${user.id} ` +
+    `msgLen=${userMessage?.length ?? 0} ` +
+    `userTextLen=${userText?.length ?? 0} aiTextLen=${aiText?.length ?? 0} ` +
+    `rawAiTextLen=${rawAiText?.length ?? 0}`
+  );
 
   // ─── Return immediately — ALL heavy work is fire-and-forget ───────────────
   // Background IIFE: emotion analysis + fragment detection + transcript save.

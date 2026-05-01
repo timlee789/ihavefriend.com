@@ -17,6 +17,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import { BOOK_MSGS } from '@/lib/bookI18n';
+import FragmentModal from '@/components/fragments/FragmentModal';
 import s from './page.module.css';
 
 export default function QuestionDetailPage() {
@@ -33,6 +34,8 @@ export default function QuestionDetailPage() {
   const [loadingSuggestions,  setLoadingSuggestions]  = useState(false);
   const [importing,           setImporting]           = useState(null); // fragmentId mid-flight
   const [importError,         setImportError]         = useState('');
+  // 🔥 Task 79 — fragment selected for full-detail modal
+  const [openFragment,        setOpenFragment]        = useState(null);
 
   const loadDetail = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -212,13 +215,27 @@ export default function QuestionDetailPage() {
         <div className={s.existingResponses}>
           <div className={s.existingLabel}>{m.previousAnswers}</div>
           {directList.map(f => (
-            <div key={f.id} className={s.fragmentCard}>
+            // 🔥 Task 79 — entire card is clickable; opens the
+            //   FragmentModal with the full body + photo uploader.
+            <button
+              key={f.id}
+              type="button"
+              className={s.fragmentCard}
+              onClick={() => setOpenFragment(f)}
+            >
               <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
               <div className={s.fragmentPreview}>
                 {(f.content || '').substring(0, 150)}
                 {(f.content || '').length > 150 ? '…' : ''}
               </div>
-            </div>
+              {Array.isArray(f.photos) && f.photos.length > 0 && (
+                <div className={s.fragmentPhotos}>
+                  {f.photos.slice(0, 2).map(p => (
+                    <img key={p.id} src={p.blob_url} alt="" className={s.fragmentThumb} />
+                  ))}
+                </div>
+              )}
+            </button>
           ))}
         </div>
       )}
@@ -256,14 +273,31 @@ export default function QuestionDetailPage() {
           <div className={s.importedLabel}>{m.importedLabel}</div>
           {importedList.map(f => (
             <div key={f.id} className={`${s.fragmentCard} ${s.importedCard}`}>
-              <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
-              <div className={s.fragmentPreview}>
-                {(f.content || '').substring(0, 150)}
-                {(f.content || '').length > 150 ? '…' : ''}
+              {/* 🔥 Task 79 — body + thumbnails are click-to-detail.
+                  The "remove import" button stops propagation so it
+                  doesn't accidentally pop the modal. */}
+              <div
+                className={s.fragmentClickable}
+                onClick={() => setOpenFragment(f)}
+                role="button"
+                tabIndex={0}
+              >
+                <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
+                <div className={s.fragmentPreview}>
+                  {(f.content || '').substring(0, 150)}
+                  {(f.content || '').length > 150 ? '…' : ''}
+                </div>
+                {Array.isArray(f.photos) && f.photos.length > 0 && (
+                  <div className={s.fragmentPhotos}>
+                    {f.photos.slice(0, 2).map(p => (
+                      <img key={p.id} src={p.blob_url} alt="" className={s.fragmentThumb} />
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 className={s.removeImportBtn}
-                onClick={() => removeImport(f.id)}
+                onClick={(e) => { e.stopPropagation(); removeImport(f.id); }}
               >
                 {m.cancelImport}
               </button>
@@ -396,6 +430,24 @@ export default function QuestionDetailPage() {
             <button className={s.modalClose} onClick={() => setImporterOpen(false)}>{m.close}</button>
           </div>
         </div>
+      )}
+
+      {/* 🔥 Task 79 — full-detail modal opened by tapping any answer
+          card. Uses the new shared FragmentModal at
+          components/fragments/FragmentModal.jsx; same shape as the
+          /my-stories modal, just a leaner subset (view + photos +
+          continue) appropriate for a book answer. */}
+      {openFragment && (
+        <FragmentModal
+          fragment={openFragment}
+          lang={lang}
+          onClose={() => setOpenFragment(null)}
+          onPhotosChanged={() => loadDetail()}
+          onContinue={() => {
+            const url = `/chat?mode=story&continueFragmentId=${encodeURIComponent(openFragment.id)}`;
+            router.push(url);
+          }}
+        />
       )}
     </div>
   );

@@ -82,9 +82,29 @@ export async function GET(request, { params }) {
     let directFragments   = [];
     let importedFragments = [];
     if (allIds.length > 0) {
+      // 🔥 Task 79 — pull each fragment's photos alongside the body
+      //   so the new FragmentModal on the question page can render
+      //   thumbnails / open the uploader without a second round-trip.
       const fragRes = await db.query(
-        `SELECT id, title, content, created_at FROM story_fragments
-          WHERE id = ANY($1::uuid[]) ORDER BY created_at DESC`,
+        `SELECT
+           f.id, f.title, f.subtitle, f.content, f.created_at,
+           COALESCE((
+             SELECT json_agg(
+                      json_build_object(
+                        'id',            p.id,
+                        'blob_url',      p.blob_url,
+                        'width',         p.width,
+                        'height',        p.height,
+                        'display_order', p.display_order,
+                        'caption',       p.caption
+                      ) ORDER BY p.display_order
+                    )
+              FROM fragment_photos p
+             WHERE p.fragment_id = f.id
+           ), '[]'::json) AS photos
+         FROM story_fragments f
+        WHERE f.id = ANY($1::uuid[])
+        ORDER BY f.created_at DESC`,
         [allIds]
       );
       const directSet = new Set(directIds.map(x => String(x)));

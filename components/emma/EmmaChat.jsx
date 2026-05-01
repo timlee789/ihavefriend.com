@@ -1901,6 +1901,17 @@ export default function EmmaChat({ initialMode }) {
         const t = tokenRef.current;
         const sid = sessionIdRef.current;
         if (sid && t) {
+          // 🔥 Task 79 diagnostic — print every length we OBSERVE on
+          //   the client right before posting. Pair with the server-
+          //   side [Turn] log: if these match, the wire is fine; if
+          //   client is long and server is short, body is being
+          //   trimmed in flight.
+          console.log(
+            `[Turn][client] turn=${turnNum} ` +
+            `userMsgLen=${(userMsg || '').length} ` +
+            `aiMsgLen=${(aiMsg || '').length} ` +
+            `rawAiTextLen=${(rawAiText || '').length}`
+          );
           fetch('/api/chat/turn', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },

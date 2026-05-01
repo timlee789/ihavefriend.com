@@ -423,3 +423,43 @@
   font-family: inherit;
 }
 .speakBtn:hover { background: rgba(255, 255, 255, 0.10); }
+
+/* 🔥 Task 79 — answer cards are now click-to-detail (FragmentModal).
+   The card is a <button>, so we reset native button styling. */
+button.fragmentCard {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+button.fragmentCard:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+/* Imported-card body wrapper (the part that opens the modal,
+   distinct from the "remove import" button). */
+.fragmentClickable {
+  cursor: pointer;
+}
+.fragmentClickable:hover .fragmentTitle {
+  color: rgba(196, 181, 253, 1);
+}
+
+.fragmentPhotos {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.fragmentThumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #2a2520;
+  flex-shrink: 0;
+}
