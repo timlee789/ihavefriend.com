@@ -390,11 +390,17 @@
 }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
+/* 🔥 Task 77 — modal close fix. PhotoUploader made the modal body
+   tall enough to scroll, and the X button got pushed above the fold.
+   The handle also caught taps that should have hit the close button.
+   Sticky header keeps X visible at all times; pointer-events:none on
+   the handle stops it from stealing taps. */
 .modalHandle {
   width: 36px; height: 4px;
   background: #ddd;
   border-radius: 2px;
   margin: 12px auto 0;
+  pointer-events: none;
 }
 
 .modalHeader {
@@ -403,6 +409,10 @@
   align-items: flex-start;
   padding: 16px 20px 12px;
   gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
 }
 
 .modalTitle {
@@ -418,7 +428,7 @@
   background: #f2f2f0;
   border: none;
   border-radius: 50%;
-  width: 30px; height: 30px;
+  width: 36px; height: 36px;
   font-size: 16px;
   cursor: pointer;
   color: #888;
@@ -426,6 +436,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
+  z-index: 6;
 }
 
 .modalBody {
@@ -1494,6 +1506,7 @@
   color: rgba(255, 255, 255, 0.9);
 }
 .modalHandle  { background: rgba(255, 255, 255, 0.2); }
+.modalHeader  { background: #1a1410; } /* Task 77 — match dark modal so sticky header doesn't show white */
 .modalTitle   { color: rgba(255, 255, 255, 0.95); }
 .modalSubtitle{ color: rgba(255, 255, 255, 0.6); }
 .modalContent { color: rgba(255, 255, 255, 0.92); }

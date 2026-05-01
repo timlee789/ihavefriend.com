@@ -14,7 +14,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { upload } from '@vercel/blob/client';
 
 const MSGS = {
   ko: {
@@ -117,22 +116,6 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
     return null;
   }, [fragmentId, onChange]);
 
-  // 🔥 Task 76 (Fix 2) — @vercel/blob/client.upload() resolves the
-  // moment the PUT to Blob finishes, but our onUploadCompleted
-  // webhook (which inserts the fragment_photos row) can fire 1-3s
-  // later. If we just call loadPhotos() once we'll race the webhook
-  // and show an empty slot. Poll for ~6s to bridge the gap.
-  const pollUntilPhotoAppears = useCallback(async (displayOrder) => {
-    const TRIES = 8;
-    const DELAY = 750;
-    for (let i = 0; i < TRIES; i++) {
-      const arr = await loadPhotos();
-      if (arr && arr.some(p => p.display_order === displayOrder)) return arr;
-      await new Promise(r => setTimeout(r, DELAY));
-    }
-    return loadPhotos();
-  }, [loadPhotos]);
-
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
   async function pickAndUpload(displayOrder) {
@@ -166,18 +149,29 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
       setUploading(displayOrder);
       try {
         const { file: compressed } = await compressImage(file);
-        await upload(compressed.name, compressed, {
-          access: 'public',
-          handleUploadUrl: `/api/fragments/${fragmentId}/photos/upload-url`,
-          clientPayload: JSON.stringify({
-            contentType: compressed.type,
-            sizeBytes  : compressed.size,
-            displayOrder,
-          }),
+        // 🔥 Task 77 — server-side upload. The client-side signed
+        //   URL flow depended on @vercel/blob's onUploadCompleted
+        //   webhook firing back to our route, which proved flaky in
+        //   prod (DB row never landed). We now POST the compressed
+        //   bytes straight at /api/fragments/[id]/photos and the
+        //   server uploads + writes the row inside one request,
+        //   returning the row inline. Thumbnail shows up the moment
+        //   the response lands — no polling.
+        const token = localStorage.getItem('token');
+        const fd = new FormData();
+        fd.append('file', compressed, compressed.name);
+        fd.append('displayOrder', String(displayOrder));
+        const res = await fetch(`/api/fragments/${fragmentId}/photos`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
         });
-        // Task 76 (Fix 2) — poll until the row lands instead of a
-        // single fetch that races the onUploadCompleted webhook.
-        await pollUntilPhotoAppears(displayOrder);
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || m.uploadFailed);
+        }
+        // Refresh the slot list from the response (single round-trip).
+        await loadPhotos();
       } catch (err) {
         console.error('[PhotoUploader] upload failed:', err);
         setError(err?.message || m.uploadFailed);
