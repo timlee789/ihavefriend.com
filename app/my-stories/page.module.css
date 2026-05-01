@@ -405,14 +405,35 @@
 
 .modalHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 16px 20px 12px;
+  align-items: center;
+  padding: 14px 20px 12px;
   gap: 12px;
   position: sticky;
   top: 0;
   z-index: 5;
   background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.modalBackBtn {
+  background: transparent;
+  border: none;
+  color: #ea580c;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 12px 8px 0;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  min-height: 36px;
+  position: relative;
+  z-index: 6;
+}
+.modalBackBtn:hover { opacity: 0.7; }
+
+.modalHeaderText {
+  flex: 1;
+  min-width: 0;
 }
 
 .modalTitle {
@@ -1506,7 +1527,11 @@
   color: rgba(255, 255, 255, 0.9);
 }
 .modalHandle  { background: rgba(255, 255, 255, 0.2); }
-.modalHeader  { background: #1a1410; } /* Task 77 — match dark modal so sticky header doesn't show white */
+.modalHeader  {
+  background: #1a1410;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+.modalBackBtn { color: #fb923c; }
 .modalTitle   { color: rgba(255, 255, 255, 0.95); }
 .modalSubtitle{ color: rgba(255, 255, 255, 0.6); }
 .modalContent { color: rgba(255, 255, 255, 0.92); }

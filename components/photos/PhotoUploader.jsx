@@ -104,6 +104,7 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/fragments/${fragmentId}/photos`, {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -149,14 +150,6 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
       setUploading(displayOrder);
       try {
         const { file: compressed } = await compressImage(file);
-        // 🔥 Task 77 — server-side upload. The client-side signed
-        //   URL flow depended on @vercel/blob's onUploadCompleted
-        //   webhook firing back to our route, which proved flaky in
-        //   prod (DB row never landed). We now POST the compressed
-        //   bytes straight at /api/fragments/[id]/photos and the
-        //   server uploads + writes the row inside one request,
-        //   returning the row inline. Thumbnail shows up the moment
-        //   the response lands — no polling.
         const token = localStorage.getItem('token');
         const fd = new FormData();
         fd.append('file', compressed, compressed.name);
@@ -166,12 +159,29 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
         });
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(j.error || m.uploadFailed);
+          console.error('[PhotoUploader] POST failed:', res.status, data);
+          throw new Error(data?.error || `Upload failed (${res.status})`);
         }
-        // Refresh the slot list from the response (single round-trip).
-        await loadPhotos();
+        // 🔥 Tim re-report — the second GET (loadPhotos) was sometimes
+        //   returning a stale list (Vercel/CDN caching of an
+        //   immediately-prior empty response, or the Neon read replica
+        //   hadn't caught up to the write). The POST already returns
+        //   the inserted row, so trust it: append the new photo to
+        //   local state directly. No second request, no race.
+        if (data?.photo) {
+          setPhotos(prev => {
+            const filtered = (prev || []).filter(p => p.display_order !== data.photo.display_order);
+            const next = [...filtered, data.photo].sort((a, b) => a.display_order - b.display_order);
+            onChange && onChange(next);
+            return next;
+          });
+        } else {
+          // Defensive: if the server somehow returned 200 without a
+          //   row, fall back to a fresh GET.
+          await loadPhotos();
+        }
       } catch (err) {
         console.error('[PhotoUploader] upload failed:', err);
         setError(err?.message || m.uploadFailed);

@@ -82,6 +82,7 @@ const VIS_MSGS = {
     editSubtitlePlaceholder : '부제 (선택)',
     editContentPlaceholder  : '이야기 내용',
     tagsLabel        : '태그',
+    backToList       : '← 나의 이야기들',
     confirmDeleteFragment   : '정말 이 이야기를 삭제할까요? 되돌릴 수 없습니다.',
     confirmDeleteYes : '네, 삭제합니다',
     deletingMsg      : '삭제 중…',
@@ -190,6 +191,7 @@ const VIS_MSGS = {
     editSubtitlePlaceholder : 'Subtitle (optional)',
     editContentPlaceholder  : 'Story content',
     tagsLabel        : 'Tags',
+    backToList       : '← My stories',
     confirmDeleteFragment   : 'Really delete this story? This cannot be undone.',
     confirmDeleteYes : 'Yes, delete',
     deletingMsg      : 'Deleting…',
@@ -298,6 +300,7 @@ const VIS_MSGS = {
     editSubtitlePlaceholder : 'Subtítulo (opcional)',
     editContentPlaceholder  : 'Contenido de la historia',
     tagsLabel        : 'Etiquetas',
+    backToList       : '← Mis historias',
     confirmDeleteFragment   : '¿Eliminar esta historia? No se puede deshacer.',
     confirmDeleteYes : 'Sí, eliminar',
     deletingMsg      : 'Eliminando…',
@@ -511,9 +514,17 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
       <div className={s.modal}>
         <div className={s.modalHandle} />
 
-        {/* Header */}
+        {/* 🔥 Header — Tim feedback: the page's top back-to-home
+            button is hidden behind the modal overlay, and the small
+            ✕ icon doesn't read as a "back" affordance. Lead the
+            header with a clear "← My stories" button on the left
+            (sticky via .modalHeader) so the back path is the first
+            thing the senior sees. */}
         <div className={s.modalHeader}>
-          <div>
+          <button className={s.modalBackBtn} onClick={onClose}>
+            {vm.backToList}
+          </button>
+          <div className={s.modalHeaderText}>
             <div className={s.modalTitle}>
               {mode === 'edit' ? vm.editMode : fragment.title}
             </div>
@@ -521,7 +532,6 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
               <div className={s.modalSubtitle}>{fragment.subtitle}</div>
             )}
           </div>
-          <button className={s.modalClose} onClick={onClose}>✕</button>
         </div>
 
         <div className={s.modalBody}>
