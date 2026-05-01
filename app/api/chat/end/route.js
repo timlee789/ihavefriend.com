@@ -253,14 +253,41 @@ export async function POST(request) {
   const STORY_MIN_USER_TURNS = 2;
   const STORY_MIN_USER_CHARS = 100;
 
-  if (isContinuation && userTurnCount >= continuationMinTurns) {
+  // 🔥 Task 80b — when the Whisper override fired, all of the user
+  //   side collapses into a SINGLE aggregate turn, which fails the
+  //   pre-Whisper STORY_MIN_USER_TURNS=2 gate every time. The intent
+  //   ("user spoke a story") is unmistakable when the aggregate
+  //   carries 200+ chars, so we treat usingWhisper as a turn-count
+  //   bypass and let userCharCount be the only signal. Continuation
+  //   gets the same treatment so a Whispered "이어서 말하기" doesn't
+  //   regress. Companion/auto stays Gemini-detect-driven, but with
+  //   a higher char floor (500) so a Whisper recovery on a casual
+  //   chat still lands a fragment.
+  const WHISPER_MIN_CHARS = 200;
+  const WHISPER_AUTO_MIN_CHARS = 500;
+  if (isContinuation && (
+    userTurnCount >= continuationMinTurns ||
+    (usingWhisper && userCharCount >= WHISPER_MIN_CHARS)
+  )) {
     shouldQueue = true;
-    generationReason = `continuation user_intent_override turns=${userTurnCount}`;
-  } else if (sessionMode === 'story' &&
-             userTurnCount >= STORY_MIN_USER_TURNS &&
-             userCharCount >= STORY_MIN_USER_CHARS) {
+    generationReason = usingWhisper && userTurnCount < continuationMinTurns
+      ? `continuation whisper_override chars=${userCharCount}`
+      : `continuation user_intent_override turns=${userTurnCount}`;
+  } else if (sessionMode === 'story' && (
+    (userTurnCount >= STORY_MIN_USER_TURNS && userCharCount >= STORY_MIN_USER_CHARS) ||
+    (usingWhisper && userCharCount >= WHISPER_MIN_CHARS)
+  )) {
     shouldQueue = true;
-    generationReason = `STORY user_intent_override turns=${userTurnCount} chars=${userCharCount}`;
+    generationReason = usingWhisper
+      ? `STORY whisper_override chars=${userCharCount}`
+      : `STORY user_intent_override turns=${userTurnCount} chars=${userCharCount}`;
+  } else if (
+    (sessionMode === 'companion' || sessionMode === 'auto') &&
+    usingWhisper &&
+    userCharCount >= WHISPER_AUTO_MIN_CHARS
+  ) {
+    shouldQueue = true;
+    generationReason = `${sessionMode.toUpperCase()} whisper_override chars=${userCharCount}`;
   }
 
   // 🆕 Task 66 — Quota gate. We always let chat/end run so the wrap-up
@@ -283,7 +310,7 @@ export async function POST(request) {
     }
   }
 
-  console.log(`[chat/end] Pre-detect gate: shouldQueue=${shouldQueue} mode=${sessionMode} continuation=${isContinuation} userTurns=${userTurnCount} userChars=${userCharCount} reason="${generationReason}"`);
+  console.log(`[chat/end] Pre-detect gate: shouldQueue=${shouldQueue} mode=${sessionMode} whisper=${usingWhisper} continuation=${isContinuation} userTurns=${userTurnCount} userChars=${userCharCount} reason="${generationReason}"`);
 
   if (apiKey && history.length >= 2) {
     try {
