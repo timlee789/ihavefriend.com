@@ -140,6 +140,14 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
   async function pickAndUpload(displayOrder) {
+    // Belt-and-suspenders cap: the slot UI already hides "Add photo"
+    // when it's filled, but if React state ever shows the slot empty
+    // while the DB has a row, we'd accidentally let a second upload
+    // race through. Bail early when the slot is already taken.
+    if (photos.some(p => p.display_order === displayOrder)) {
+      console.warn('[PhotoUploader] slot already filled, ignoring tap');
+      return;
+    }
     setError('');
     const input = document.createElement('input');
     input.type = 'file';
@@ -169,16 +177,20 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
 
       setUploading(displayOrder);
       try {
+        console.log('[PhotoUploader] picked file:', { name: file.name, type: file.type, size: file.size });
         const { file: compressed } = await compressImage(file);
+        console.log('[PhotoUploader] compressed:', { name: compressed.name, type: compressed.type, size: compressed.size });
         const token = localStorage.getItem('token');
         const fd = new FormData();
         fd.append('file', compressed, compressed.name);
         fd.append('displayOrder', String(displayOrder));
+        console.log('[PhotoUploader] POSTing to', `/api/fragments/${fragmentId}/photos`);
         const res = await fetch(`/api/fragments/${fragmentId}/photos`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
         });
+        console.log('[PhotoUploader] response status:', res.status);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           console.error('[PhotoUploader] POST failed:', res.status, data);
@@ -190,16 +202,28 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
         //   hadn't caught up to the write). The POST already returns
         //   the inserted row, so trust it: append the new photo to
         //   local state directly. No second request, no race.
+        // 🔥 Tim re-test — thumbnails STILL didn't render. Two
+        //   compounding issues: (1) the previous setPhotos updater
+        //   contained the fireOnChange side-effect, which under
+        //   React 18 strict/concurrent rendering can run twice or
+        //   be discarded; (2) we sometimes raced a `setUploading(null)`
+        //   render against the photos render, so the slot snapped
+        //   from "uploading" back to "empty" before the photo state
+        //   landed. Fix: compute the new array eagerly from the
+        //   captured `photos` closure, set photos directly, fire
+        //   onChange separately, then null uploading. Pure, ordered.
+        console.log('[PhotoUploader] POST ok, photo=', data?.photo);
         if (data?.photo) {
-          setPhotos(prev => {
-            const filtered = (prev || []).filter(p => p.display_order !== data.photo.display_order);
-            const next = [...filtered, data.photo].sort((a, b) => a.display_order - b.display_order);
-            fireOnChange(next);
-            return next;
-          });
+          const incoming = data.photo;
+          const nextArr = [
+            ...(photos || []).filter(p => p.display_order !== incoming.display_order),
+            incoming,
+          ].sort((a, b) => a.display_order - b.display_order);
+          setPhotos(nextArr);
+          fireOnChange(nextArr);
         } else {
-          // Defensive: if the server somehow returned 200 without a
-          //   row, fall back to a fresh GET.
+          // Defensive fallback — server returned 200 with no row.
+          console.warn('[PhotoUploader] 200 but no photo row in response');
           await loadPhotos();
         }
       } catch (err) {
@@ -244,11 +268,25 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
           uploadingLabel={m.uploading} addLabel={m.addPhoto}
         />
       </div>
+
+      {/* 🔥 Counter so the senior can see at a glance how many of the
+          two slots are filled, regardless of whether thumbnails
+          render. Also makes the cap legible: "사진은 최대 2장". */}
+      <div className="photoCount">
+        {photos.length} / 2
+      </div>
+
       {error && <div className="photoError">{error}</div>}
 
       <style jsx>{`
         .photoUploader { margin-top: 12px; }
         .photoSlots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .photoCount {
+          margin-top: 8px;
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.55);
+          text-align: right;
+        }
         .photoError {
           margin-top: 8px;
           padding: 8px 12px;
@@ -279,7 +317,12 @@ function PhotoSlot({ photo, label, uploading, onAdd, onDelete, uploadingLabel, a
   if (photo) {
     return (
       <div className="slot slotFilled">
-        <img src={photo.blob_url} alt={label} />
+        <img
+          src={photo.blob_url}
+          alt={label}
+          onLoad={() => console.log('[PhotoUploader] thumbnail loaded:', photo.blob_url)}
+          onError={(e) => console.error('[PhotoUploader] thumbnail failed:', photo.blob_url, e)}
+        />
         <button className="deleteBtn" onClick={onDelete} aria-label="delete">🗑️</button>
         <style jsx>{`
           .slot { position: relative; aspect-ratio: 4/3; border-radius: 10px; overflow: hidden; }
