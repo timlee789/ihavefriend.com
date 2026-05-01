@@ -205,6 +205,15 @@ export async function POST(request) {
   const userTurnCount      = history.filter(m => m.role === 'user').length;
   const userCharCount      = history.filter(m => m.role === 'user')
                                     .reduce((s, m) => s + (m.content || '').length, 0);
+  // 🔥 Task 78 diagnostic — print every user turn's length so we can
+  //   verify the truncation cap isn't biting legit Korean monologues.
+  //   Look for these in Vercel logs after Tim's recording test.
+  if (history.length > 0) {
+    const userTurnLengths = history
+      .filter(m => m.role === 'user')
+      .map((m, i) => `t${i}=${(m.content || '').length}`);
+    console.log(`[chat/end] 📏 user turns lens: [${userTurnLengths.join(', ')}] total=${userCharCount}`);
+  }
   const continuationMinTurns = 2;
   const STORY_MIN_USER_TURNS = 2;
   const STORY_MIN_USER_CHARS = 100;
