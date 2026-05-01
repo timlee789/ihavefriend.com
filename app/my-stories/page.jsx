@@ -605,7 +605,14 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 </div>
               )}
 
-              {allTags.length > 0 && (
+              {/* 🔥 Task 76 (Fix 4) — tag chips suppressed from the
+                  fragment surface. The DB columns (tags_theme,
+                  tags_emotion, tags_people, tags_era, tags_place) are
+                  preserved for AI classification + future filters; we
+                  just don't render them in the user-facing modal
+                  anymore. The `allTags` array above is kept so any
+                  reintroduction is a one-liner. */}
+              {false && allTags.length > 0 && (
                 <div className={s.modalTagSection}>
                   <div className={s.modalTagLabel}>{vm.tagsLabel}</div>
                   <div className={s.tagRow}>

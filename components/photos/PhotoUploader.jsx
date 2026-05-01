@@ -111,9 +111,27 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
         const arr = data.photos || [];
         setPhotos(arr);
         onChange && onChange(arr);
+        return arr;
       }
     } catch {}
+    return null;
   }, [fragmentId, onChange]);
+
+  // 🔥 Task 76 (Fix 2) — @vercel/blob/client.upload() resolves the
+  // moment the PUT to Blob finishes, but our onUploadCompleted
+  // webhook (which inserts the fragment_photos row) can fire 1-3s
+  // later. If we just call loadPhotos() once we'll race the webhook
+  // and show an empty slot. Poll for ~6s to bridge the gap.
+  const pollUntilPhotoAppears = useCallback(async (displayOrder) => {
+    const TRIES = 8;
+    const DELAY = 750;
+    for (let i = 0; i < TRIES; i++) {
+      const arr = await loadPhotos();
+      if (arr && arr.some(p => p.display_order === displayOrder)) return arr;
+      await new Promise(r => setTimeout(r, DELAY));
+    }
+    return loadPhotos();
+  }, [loadPhotos]);
 
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
@@ -122,7 +140,11 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
-    input.capture = 'environment'; // mobile camera hint; desktop ignores
+    // 🔥 Task 76 (Fix 1+3) — DO NOT set input.capture. On iOS that
+    // attribute forces the camera and hides the photo library / iCloud
+    // / Google Drive options. Letting the OS pick its native sheet is
+    // what Tim's seniors actually want: "Photo Library / Take Photo /
+    // Choose File" with a single shot per tap.
 
     input.onchange = async (e) => {
       const file = e.target.files?.[0];
@@ -153,7 +175,9 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
             displayOrder,
           }),
         });
-        await loadPhotos();
+        // Task 76 (Fix 2) — poll until the row lands instead of a
+        // single fetch that races the onUploadCompleted webhook.
+        await pollUntilPhotoAppears(displayOrder);
       } catch (err) {
         console.error('[PhotoUploader] upload failed:', err);
         setError(err?.message || m.uploadFailed);
