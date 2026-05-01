@@ -13,7 +13,7 @@
  *   onChange    : (photos[]) => void   (parent refresh trigger)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const MSGS = {
   ko: {
@@ -99,6 +99,26 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
   const [uploading, setUploading] = useState(null); // displayOrder being uploaded
   const [error, setError]       = useState('');
 
+  // 🔥 Tim re-report — onChange was being called inside loadPhotos AND
+  //   listed in loadPhotos's useCallback deps. Parents that pass an
+  //   inline arrow function for onChange (like /my-stories) get a new
+  //   reference on every render, which made loadPhotos unstable, which
+  //   re-fired its useEffect on every render. The cycle:
+  //     mount → loadPhotos → onChange → parent setSelected →
+  //     parent re-renders → new onChange identity → useCallback
+  //     recompute → useEffect re-runs → loadPhotos again → loop
+  //   That loop is what caused the modal close to "bounce" without
+  //   unmounting and the thumbnail to never settle.
+  // Fix: pin onChange to a ref. The user-action paths (upload / delete)
+  //   read .current; the initial loadPhotos sync does NOT fire onChange
+  //   at all. Result: loadPhotos has stable deps, useEffect runs once,
+  //   no render storm.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  const fireOnChange = useCallback((arr) => {
+    if (typeof onChangeRef.current === 'function') onChangeRef.current(arr);
+  }, []);
+
   const loadPhotos = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -110,12 +130,12 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
         const data = await res.json();
         const arr = data.photos || [];
         setPhotos(arr);
-        onChange && onChange(arr);
+        // NOTE: deliberately NOT calling onChange here — see above.
         return arr;
       }
     } catch {}
     return null;
-  }, [fragmentId, onChange]);
+  }, [fragmentId]);
 
   useEffect(() => { loadPhotos(); }, [loadPhotos]);
 
@@ -174,7 +194,7 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
           setPhotos(prev => {
             const filtered = (prev || []).filter(p => p.display_order !== data.photo.display_order);
             const next = [...filtered, data.photo].sort((a, b) => a.display_order - b.display_order);
-            onChange && onChange(next);
+            fireOnChange(next);
             return next;
           });
         } else {
@@ -199,7 +219,8 @@ export default function PhotoUploader({ fragmentId, lang = 'ko', onChange }) {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
-    await loadPhotos();
+    const next = await loadPhotos();
+    if (Array.isArray(next)) fireOnChange(next);
   }
 
   const slot1 = photos.find(p => p.display_order === 1);

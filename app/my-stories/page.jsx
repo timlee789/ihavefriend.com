@@ -408,7 +408,7 @@ function Spinner() {
 
 // ── Fragment Detail Modal ────────────────────────────────────────
 // ── Fragment Modal ─────────────────────────────────────────────────────────
-function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' }) {
+function FragmentModal({ fragment, onClose, onUpdated, onPhotosChanged, onDeleted, lang = 'KO' }) {
   const router = useRouter();
   const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete' | 'confirmVisibility'
   const [editTitle, setEditTitle] = useState(fragment.title || '');
@@ -578,7 +578,7 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
                 <PhotoUploader
                   fragmentId={fragment.id}
                   lang={String(lang).toLowerCase()}
-                  onChange={() => onUpdated && onUpdated({ ...fragment })}
+                  onChange={(photos) => onPhotosChanged && onPhotosChanged(fragment.id, photos)}
                 />
               </div>
 
@@ -1587,6 +1587,14 @@ export default function MyStoriesPage() {
     showToast(vm.toastDeleted);
   }
 
+  // 🔥 Photos-only update path (Tim re-report). Updates the card
+  //   thumbnail list WITHOUT touching `selected`, so a photo upload /
+  //   delete inside the open modal never re-renders the modal sheet
+  //   and never hijacks the back-button click.
+  function handlePhotosChanged(fragmentId, photos) {
+    setFragments(prev => prev.map(f => (f.id === fragmentId ? { ...f, photos } : f)));
+  }
+
   function handleEbookSuccess() {
     // Refresh books after a moment
     setTimeout(loadAll, 1200);
@@ -1741,6 +1749,7 @@ export default function MyStoriesPage() {
           fragment={selected}
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
+          onPhotosChanged={handlePhotosChanged}
           onDeleted={handleDeleted}
           lang={lang}
         />
