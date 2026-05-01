@@ -40,7 +40,18 @@ export async function POST(request) {
     body = JSON.parse(text);
   } catch {}
 
-  const { sessionId, transcript: clientTranscript = [], _token, conversationMode = 'auto' } = body;
+  const {
+    sessionId,
+    transcript: clientTranscript = [],
+    _token,
+    conversationMode = 'auto',
+    // 🔥 Task 80 — Whisper-based recovery transcript for the user
+    //   side of the conversation. When present and non-trivial,
+    //   replaces the user turns from Gemini Live (which silently
+    //   truncates long Korean monologues). Emma's turns from the
+    //   real-time path are preserved as-is.
+    whisperTranscript = null,
+  } = body;
 
   // Auth: prefer Authorization header, fall back to _token in body (for sendBeacon)
   let user = null;
@@ -125,10 +136,34 @@ export async function POST(request) {
   }
 
   // Convert transcript format: [{role, text}] → [{role, content}]
-  const rawHistory = transcript.map(t => ({
+  let rawHistory = transcript.map(t => ({
     role: t.role === 'user' ? 'user' : 'assistant',
     content: t.text || t.content || '',
   }));
+
+  // 🔥 Task 80 — apply the Whisper recovery transcript when it's
+  //   long enough to matter. Threshold of 200 chars keeps this from
+  //   clobbering a real (but short) conversation with Whisper's
+  //   "you you you you" tic on near-silence. We collapse all the
+  //   user turns into a single aggregate message that contains the
+  //   full Whisper text, while keeping every Emma turn in place at
+  //   its original position so the question→answer cadence still
+  //   reads correctly downstream.
+  const usingWhisper =
+    typeof whisperTranscript === 'string' &&
+    whisperTranscript.trim().length >= 200;
+  if (usingWhisper) {
+    const aiTurns = rawHistory.filter(m => m.role === 'assistant');
+    const before  = rawHistory.filter(m => m.role === 'user').reduce((n, m) => n + (m.content || '').length, 0);
+    rawHistory = [
+      { role: 'user', content: whisperTranscript.trim() },
+      ...aiTurns,
+    ];
+    console.log(
+      `[chat/end] 🎤 whisper override active — userChars ${before} → ${whisperTranscript.length} ` +
+      `(kept ${aiTurns.length} assistant turns)`
+    );
+  }
 
   // 🆕 2026-04-27 (Task 47): Normalise STT noise BEFORE any LLM call.
   // ASR repetition collapse ("어디 어디 어디 …" ×500) can dominate the

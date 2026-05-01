@@ -1204,6 +1204,16 @@ export default function EmmaChat({ initialMode }) {
   const geminiKeyRef        = useRef('');
   const systemPromptBaseRef = useRef('');
   const micStreamRef        = useRef(null);
+  // 🔥 Task 80 — Whisper-based STT recovery. Gemini Live's real-time
+  //   STT silently truncates long Korean monologues (88 sec → 232
+  //   chars + an English hallucination tail). We mirror the mic
+  //   stream into a MediaRecorder so the chat session has a
+  //   parallel, full-fidelity recording. On disconnect() we POST the
+  //   audio to /api/transcribe and feed the result to chat/end as
+  //   the authoritative user transcript.
+  const mediaRecorderRef    = useRef(null);
+  const audioChunksRef      = useRef([]);
+  const recorderMimeRef     = useRef('audio/webm;codecs=opus');
   const reconnectTimerRef   = useRef(null);
   const isReconnectingRef   = useRef(false);
   const tokenRef            = useRef('');   // always-current token for closures
@@ -2207,6 +2217,47 @@ export default function EmmaChat({ initialMode }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
       setMicPermission('granted');
+
+      // 🔥 Task 80 — start a parallel MediaRecorder on the SAME stream.
+      //   Gemini Live continues to handle real-time conversation; the
+      //   recorder accumulates raw audio so we can hand it to Whisper
+      //   on disconnect() for an accurate full-length transcript.
+      try {
+        // Pick the most-supported encoding the browser will let us
+        // record. Safari historically prefers audio/mp4. We fall back
+        // gracefully if the preferred mime isn't supported.
+        const candidates = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4',
+          'audio/ogg;codecs=opus',
+        ];
+        let chosenMime = '';
+        for (const c of candidates) {
+          if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) {
+            chosenMime = c; break;
+          }
+        }
+        recorderMimeRef.current = chosenMime || 'audio/webm';
+        const recOpts = chosenMime ? { mimeType: chosenMime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 };
+        const recorder = new MediaRecorder(stream, recOpts);
+        audioChunksRef.current = [];
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+        recorder.onerror = (e) => {
+          console.warn('[whisper-rec] recorder error:', e?.error?.message || e);
+        };
+        // Cut chunks every second so a hard kill (refresh / crash) at
+        // most loses the last 1s of audio.
+        recorder.start(1000);
+        mediaRecorderRef.current = recorder;
+        console.log('[whisper-rec] started, mime=', chosenMime || 'auto');
+      } catch (e) {
+        console.warn('[whisper-rec] could not start MediaRecorder (will fall back to Gemini Live transcript):', e?.message);
+        mediaRecorderRef.current = null;
+      }
+
       openWS(stream, false);
     } catch (e) {
       // 🔥 Task 55 #3: distinguish permission denial from other errors.
@@ -2297,15 +2348,79 @@ export default function EmmaChat({ initialMode }) {
       const prev = parseInt(localStorage.getItem('conversationCount') || '0');
       localStorage.setItem('conversationCount', String(prev + 1));
       sessionIdRef.current = null;
-      fetch('/api/chat/end', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify({
-          sessionId       : sid,
-          transcript      : transcriptRef.current,
-          conversationMode: convModeRef.current,
-        }),
-      }).catch(() => {});
+
+      // 🔥 Task 80 — finalize the parallel MediaRecorder, upload the
+      //   audio to /api/transcribe, then POST /api/chat/end with the
+      //   Whisper transcript as the authoritative user-side text.
+      //   Gemini Live's real-time transcript on transcriptRef stays
+      //   the fallback if Whisper fails (caller logic on the server).
+      const transcriptSnapshot = transcriptRef.current;
+      const conversationMode   = convModeRef.current;
+      const langSnapshot       = (typeof langRef.current === 'string' ? langRef.current : 'KO').toLowerCase();
+
+      (async () => {
+        let whisperTranscript = null;
+        const recorder = mediaRecorderRef.current;
+        const chunks   = audioChunksRef.current || [];
+        mediaRecorderRef.current = null;
+        audioChunksRef.current   = [];
+        if (recorder) {
+          try {
+            // Wait for the final dataavailable event to flush.
+            await new Promise((resolve) => {
+              const done = () => resolve();
+              recorder.addEventListener('stop', done, { once: true });
+              try { recorder.stop(); } catch { resolve(); }
+              setTimeout(resolve, 4000); // safety
+            });
+          } catch (e) {
+            console.warn('[whisper-rec] stop failed:', e?.message);
+          }
+          if (chunks.length > 0) {
+            const mime = recorderMimeRef.current || 'audio/webm';
+            const blob = new Blob(chunks, { type: mime });
+            console.log(`[whisper-rec] finalized ${chunks.length} chunks, ${blob.size} bytes, mime=${mime}`);
+            try {
+              const fd = new FormData();
+              fd.append('audio', blob, 'recording.webm');
+              fd.append('lang', langSnapshot);
+              fd.append('sessionId', sid);
+              const tr = await fetch('/api/transcribe', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${t}` },
+                body: fd,
+              });
+              const json = await tr.json().catch(() => ({}));
+              if (tr.ok && typeof json.transcript === 'string') {
+                whisperTranscript = json.transcript;
+                console.log(`[whisper-rec] transcript length=${whisperTranscript.length}, lang=${json.language || '?'}, dur=${json.duration || '?'}s`);
+              } else {
+                console.warn('[whisper-rec] transcribe non-OK:', tr.status, json);
+              }
+            } catch (e) {
+              console.warn('[whisper-rec] transcribe upload failed:', e?.message);
+            }
+          } else {
+            console.warn('[whisper-rec] no audio chunks captured');
+          }
+        }
+
+        try {
+          await fetch('/api/chat/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+            body: JSON.stringify({
+              sessionId       : sid,
+              transcript      : transcriptSnapshot,
+              conversationMode,
+              whisperTranscript,
+            }),
+          });
+        } catch (e) {
+          console.warn('[chat/end] post failed:', e?.message);
+        }
+      })();
+
       // Show "내 이야기 확인하기" banner in chat area
       setSessionEnded(true);
       // Show feedback modal after conversation with enough turns
@@ -2423,6 +2538,14 @@ export default function EmmaChat({ initialMode }) {
     try { sourceRef.current?.disconnect();    } catch {}
     processorRef.current = null;
     sourceRef.current    = null;
+    // 🔥 Task 80 — also stop the parallel MediaRecorder. forceStop
+    //   is the unmount/emergency path so we can't await the Whisper
+    //   round-trip; we just halt the recorder so the mic releases.
+    //   The user-initiated disconnect() above is the path that
+    //   actually ships audio to /api/transcribe.
+    try { mediaRecorderRef.current?.stop(); } catch {}
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
     try { micStreamRef.current?.getTracks().forEach(tr => tr.stop()); } catch {}
     micStreamRef.current = null;
 
