@@ -1661,3 +1661,30 @@
   letter-spacing: 0.02em;
   border: 1px solid rgba(99, 102, 241, 0.30);
 }
+
+/* 🔥 Task 75 — photo attachment styles */
+.cardPhotos {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.cardThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #2a2520;
+  flex-shrink: 0;
+}
+.photosSection {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.photosLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}

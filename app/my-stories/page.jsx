@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import PhotoUploader from '@/components/photos/PhotoUploader';
 import s from './page.module.css';
 
 // ── Visibility (Private/Public) 다국어 카피 ────────────────────────────────
@@ -555,6 +556,20 @@ function FragmentModal({ fragment, onClose, onUpdated, onDeleted, lang = 'KO' })
 
               <div className={s.modalContent}>
                 <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
+              </div>
+
+              {/* 🔥 Task 75 — photo attachment (max 2). Sits between
+                  the body and the continuations thread so the photos
+                  feel like part of the story, not an afterthought. */}
+              <div className={s.photosSection}>
+                <div className={s.photosLabel}>
+                  {lang === 'EN' ? '📷 Photos' : lang === 'ES' ? '📷 Fotos' : '📷 사진'}
+                </div>
+                <PhotoUploader
+                  fragmentId={fragment.id}
+                  lang={String(lang).toLowerCase()}
+                  onChange={() => onUpdated && onUpdated({ ...fragment })}
+                />
               </div>
 
               {fragment.truncated && (
@@ -1764,6 +1779,16 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
       {f.subtitle && <div className={s.cardSubtitle}>{f.subtitle}</div>}
 
       <div className={s.cardPreview}>{preview(f.content, 100)}</div>
+
+      {/* 🔥 Task 75 — photo thumbnails (max 2) right under the preview
+          so the user recognizes a story by its picture, not just text. */}
+      {Array.isArray(f.photos) && f.photos.length > 0 && (
+        <div className={s.cardPhotos}>
+          {f.photos.slice(0, 2).map(p => (
+            <img key={p.id} src={p.blob_url} alt="" className={s.cardThumb} />
+          ))}
+        </div>
+      )}
 
       <div className={s.cardFooter}>
         <span className={s.cardDate}>{fmtDateShort(f.created_at)}</span>
