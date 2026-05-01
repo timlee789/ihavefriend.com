@@ -1206,3 +1206,35 @@
   font-size: 14px;
   opacity: 0.5;
 }
+
+/* 🔥 Task 81 — listening indicator (replaces the user bubble during
+   live speech). Same right-alignment + bubble shape as a normal user
+   bubble so the eye knows "this side = me", but with reduced opacity
+   and italic text so it reads as a status, not content. */
+.listeningBubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 18px 18px 4px 18px;
+  opacity: 0.85;
+  font-style: italic;
+}
+.listeningBubbleDay {
+  background: rgba(234, 88, 12, 0.85);
+  color: #fff;
+}
+.listeningBubbleNight {
+  background: rgba(91, 33, 182, 0.85);
+  color: rgba(255, 255, 255, 0.92);
+}
+.listeningText {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+.listeningDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}

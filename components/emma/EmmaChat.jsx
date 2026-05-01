@@ -655,6 +655,34 @@ const THINKING_MSG = {
   ],
 };
 
+// 🔥 Task 81 — listening indicator. Replaces the user-bubble during
+//   live speech; the actual transcript saved to fragments comes from
+//   Whisper at session end (Task 80), and Gemini Live's real-time
+//   transcript was leaking visibly-mangled text into the bubble. The
+//   bubble is the noise; the indicator is the signal.
+const LISTENING_MSG = {
+  KO: '🎙️ 듣고 있어요',
+  EN: '🎙️ Listening',
+  ES: '🎙️ Escuchando',
+};
+
+function ListeningIndicator({ mode, lang = 'KO' }) {
+  const isDay = mode === 'day';
+  const text = LISTENING_MSG[lang] || LISTENING_MSG.KO;
+  return (
+    <div className={styles.rowUser}>
+      <div className={`${styles.listeningBubble} ${isDay ? styles.listeningBubbleDay : styles.listeningBubbleNight}`}>
+        <span className={styles.listeningText}>{text}</span>
+        <span className={styles.listeningDots}>
+          {[0, 1, 2].map(i => (
+            <span key={i} className={styles.typingDot} style={{ animationDelay: `${i * 0.2}s` }} />
+          ))}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function TypingIndicator({ mode, liveText, thinkingLevel = 0, lang = 'KO' }) {
   const bubbleClass = `${styles.bubble} ${mode === 'day' ? styles.bubbleEmmaDay : styles.bubbleEmmaNight}`;
   const msg = THINKING_MSG[lang]?.[thinkingLevel] || '';
@@ -1142,6 +1170,11 @@ export default function EmmaChat({ initialMode }) {
   const sttWarningRef = useRef('');
   useEffect(() => { sttWarningRef.current = sttWarning; }, [sttWarning]);
   const [isThinking,   setIsThinking]   = useState(false); // user done speaking, Emma processing
+  // 🔥 Task 81 — re-renderable mirror of hasSpokenThisTurnRef so the
+  //   ListeningIndicator can react. The ref is read inside event
+  //   loops where we can't trigger re-renders, so we keep both in
+  //   sync at every flip site.
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   // thinkingLevel: 0 = dots only, 1 = "잠시만요, 생각하고 있어요" (≥5s),
   //                2 = "조금만 더 기다려 주세요" (≥10s), 3 = error fallback (≥15s)
   const [thinkingLevel, setThinkingLevel] = useState(0);
@@ -1707,6 +1740,7 @@ export default function EmmaChat({ initialMode }) {
                 reason: 'too brief — likely filler / noise / false start',
               });
               hasSpokenThisTurnRef.current = false;
+              setIsUserSpeaking(false); // Task 81
               speechEndedLoggedRef.current = false;
               accumulatedSpeechTimeRef.current = 0;
               loudStreakRef.current = 0;
@@ -1888,14 +1922,27 @@ export default function EmmaChat({ initialMode }) {
           : null;
         console.log(`[Turn] turnComplete — turn ${turnNum}, elapsed ${elapsedS}s`);
 
+        // 🔥 Task 81 — user bubble suppressed in the chat surface.
+        //   Gemini Live's real-time STT was leaking visibly-mangled
+        //   text into the bubble, but Whisper (Task 80) is the source
+        //   of truth for what gets saved. transcriptRef still tracks
+        //   the user turn so chat/end has a fallback if Whisper
+        //   fails. The listening indicator covers the visual gap.
         const ts = nowStr();
         setMessages(prev => {
           const next = [...prev];
-          if (userMsg) next.push({ id: Date.now(),     role: 'user', text: userMsg });
-          if (aiMsg)   next.push({ id: Date.now() + 1, role: 'emma', text: aiMsg, timestamp: ts });
-          transcriptRef.current = next.map(m => ({ role: m.role === 'emma' ? 'assistant' : 'user', text: m.text }));
+          if (aiMsg) next.push({ id: Date.now() + 1, role: 'emma', text: aiMsg, timestamp: ts });
+          // Build the transcript ref by appending BOTH sides
+          // (user + emma) at this turn boundary even though the user
+          // side never enters `messages`.
+          transcriptRef.current = [
+            ...transcriptRef.current,
+            ...(userMsg ? [{ role: 'user',      text: userMsg }] : []),
+            ...(aiMsg   ? [{ role: 'assistant', text: aiMsg }]   : []),
+          ];
           return next;
         });
+        setIsUserSpeaking(false);
 
         currentAiMsgRef.current  = '';
         currentUserMsgRef.current = '';
@@ -2047,6 +2094,7 @@ export default function EmmaChat({ initialMode }) {
         && loudStreakRef.current >= LOUD_STREAK_TO_START
         && !hasSpokenThisTurnRef.current) {
         hasSpokenThisTurnRef.current = true;
+        setIsUserSpeaking(true); // Task 81 — re-renderable mirror
         turnStartRef.current = now;
         accumulatedSpeechTimeRef.current = 0; // 🆕 reset for new turn
         lastFrameTimeRef.current = now;       // 🆕 reset for new turn
@@ -2102,6 +2150,7 @@ export default function EmmaChat({ initialMode }) {
     clearTimeout(thinkingDelayRef.current);
     thinkingDelayRef.current = null;
     hasSpokenThisTurnRef.current = false;
+    setIsUserSpeaking(false); // Task 81
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
     thinkingShownAtRef.current   = 0;
@@ -2318,6 +2367,7 @@ export default function EmmaChat({ initialMode }) {
     clearTimeout(thinkingDelayRef.current);
     thinkingDelayRef.current = null;
     hasSpokenThisTurnRef.current = false;
+    setIsUserSpeaking(false); // Task 81
     isAiSpeakingRef.current      = false;
     speechEndedLoggedRef.current = false;
     thinkingShownAtRef.current   = 0;
@@ -2856,6 +2906,15 @@ export default function EmmaChat({ initialMode }) {
         {messages.map(msg => (
           <Bubble key={msg.id} msg={msg} mode={mode} />
         ))}
+        {/* 🔥 Task 81 — listening indicator. Sits on the user side
+            (right-aligned) while the senior is mid-utterance, then
+            disappears as soon as Emma starts thinking or speaking.
+            Whisper at session end remains the source of truth for
+            saved text; this indicator is purely a "we hear you"
+            assurance with no transcript exposed. */}
+        {isConnected && isUserSpeaking && !isAiSpeaking && !isThinking && (
+          <ListeningIndicator mode={mode} lang={lang} />
+        )}
         {(isAiSpeaking || liveText || isThinking) && (
           <TypingIndicator mode={mode} liveText={liveText} thinkingLevel={thinkingLevel} lang={lang} />
         )}
