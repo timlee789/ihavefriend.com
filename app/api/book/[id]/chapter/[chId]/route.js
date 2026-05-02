@@ -101,8 +101,16 @@ export async function GET(request, { params }) {
         };
       });
 
+    // 🔥 Task 85 — expose title_i18n (already on the row) so the
+    //   breadcrumb can localize the book title in EN/ES, matching what
+    //   the book overview page does via titleOf(book.title_i18n, lang).
     return Response.json({
-      book: { id: book.id, title: book.title, template_id: book.template_id },
+      book: {
+        id: book.id,
+        title: book.title,
+        title_i18n: book.title_i18n,
+        template_id: book.template_id,
+      },
       chapter: {
         id: chapter.id,
         order: chapter.order,

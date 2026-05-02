@@ -117,8 +117,15 @@ export async function GET(request, { params }) {
       }
     }
 
+    // 🔥 Task 85 — surface title_i18n on book + chapter so the
+    //   breadcrumb on the question page can localize each crumb in
+    //   EN/ES (titleOf(...title_i18n, lang)).
     return Response.json({
-      book: { id: book.id, title: book.title },
+      book: {
+        id: book.id,
+        title: book.title,
+        title_i18n: book.title_i18n,
+      },
       chapter: {
         id: chapter.id,
         order: chapter.order,

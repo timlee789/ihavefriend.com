@@ -1,0 +1,93 @@
+/* Breadcrumb — Task 85
+   Sits just under the page header, narrates the senior's path through
+   the book → chapter → question flow. Reads as a single line on
+   mobile and wraps cleanly when titles are long. Color borrowed from
+   Task 84's "book" hue (deep green) so the navigation feels of a piece
+   with the home grid.
+*/
+
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 4px 0 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The "›" separator. Slightly de-emphasized so the labels carry the
+   weight, but still readable for a senior reader. */
+.sep {
+  color: rgba(255, 255, 255, 0.40);
+  font-weight: 400;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.link {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 6px;
+  color: rgba(134, 239, 172, 0.95);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(134, 239, 172, 0.35);
+  text-underline-offset: 3px;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: #d1fae5;
+  background: rgba(34, 197, 94, 0.10);
+  text-decoration-color: rgba(134, 239, 172, 0.65);
+}
+
+.current {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 500;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Last crumb is the page the senior is on — bolder so it stands out
+   as "you are here". */
+.currentLast {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Light-mode override (only kicks in on pages that aren't the dark
+   book/chapter/question surfaces). All current callers are dark, so
+   this branch is dormant but kept for future re-use. */
+@media (prefers-color-scheme: light) {
+  .sep     { color: rgba(0, 0, 0, 0.40); }
+  .link    { color: #166534; text-decoration-color: rgba(21, 128, 61, 0.45); }
+  .link:hover { color: #14532d; background: rgba(21, 128, 61, 0.08); }
+  .current { color: rgba(0, 0, 0, 0.78); }
+  .currentLast { color: #1a1410; }
+}
+
+@media (max-width: 380px) {
+  .crumb { font-size: 14px; gap: 3px 5px; margin-bottom: 12px; }
+  .link, .current { max-width: 14ch; }
+}

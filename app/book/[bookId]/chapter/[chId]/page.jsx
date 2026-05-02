@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import { BOOK_MSGS } from '@/lib/bookI18n';
+import Breadcrumb from '@/components/book/Breadcrumb';
 import s from './page.module.css';
 
 const STATUS_ICON = {
@@ -51,16 +52,23 @@ export default function ChapterDetailPage() {
   if (loading) return <div className={s.loading}>{m.loading}</div>;
   if (!data?.chapter) return <div className={s.loading}>{m.chapterNotFound}</div>;
 
-  const { chapter } = data;
+  const { chapter, book } = data;
   const completed = chapter.questions.filter(q => q.response_status === 'complete').length;
   const total = chapter.questions.length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const bookTitle = (book && (titleOf(book.title_i18n, lang) || book.title)) || m.bookDefaultTitle;
 
   return (
     <div className={s.container}>
       <header className={s.header}>
         <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>{m.backToBook}</button>
       </header>
+
+      {/* 🔥 Task 85 — Breadcrumb: 책제목 › 챕터 N */}
+      <Breadcrumb items={[
+        { label: bookTitle, href: `/book/${bookId}` },
+        { label: `${m.chapterPrefix} ${chapter.order}` },
+      ]} />
 
       <h1 className={s.chapterTitle}>
         {m.chapterPrefix} {chapter.order}: {titleOf(chapter.title, lang)}

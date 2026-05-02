@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import { BOOK_MSGS } from '@/lib/bookI18n';
+import Breadcrumb from '@/components/book/Breadcrumb';
 import s from './page.module.css';
 
 // 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, real generate at
@@ -86,6 +87,7 @@ export default function BookOverviewPage() {
 
   const { book, suggested_next, chapters } = data;
   const errFallback = { retry: m.failedRetry, generic: m.failedGeneric };
+  const bookTitle = titleOf(book.title_i18n, lang) || book.title || m.bookDefaultTitle;
 
   return (
     <div className={s.container}>
@@ -97,7 +99,7 @@ export default function BookOverviewPage() {
         {/* 🔥 Task 69 — localize the title via the template's i18n
             name when present, falling back to whatever was stored
             at start time. */}
-        <h1 className={s.title}>📚 {titleOf(book.title_i18n, lang) || book.title}</h1>
+        <h1 className={s.title}>📚 {bookTitle}</h1>
         <button
           className={s.customizeBtn}
           onClick={() => router.push(`/book/${bookId}/customize`)}
@@ -106,6 +108,11 @@ export default function BookOverviewPage() {
           {m.customizeBtn}
         </button>
       </header>
+
+      {/* 🔥 Task 85 — Breadcrumb. On the book overview the only crumb
+          is the book itself (current location). Chapter + question
+          pages add deeper crumbs. */}
+      <Breadcrumb items={[{ label: bookTitle }]} />
 
       <div className={s.progressCard}>
         <div className={s.progressLabel}>

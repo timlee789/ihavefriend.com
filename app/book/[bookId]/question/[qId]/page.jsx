@@ -18,6 +18,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import { BOOK_MSGS } from '@/lib/bookI18n';
 import FragmentModal from '@/components/fragments/FragmentModal';
+import Breadcrumb from '@/components/book/Breadcrumb';
 import s from './page.module.css';
 
 export default function QuestionDetailPage() {
@@ -153,10 +154,11 @@ export default function QuestionDetailPage() {
   if (loading) return <div className={s.loading}>{m.loading}</div>;
   if (!data?.question) return <div className={s.loading}>{m.questionNotFound}</div>;
 
-  const { question, chapter, response, navigation } = data;
+  const { question, chapter, response, navigation, book } = data;
   const promptText   = titleOf(question.prompt, lang);
   const hintText     = titleOf(question.hint, lang);
   const chapterText  = titleOf(chapter.title, lang);
+  const bookTitle    = (book && (titleOf(book.title_i18n, lang) || book.title)) || m.bookDefaultTitle;
   const directList   = response.fragments || [];
   const importedList = response.imported_fragments || [];
 
@@ -170,6 +172,13 @@ export default function QuestionDetailPage() {
           {m.backToChapter} {chapter.order}
         </button>
       </header>
+
+      {/* 🔥 Task 85 — 3-step Breadcrumb: 책제목 › 챕터 N › 질문 N. */}
+      <Breadcrumb items={[
+        { label: bookTitle, href: `/book/${bookId}` },
+        { label: `${m.chapterPrefix} ${chapter.order}`, href: `/book/${bookId}/chapter/${chapter.id}` },
+        { label: `${m.questionPrefix} ${question.order}` },
+      ]} />
 
       <div className={s.breadcrumb}>{m.chapterPrefix} {chapter.order}: {chapterText}</div>
       <div className={s.questionNum}>{m.questionPrefix} {question.order}</div>
