@@ -14,8 +14,10 @@
  */
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import storiesIndex from '@/data/stories/index.json';
 import s from './page.module.css';
 
 // ── Localization ──────────────────────────────────────────────
@@ -136,6 +138,16 @@ export default function SharingStoriesPage() {
         <p className={s.subtitle}>{msgs.pageSubtitle}</p>
       </div>
 
+      {/* 🆕 Long-form entry buttons — stacked vertically (memoir / essay).
+          Drives users from short stories into the full-length samples
+          built at /stories. Color-coordinated with /stories cards. */}
+      <BookEntryStack />
+
+      {/* Divider between long-form entries and short-form story cards */}
+      <div className={s.shortStoriesDivider}>
+        <span>더 짧은 이야기들</span>
+      </div>
+
       {/* Content */}
       {loading ? (
         <div className={s.loading}>…</div>
@@ -174,6 +186,46 @@ export default function SharingStoriesPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+// ── Long-form book entries (memoir + essay) ──────────────────
+// Two big stacked buttons that link into /stories/[bookId]. Stays
+// stacked vertically on every viewport per spec — no side-by-side
+// layout, even on desktop.
+function BookEntryStack() {
+  const books = Array.isArray(storiesIndex?.books) ? storiesIndex.books : [];
+  return (
+    <div className={s.bookEntryStack}>
+      {books.map(book => {
+        const isMemoir = book.type === 'memoir';
+        const kindLabel = isMemoir ? '자서전' : '수필';
+        const unit      = isMemoir ? '장' : '편';
+        const icon      = isMemoir ? '📖' : '✍️';
+        return (
+          <Link
+            key={book.id}
+            href={`/stories/${book.id}`}
+            className={`${s.bookEntry} ${isMemoir ? s.bookEntryMemoir : s.bookEntryEssay}`}
+            aria-label={`${kindLabel} ${book.title} 읽기`}
+          >
+            <div className={s.bookEntryLeft}>
+              <div className={s.bookEntryKind}>
+                <span className={s.bookEntryIcon} aria-hidden="true">{icon}</span>
+                {kindLabel}
+              </div>
+              <div className={s.bookEntryTitle}>{book.title}</div>
+              <div className={s.bookEntryMeta}>
+                {book.authorLabel} · 총 {book.totalChapters}{unit}
+              </div>
+            </div>
+            <div className={s.bookEntryCta} aria-hidden="true">
+              읽기 →
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

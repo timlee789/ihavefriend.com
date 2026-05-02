@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════
+   /stories/[bookId]/[chapterNumber] — chapter body (Level 3)
+   Senior-friendly: 20px body, line-height 1.9, max-width 700px.
+   ═══════════════════════════════════════════════════════════ */
+
+.page {
+  min-height: 100dvh;
+  background: #faf8f3;
+  color: #1a1a1a;
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding: 20px 20px 40px;
+}
+
+/* Top nav */
+.topNav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 700px;
+  margin: 0 auto 20px;
+  flex-wrap: wrap;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: rgba(234, 88, 12, 0.10);
+  color: #b04400;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+.backLink:hover { background: rgba(234, 88, 12, 0.20); }
+.backLink:focus-visible { outline: 3px solid #ea580c; outline-offset: 2px; }
+
+.bookCrumb {
+  font-size: 15px;
+  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.crumbAuthor { font-weight: 600; color: #555; }
+.crumbDot { color: #bbb; }
+.crumbBook { font-style: italic; }
+
+/* Article */
+.article {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #fffdf7;
+  border-radius: 16px;
+  padding: 36px 32px 40px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.chapterTitle {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+  text-align: center;
+  margin: 0 0 32px;
+  padding-bottom: 22px;
+  border-bottom: 2px solid rgba(180, 130, 50, 0.25);
+  color: #1a1a1a;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+}
+
+.paragraph {
+  font-size: 20px;
+  line-height: 1.9;
+  color: #2a2a2a;
+  margin: 0;
+  letter-spacing: -0.1px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.signature {
+  margin-top: 40px;
+  padding-top: 24px;
+  text-align: right;
+  font-size: 20px;
+  font-style: italic;
+  color: #555;
+  letter-spacing: 0.5px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+}
+
+/* Bottom nav */
+.bottomNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  max-width: 700px;
+  margin: 28px auto 0;
+  padding: 0 4px;
+}
+
+.navBtn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: rgba(234, 88, 12, 0.10);
+  color: #b04400;
+  font-size: 17px;
+  font-weight: 700;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  text-align: center;
+}
+.navBtn:hover { background: rgba(234, 88, 12, 0.22); }
+.navBtn:active { transform: scale(0.97); }
+.navBtn:focus-visible { outline: 3px solid #ea580c; outline-offset: 2px; }
+
+.navToc {
+  background: rgba(60, 60, 60, 0.08);
+  color: #333;
+}
+.navToc:hover { background: rgba(60, 60, 60, 0.16); }
+
+.navDisabled {
+  background: rgba(0, 0, 0, 0.04);
+  color: #b8b8b8;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Compact phones */
+@media (max-width: 480px) {
+  .article { padding: 28px 22px 32px; border-radius: 14px; }
+  .chapterTitle { font-size: 24px; margin-bottom: 24px; padding-bottom: 18px; }
+  .paragraph { font-size: 19px; line-height: 1.85; }
+  .navBtn { font-size: 16px; }
+}

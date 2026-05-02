@@ -1,0 +1,118 @@
+/* ═══════════════════════════════════════════════════════════
+   /stories/[bookId] — table of contents (Level 2)
+   ═══════════════════════════════════════════════════════════ */
+
+.page {
+  min-height: 100dvh;
+  background: #faf8f3;
+  color: #1a1a1a;
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding: 24px 20px 60px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header { margin-bottom: 28px; }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: rgba(234, 88, 12, 0.10);
+  color: #b04400;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 22px;
+  transition: background-color 0.15s ease;
+}
+.backLink:hover { background: rgba(234, 88, 12, 0.20); }
+.backLink:focus-visible { outline: 3px solid #ea580c; outline-offset: 2px; }
+
+.kindBadge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8a6a2e;
+  background: rgba(180, 130, 50, 0.12);
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.bookTitle {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+}
+
+.bookAuthor {
+  font-size: 19px;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.bookMeta {
+  font-size: 16px;
+  color: #777;
+}
+
+/* TOC */
+.tocList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tocRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 19px;
+  color: #1a1a1a;
+  transition: background-color 0.15s ease;
+}
+.tocRow:hover { background: rgba(234, 88, 12, 0.08); }
+.tocRow:focus-visible {
+  outline: 3px solid #ea580c;
+  outline-offset: -3px;
+  border-radius: 6px;
+}
+
+.tocNumber {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: #b04400;
+  font-size: 18px;
+  min-width: 40px;
+  text-align: center;
+  padding: 4px 0;
+  background: rgba(234, 88, 12, 0.10);
+  border-radius: 8px;
+}
+
+.tocTitle {
+  flex: 1 1 auto;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.tocArrow {
+  flex: 0 0 auto;
+  color: #999;
+  font-size: 22px;
+  margin-left: 8px;
+}
+.tocRow:hover .tocArrow { color: #b04400; }

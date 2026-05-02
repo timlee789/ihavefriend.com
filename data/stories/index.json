@@ -1,0 +1,22 @@
+{
+  "books": [
+    {
+      "id": "memoir-kim-soonja",
+      "type": "memoir",
+      "title": "바늘 끝에서 보낸 일생",
+      "author": "김순자",
+      "authorLabel": "김순자 구술",
+      "totalChapters": 9,
+      "file": "memoir.json"
+    },
+    {
+      "id": "essay-park-jeongmin",
+      "type": "essay",
+      "title": "늦은 오후의 산책",
+      "author": "박정민",
+      "authorLabel": "박정민 구술",
+      "totalChapters": 10,
+      "file": "essay.json"
+    }
+  ]
+}
