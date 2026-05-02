@@ -56,6 +56,18 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
+      {/* Home escape — visitors who land here without an account need
+          a clear, always-visible way back. router.push('/') instead of
+          back() so it works no matter how they arrived. */}
+      <button
+        type="button"
+        style={styles.homeBtn}
+        onClick={() => router.push('/')}
+        aria-label="Back to home"
+      >
+        ← Home
+      </button>
+
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logo}>
@@ -140,6 +152,25 @@ const styles = {
     justifyContent: 'center',
     background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)',
     padding: '20px',
+    position: 'relative',
+  },
+  homeBtn: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    minHeight: 44,
+    padding: '10px 18px',
+    borderRadius: 22,
+    background: 'rgba(168, 85, 247, 0.15)',
+    color: '#c4b5fd',
+    border: '1px solid rgba(168, 85, 247, 0.30)',
+    fontSize: 15,
+    fontWeight: 600,
+    cursor: 'pointer',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    transition: 'background 0.15s ease, transform 0.1s ease',
+    zIndex: 1,
   },
   card: {
     background: '#16213e',
