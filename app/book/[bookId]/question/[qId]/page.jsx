@@ -440,12 +440,22 @@ export default function QuestionDetailPage() {
       {openFragment && (
         <FragmentModal
           fragment={openFragment}
-          lang={lang}
+          // 🔥 Task 82 — the unified modal expects KO/EN/ES uppercase
+          //   (the rest of the /my-stories vocabulary uses that
+          //   casing). Local `lang` here is lowercase from getUserLang.
+          lang={String(lang || 'ko').toUpperCase()}
           onClose={() => setOpenFragment(null)}
+          onUpdated={(updated) => {
+            // Refresh the question detail so the body / title / etc.
+            // reflect the user's edit, then keep the modal open so
+            // they can see their change.
+            setOpenFragment(updated);
+            loadDetail();
+          }}
           onPhotosChanged={() => loadDetail()}
-          onContinue={() => {
-            const url = `/chat?mode=story&continueFragmentId=${encodeURIComponent(openFragment.id)}`;
-            router.push(url);
+          onDeleted={() => {
+            setOpenFragment(null);
+            loadDetail();
           }}
         />
       )}

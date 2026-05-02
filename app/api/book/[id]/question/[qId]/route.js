@@ -88,6 +88,9 @@ export async function GET(request, { params }) {
       const fragRes = await db.query(
         `SELECT
            f.id, f.title, f.subtitle, f.content, f.created_at,
+           f.parent_fragment_id, f.thread_order,
+           f.book_id, f.book_question_id, f.word_count,
+           f.visibility, f.status, f.truncated,
            COALESCE((
              SELECT json_agg(
                       json_build_object(
