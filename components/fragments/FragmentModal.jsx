@@ -43,6 +43,13 @@ export default function FragmentModal({
   onPhotosChanged,
   onDeleted,
   lang = 'KO',
+  // 🔥 Task 83 — render the modal body inside the page flow instead
+  //   of as an overlay. Used by /book/.../question/[qId] so the answer
+  //   appears right where the old preview card sat (no extra tap).
+  //   When inline=true: no overlay/backdrop, no slide-up animation,
+  //   no back/close/handle controls — just the content. All edit /
+  //   delete / photo / continuation behavior is otherwise identical.
+  inline = false,
 }) {
   const router = useRouter();
   const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete' | 'confirmVisibility'
@@ -142,27 +149,26 @@ export default function FragmentModal({
     }
   }
 
-  return (
-    <>
-    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className={s.modal}>
-        <div className={s.modalHandle} />
-
-        <div className={s.modalHeader}>
-          <button className={s.modalBackBtn} onClick={onClose}>
-            {vm.backToList}
-          </button>
-          <div className={s.modalHeaderText}>
-            <div className={s.modalTitle}>
-              {mode === 'edit' ? vm.editMode : fragment.title}
-            </div>
-            {mode === 'view' && fragment.subtitle && (
-              <div className={s.modalSubtitle}>{fragment.subtitle}</div>
-            )}
-          </div>
+  const headerSection = (
+    <div className={s.modalHeader}>
+      {!inline && (
+        <button className={s.modalBackBtn} onClick={onClose}>
+          {vm.backToList}
+        </button>
+      )}
+      <div className={s.modalHeaderText}>
+        <div className={s.modalTitle}>
+          {mode === 'edit' ? vm.editMode : fragment.title}
         </div>
+        {mode === 'view' && fragment.subtitle && (
+          <div className={s.modalSubtitle}>{fragment.subtitle}</div>
+        )}
+      </div>
+    </div>
+  );
 
-        <div className={s.modalBody}>
+  const bodyContent = (
+    <div className={s.modalBody}>
           {/* ── VIEW MODE ── */}
           {mode === 'view' && (
             <>
@@ -345,19 +351,43 @@ export default function FragmentModal({
               </div>
             </>
           )}
+    </div>
+  );
+
+  const picker = showPicker && (
+    <FragmentCollectionPicker
+      fragmentId={fragment.id}
+      currentCollectionIds={fragmentCollections.map(c => c.id)}
+      lang={lang}
+      onClose={() => setShowPicker(false)}
+      onChanged={reloadFragmentMeta}
+    />
+  );
+
+  if (inline) {
+    return (
+      <>
+        <div className={s.inlineContainer}>
+          <div className={s.inlineBody}>
+            {headerSection}
+            {bodyContent}
+          </div>
+        </div>
+        {picker}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className={s.modal}>
+          <div className={s.modalHandle} />
+          {headerSection}
+          {bodyContent}
         </div>
       </div>
-    </div>
-
-    {showPicker && (
-      <FragmentCollectionPicker
-        fragmentId={fragment.id}
-        currentCollectionIds={fragmentCollections.map(c => c.id)}
-        lang={lang}
-        onClose={() => setShowPicker(false)}
-        onChanged={reloadFragmentMeta}
-      />
-    )}
+      {picker}
     </>
   );
 }

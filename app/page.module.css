@@ -708,6 +708,111 @@
   }
 }
 
+/* 🔥 Task 83 — 2×3 square grid replacing the 6 horizontal CTAs.
+   Senior-friendly: aspect-ratio:1/1 keeps every button a generous
+   touch target (~100px+ at mobile widths), big icon centered top,
+   single label below, no subtitle. Six saturated hues differentiate
+   actions at a glance. */
+.gridContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+/* 🔥 Task 83 (revised) — Tim 요청: 2행 3줄. 즉 3 columns × 2 rows
+   가 아니라, 2 columns × 3 rows. 한 줄에 버튼 2개씩, 총 3 줄. */
+.gridRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.gridBtn {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  font-family: inherit;
+}
+
+.gridBtn:active { transform: scale(0.97); }
+.gridBtn:hover  { filter: brightness(0.94); }
+
+.gridIcon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.gridLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  line-height: 1.2;
+  word-break: keep-all;
+  letter-spacing: -0.01em;
+}
+
+/* Six fully-opaque hues. Memoir/essay distinct from each other so the
+   senior tells "내 자서전" apart from "내 수필집" instantly. */
+.gridBtnMemoir    { background: #c2410c; }   /* burnt orange */
+.gridBtnEssay     { background: #15803d; }   /* deep green */
+.gridBtnRecord    { background: #b45309; }   /* amber */
+.gridBtnTalk      { background: #4338ca; }   /* indigo */
+.gridBtnMyStories { background: #7c2d12; }   /* dark brown */
+.gridBtnSamples   { background: #0e7490; }   /* cyan */
+
+/* Private-mode badge anchored top-right of the Talk button. Slightly
+   translucent black so the white text reads cleanly without competing
+   with the centered label. */
+.gridPrivateBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 3px 6px;
+  border-radius: 8px;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+@media (max-width: 380px) {
+  .gridBtn   { padding: 10px 6px; gap: 6px; }
+  .gridIcon  { font-size: 30px; }
+  .gridLabel { font-size: 12px; }
+  .gridPrivateBadge { font-size: 9px; padding: 2px 5px; top: 6px; right: 6px; }
+}
+
+/* DEPRECATED Task 83 — replaced by .gridBtn* family above. Kept here
+   (unused by /) so any other page that imports the same classnames
+   keeps working and git diff stays small. Safe to delete once we
+   confirm nothing else references them. */
+/*
+.bookCta { … }
+.storyCta { … }
+.companionCta { … }
+.myStoriesCta { … }
+.viewStoriesCta { … }
+.privateBadge { … }
+.footerTemplatesBtn { … }
+*/
+
 /* 🆕 Stage 7 — home Resume Banner for in-progress books */
 .resumeBookCard {
   display: flex;

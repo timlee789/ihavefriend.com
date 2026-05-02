@@ -14,8 +14,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import EmmaAvatar from '@/components/emma/EmmaAvatar';
-import { titleOf } from '@/lib/i18nHelper';
 import s from './page.module.css';
 
 // ── Localization ─────────────────────────────────────────────────
@@ -54,6 +52,14 @@ const HOME_MSGS = {
     myStoriesCtaTitle  : '내 이야기 보기',
     myStoriesCtaSub    : '지금까지 모은 이야기들',
     privateLabel       : 'Private Mode',
+
+    // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
+    homeBtnMemoir      : '내 자서전',
+    homeBtnEssay       : '내 수필집',
+    homeBtnRecord      : '기록하기',
+    homeBtnTalk        : '이야기하기',
+    homeBtnMyStories   : '내 이야기 보기',
+    homeBtnSamples     : '샘플 이야기 보기',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -89,6 +95,14 @@ const HOME_MSGS = {
     myStoriesCtaTitle  : 'View my stories',
     myStoriesCtaSub    : 'The stories you have kept so far',
     privateLabel       : 'Private Mode',
+
+    // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
+    homeBtnMemoir      : 'My Memoir',
+    homeBtnEssay       : 'My Essays',
+    homeBtnRecord      : 'Record',
+    homeBtnTalk        : 'Talk',
+    homeBtnMyStories   : 'My Stories',
+    homeBtnSamples     : 'Sample Stories',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -124,6 +138,14 @@ const HOME_MSGS = {
     myStoriesCtaTitle  : 'Ver mis historias',
     myStoriesCtaSub    : 'Las historias que has guardado',
     privateLabel       : 'Modo Privado',
+
+    // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
+    homeBtnMemoir      : 'Mis memorias',
+    homeBtnEssay       : 'Mis ensayos',
+    homeBtnRecord      : 'Grabar',
+    homeBtnTalk        : 'Hablar',
+    homeBtnMyStories   : 'Mis historias',
+    homeBtnSamples     : 'Historias',
   },
 };
 
@@ -142,27 +164,10 @@ export default function Home() {
   const [lang, setLang] = useLang();
   const [userName, setUserName] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  // Task 55: recent stories card removed in favor of a dedicated
-  // "내 이야기 보기" button. The fragments fetch + state are gone too.
   // 🆕 Stage 7 — surface in-progress books on the home page so the
-  //   senior can resume in one tap instead of digging through the
-  //   "🎙️ 내 이야기 남기기" branch every time.
+  //   senior can resume in one tap (Task 83 routes them through the
+  //   memoir / essay grid buttons by template_category).
   const [activeBooks, setActiveBooks] = useState([]);
-
-  // Track system color scheme for EmmaAvatar mode
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mq.matches);
-    const handler = (e) => setIsDark(e.matches);
-    if (mq.addEventListener) mq.addEventListener('change', handler);
-    else mq.addListener(handler);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', handler);
-      else mq.removeListener(handler);
-    };
-  }, []);
 
   const msgs = HOME_MSGS[lang] || HOME_MSGS.KO;
 
@@ -239,6 +244,26 @@ export default function Home() {
     setActiveBooks([]);
   }
 
+  // 🔥 Task 83 — classify in-progress books by template_category so the
+  //   Memoir / Essay buttons resume into an existing book when one is
+  //   in flight, instead of always landing on /book/templates. The
+  //   /api/book/list response already JOINs book_template_definitions
+  //   and exposes `template_category` ('memoir' | 'essays' | …).
+  const memoirBook = activeBooks.find(b => b.template_category === 'memoir');
+  const essayBook  = activeBooks.find(b => b.template_category === 'essays');
+
+  function onMemoirClick() {
+    if (!isLoggedIn) return requireLogin('/book/templates');
+    if (memoirBook) router.push(`/book/${memoirBook.id}`);
+    else router.push('/book/templates');
+  }
+
+  function onEssayClick() {
+    if (!isLoggedIn) return requireLogin('/book/templates');
+    if (essayBook) router.push(`/book/${essayBook.id}`);
+    else router.push('/book/templates');
+  }
+
   if (!authChecked) {
     return <div className={s.loadingScreen} />;
   }
@@ -261,122 +286,73 @@ export default function Home() {
         {isLoggedIn ? msgs.greeting(userName) : msgs.tagline}
       </div>
 
-      {/* 🔥 Task 70 — Button order. Book first (resume / make), then
-          the two chat modes, then library. */}
+      {/* 🔥 Task 83 — 2×3 square grid replaces the 5 horizontal CTAs.
+          Memoir/Essay split into their own buttons; if a book of that
+          template_category is already in flight we resume into it,
+          otherwise the tap lands on /book/templates filtered to that
+          type. */}
+      {/* 🔥 Task 83 (revised) — Tim 요청: 2 columns × 3 rows. 한 줄에
+          버튼 2개씩, 총 3줄. */}
+      <div className={s.gridContainer}>
+        <div className={s.gridRow}>
+          <button
+            className={`${s.gridBtn} ${s.gridBtnMemoir}`}
+            onClick={onMemoirClick}
+          >
+            <div className={s.gridIcon}>📘</div>
+            <div className={s.gridLabel}>{msgs.homeBtnMemoir}</div>
+          </button>
 
-      {/* 🔥 Task 72 — show every active book (capped at 3 to stay
-          within the iPhone-SE viewport budget for the 6-button row).
-          Each card jumps straight to that book; if there are zero
-          active books we fall back to the "Make my book" single
-          button that lands on /book/templates. */}
-      {activeBooks.length === 0 ? (
-        <button
-          className={s.bookCta}
-          onClick={() => router.push('/book/templates')}
-        >
-          {/* /book/templates is also public (Task 74) — visitors can
-              browse the cards; the actual "start" tap there is what
-              triggers the login prompt. */}
-          <div className={s.ctaIcon}>📚</div>
-          <div className={s.ctaTextWrap}>
-            <div className={s.ctaMain}>{msgs.bookCtaTitle}</div>
-            <div className={s.ctaSub}>{msgs.bookCtaSub}</div>
-          </div>
-        </button>
-      ) : (
-        activeBooks.slice(0, 3).map(b => {
-          // Task 69 — prefer the template's localized name so the
-          // resume label reads "Continue — My Memoir" in EN even on
-          // a book that was started under memoir-ko.
-          const title =
-            titleOf(b.template_name, lang.toLowerCase()) ||
-            b.title ||
-            msgs.bookDefaultTitle;
-          const done  = b.completed_questions || 0;
-          const total = b.total_questions || 0;
-          return (
-            <button
-              key={b.id}
-              className={s.bookCta}
-              onClick={() => router.push(`/book/${b.id}`)}
-            >
-              <div className={s.ctaIcon}>📚</div>
-              <div className={s.ctaTextWrap}>
-                <div className={s.ctaMain}>
-                  {msgs.bookResumeTitle.replace('{title}', title)}
-                </div>
-                <div className={s.ctaSub}>
-                  {msgs.bookResumeSub.replace('{done}', done).replace('{total}', total)}
-                </div>
-              </div>
-            </button>
-          );
-        })
-      )}
-
-      {/* 2. Story CTA — direct /chat?mode=story */}
-      <button
-        className={s.storyCta}
-        onClick={() => isLoggedIn ? router.push('/chat?mode=story') : requireLogin('/chat?mode=story')}
-      >
-        <div className={s.ctaIcon}>🎙️</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.storyCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.storyCtaSub}</div>
+          <button
+            className={`${s.gridBtn} ${s.gridBtnEssay}`}
+            onClick={onEssayClick}
+          >
+            <div className={s.gridIcon}>📓</div>
+            <div className={s.gridLabel}>{msgs.homeBtnEssay}</div>
+          </button>
         </div>
-      </button>
 
-      {/* 3. Companion CTA — Private chat */}
-      <button
-        className={s.companionCta}
-        onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
-      >
-        <div className={s.ctaIcon}>💬</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.companionCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.companionCtaSub}</div>
+        <div className={s.gridRow}>
+          <button
+            className={`${s.gridBtn} ${s.gridBtnRecord}`}
+            onClick={() => isLoggedIn ? router.push('/chat?mode=story') : requireLogin('/chat?mode=story')}
+          >
+            <div className={s.gridIcon}>🎙️</div>
+            <div className={s.gridLabel}>{msgs.homeBtnRecord}</div>
+          </button>
+
+          <button
+            className={`${s.gridBtn} ${s.gridBtnTalk}`}
+            onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
+          >
+            <div className={s.gridIcon}>💬</div>
+            <div className={s.gridLabel}>{msgs.homeBtnTalk}</div>
+            <span className={s.gridPrivateBadge}>🔒 {msgs.privateLabel}</span>
+          </button>
         </div>
-        <span className={s.privateBadge}>🔒 {msgs.privateLabel}</span>
-      </button>
 
-      {/* 4. My Stories */}
-      <button
-        className={s.myStoriesCta}
-        onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
-      >
-        <div className={s.ctaIcon}>📖</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.myStoriesCtaTitle}</div>
-          <div className={s.ctaSub}>{msgs.myStoriesCtaSub}</div>
+        <div className={s.gridRow}>
+          <button
+            className={`${s.gridBtn} ${s.gridBtnMyStories}`}
+            onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
+          >
+            <div className={s.gridIcon}>📖</div>
+            <div className={s.gridLabel}>{msgs.homeBtnMyStories}</div>
+          </button>
+
+          <button
+            className={`${s.gridBtn} ${s.gridBtnSamples}`}
+            onClick={() => router.push('/sharing-stories')}
+          >
+            <div className={s.gridIcon}>🌐</div>
+            <div className={s.gridLabel}>{msgs.homeBtnSamples}</div>
+          </button>
         </div>
-      </button>
+      </div>
 
-      {/* 5. Other people's stories */}
-      <button
-        className={s.viewStoriesCta}
-        onClick={() => router.push('/sharing-stories')}
-      >
-        <div className={s.ctaIcon}>🌐</div>
-        <div className={s.ctaTextWrap}>
-          <div className={s.ctaMain}>{msgs.sharingStoriesTitle}</div>
-          <div className={s.ctaSub}>{msgs.sharingStoriesSub}</div>
-        </div>
-      </button>
-
-      {/* 🔥 Task 70 — Footer. lang toggle + logout demoted to a small
-          row at the bottom of the screen (margin-top:auto pushes it
-          there). Opacity 0.65 by default so they don't compete with
-          the primary CTAs above. */}
+      {/* 🔥 Task 83 — Footer. The book templates link was removed (the
+          memoir/essay grid buttons cover the same path now). */}
       <footer className={s.homeFooter}>
-        {/* 🔥 Task 71 — book templates link, always present so the
-            senior can discover other book types beyond whatever's
-            currently showing on the bookCta above. */}
-        <button
-          className={s.footerTemplatesBtn}
-          onClick={() => router.push('/book/templates')}
-        >
-          📚 {msgs.bookTemplatesFooter}
-        </button>
         <div className={s.footerRow}>
           <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
           {isLoggedIn ? (

@@ -1726,3 +1726,46 @@
   margin-bottom: 4px;
   letter-spacing: 0.02em;
 }
+
+/* 🔥 Task 83 — inline FragmentModal mode (used by /book/.../question/[qId]).
+   Renders the same modal body inside the page flow so the senior sees
+   their answer immediately without an extra tap. No overlay, no slide-up,
+   no sticky header. The modal still uses .modalHeader / .modalBody /
+   .modalContent so all existing styling (markdown, photos, edit, delete)
+   applies unchanged. */
+.inlineContainer {
+  width: 100%;
+  margin: 16px 0;
+  background: #2a2520;
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.inlineBody {
+  padding: 4px 0 8px;
+}
+
+/* In inline mode the sticky-header treatment + close pill aren't right —
+   the body sits in normal page flow, not a slide-up sheet. We override
+   the sticky positioning and drop the bottom border so the header reads
+   as a section heading instead of a floating bar. */
+.inlineContainer .modalHeader {
+  position: static;
+  background: transparent;
+  border-bottom: none;
+  padding: 14px 20px 8px;
+}
+
+.inlineContainer .modalTitle {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 17px;
+}
+
+.inlineContainer .modalSubtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.inlineContainer .modalBody {
+  padding: 0 20px 20px;
+}

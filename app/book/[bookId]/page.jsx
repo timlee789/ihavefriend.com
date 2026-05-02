@@ -90,7 +90,10 @@ export default function BookOverviewPage() {
   return (
     <div className={s.container}>
       <header className={s.header}>
-        <button className={s.backBtn} onClick={() => router.push('/book/select')}>{m.backToList}</button>
+        {/* 🔥 Task 83 — book overview backBtn jumps straight to /
+            (Tim's beta polish: skip the /book/select detour — that
+            templates surface is now reached via the home grid). */}
+        <button className={s.backBtn} onClick={() => router.push('/')}>{m.backToHome}</button>
         {/* 🔥 Task 69 — localize the title via the template's i18n
             name when present, falling back to whatever was stored
             at start time. */}

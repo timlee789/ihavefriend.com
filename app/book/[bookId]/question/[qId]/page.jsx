@@ -34,8 +34,9 @@ export default function QuestionDetailPage() {
   const [loadingSuggestions,  setLoadingSuggestions]  = useState(false);
   const [importing,           setImporting]           = useState(null); // fragmentId mid-flight
   const [importError,         setImportError]         = useState('');
-  // 🔥 Task 79 — fragment selected for full-detail modal
-  const [openFragment,        setOpenFragment]        = useState(null);
+  // 🔥 Task 83 — answer fragments now render inline (FragmentModal
+  //   inline=true). The previous click-to-open card flow is gone, so
+  //   the openFragment state is no longer needed.
 
   const loadDetail = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -117,18 +118,6 @@ export default function QuestionDetailPage() {
     }
   }
 
-  async function selectFragment(fragmentId, type = 'direct') {
-    const token = localStorage.getItem('token');
-    try {
-      await fetch(`/api/book/${bookId}/question/${qId}/select`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ fragmentId, type }),
-      });
-      await loadDetail();
-    } catch {}
-  }
-
   // 🆕 Stage 7 — read the question prompt aloud. Senior eyes get
   //   tired, so we offer a "🔊" button that uses the browser
   //   SpeechSynthesis API at a slightly slower rate. We do NOT lean on
@@ -205,99 +194,48 @@ export default function QuestionDetailPage() {
         )}
       </div>
 
-      {/* Direct answers (saved by /chat?mode=book sessions).
-          🆕 Stage 7: when there's only one answer we keep the simple
-          read-only card. When there are multiple we render the radio-
-          select UI so the senior can pick which one ends up in the
-          printed book. The select API mirrors the choice into
-          response.selected_fragment_id (or selected_imported_id). */}
-      {response.status === 'complete' && directList.length === 1 && (
+      {/* 🔥 Task 83 — direct answers render as inline FragmentModal so
+          the senior sees the full answer (body, photos, edit/delete,
+          continuation thread) right where the old preview card sat,
+          without an extra tap. Multiple fragments stack vertically. */}
+      {directList.length > 0 && (
         <div className={s.existingResponses}>
-          <div className={s.existingLabel}>{m.previousAnswers}</div>
+          <div className={s.existingLabel}>
+            {directList.length > 1 ? m.multipleAnswers : m.previousAnswers}
+          </div>
           {directList.map(f => (
-            // 🔥 Task 79 — entire card is clickable; opens the
-            //   FragmentModal with the full body + photo uploader.
-            <button
+            <FragmentModal
               key={f.id}
-              type="button"
-              className={s.fragmentCard}
-              onClick={() => setOpenFragment(f)}
-            >
-              <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
-              <div className={s.fragmentPreview}>
-                {(f.content || '').substring(0, 150)}
-                {(f.content || '').length > 150 ? '…' : ''}
-              </div>
-              {Array.isArray(f.photos) && f.photos.length > 0 && (
-                <div className={s.fragmentPhotos}>
-                  {f.photos.slice(0, 2).map(p => (
-                    <img key={p.id} src={p.blob_url} alt="" className={s.fragmentThumb} />
-                  ))}
-                </div>
-              )}
-            </button>
+              fragment={f}
+              inline={true}
+              lang={String(lang || 'ko').toUpperCase()}
+              onUpdated={() => loadDetail()}
+              onPhotosChanged={() => loadDetail()}
+              onDeleted={() => loadDetail()}
+            />
           ))}
         </div>
       )}
-      {directList.length > 1 && (
-        <div className={s.multipleResponses}>
-          <div className={s.multipleLabel}>{m.multipleAnswers}</div>
-          {directList.map((f, i) => {
-            const isSelected = response.selected_fragment_id === f.id;
-            return (
-              <button
-                key={f.id}
-                type="button"
-                className={`${s.fragmentSelectCard} ${isSelected ? s.fragmentSelected : ''}`}
-                onClick={() => selectFragment(f.id, 'direct')}
-              >
-                <span className={s.fragmentRadio}>{isSelected ? '🔘' : '⚪'}</span>
-                <span className={s.fragmentBody}>
-                  <span className={s.fragmentDate}>
-                    {m.answerNum} {i + 1} · {f.created_at ? new Date(f.created_at).toLocaleDateString(dateLocale) : ''}
-                  </span>
-                  <span className={s.fragmentText}>
-                    {(f.content || '').substring(0, 200)}
-                    {(f.content || '').length > 200 ? '…' : ''}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
-      {/* 🆕 Stage 5 — imported free-form fragments */}
+      {/* 🆕 Stage 5 — imported free-form fragments. Task 83: also inline.
+          The "remove from book" button stays beside each modal because
+          it's a question-page concern (not part of the FragmentModal). */}
       {importedList.length > 0 && (
         <div className={s.importedSection}>
           <div className={s.importedLabel}>{m.importedLabel}</div>
           {importedList.map(f => (
-            <div key={f.id} className={`${s.fragmentCard} ${s.importedCard}`}>
-              {/* 🔥 Task 79 — body + thumbnails are click-to-detail.
-                  The "remove import" button stops propagation so it
-                  doesn't accidentally pop the modal. */}
-              <div
-                className={s.fragmentClickable}
-                onClick={() => setOpenFragment(f)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className={s.fragmentTitle}>{f.title || m.answerFallback}</div>
-                <div className={s.fragmentPreview}>
-                  {(f.content || '').substring(0, 150)}
-                  {(f.content || '').length > 150 ? '…' : ''}
-                </div>
-                {Array.isArray(f.photos) && f.photos.length > 0 && (
-                  <div className={s.fragmentPhotos}>
-                    {f.photos.slice(0, 2).map(p => (
-                      <img key={p.id} src={p.blob_url} alt="" className={s.fragmentThumb} />
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div key={f.id} className={s.importedInlineWrap}>
+              <FragmentModal
+                fragment={f}
+                inline={true}
+                lang={String(lang || 'ko').toUpperCase()}
+                onUpdated={() => loadDetail()}
+                onPhotosChanged={() => loadDetail()}
+                onDeleted={() => loadDetail()}
+              />
               <button
                 className={s.removeImportBtn}
-                onClick={(e) => { e.stopPropagation(); removeImport(f.id); }}
+                onClick={() => removeImport(f.id)}
               >
                 {m.cancelImport}
               </button>
@@ -432,33 +370,8 @@ export default function QuestionDetailPage() {
         </div>
       )}
 
-      {/* 🔥 Task 79 — full-detail modal opened by tapping any answer
-          card. Uses the new shared FragmentModal at
-          components/fragments/FragmentModal.jsx; same shape as the
-          /my-stories modal, just a leaner subset (view + photos +
-          continue) appropriate for a book answer. */}
-      {openFragment && (
-        <FragmentModal
-          fragment={openFragment}
-          // 🔥 Task 82 — the unified modal expects KO/EN/ES uppercase
-          //   (the rest of the /my-stories vocabulary uses that
-          //   casing). Local `lang` here is lowercase from getUserLang.
-          lang={String(lang || 'ko').toUpperCase()}
-          onClose={() => setOpenFragment(null)}
-          onUpdated={(updated) => {
-            // Refresh the question detail so the body / title / etc.
-            // reflect the user's edit, then keep the modal open so
-            // they can see their change.
-            setOpenFragment(updated);
-            loadDetail();
-          }}
-          onPhotosChanged={() => loadDetail()}
-          onDeleted={() => {
-            setOpenFragment(null);
-            loadDetail();
-          }}
-        />
-      )}
+      {/* 🔥 Task 83 — overlay FragmentModal removed; answers now render
+          inline above (see directList / importedList sections). */}
     </div>
   );
 }

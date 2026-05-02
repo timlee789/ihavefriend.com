@@ -463,3 +463,22 @@ button.fragmentCard:hover {
   background: #2a2520;
   flex-shrink: 0;
 }
+
+/* 🔥 Task 83 — wrapper around an inline FragmentModal of an imported
+   fragment, so the "remove from book" button can sit just below the
+   inline body without jamming up against the next imported card. */
+.importedInlineWrap {
+  margin-bottom: 12px;
+}
+.importedInlineWrap .removeImportBtn {
+  margin: -8px 0 0 20px;
+}
+
+/* DEPRECATED Task 83 — answer cards (.fragmentCard / .fragmentTitle /
+   .fragmentPreview / .fragmentPhotos / .fragmentThumb / .fragmentClickable)
+   plus the multi-answer radio-select UI (.multipleResponses /
+   .multipleLabel / .fragmentSelectCard / .fragmentSelected /
+   .fragmentRadio / .fragmentBody / .fragmentDate / .fragmentText) are
+   no longer referenced — the page renders fragments via inline
+   FragmentModal now. Definitions are left in place so any future
+   revival doesn't have to re-author the styles. */
