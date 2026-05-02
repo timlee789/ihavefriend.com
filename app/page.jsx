@@ -57,7 +57,10 @@ const HOME_MSGS = {
     homeBtnMemoir      : '내 자서전',
     homeBtnEssay       : '내 수필집',
     homeBtnRecord      : '기록하기',
-    homeBtnTalk        : '이야기하기',
+    // 🔥 Task 84 — Tim 결정: companion mode은 "기록되지 않음"이
+    //   핵심 가치라서 라벨이 그 사실을 직접 말해야 함. 🔒 Private
+    //   Mode 배지는 그대로 유지.
+    homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
   },
@@ -100,7 +103,7 @@ const HOME_MSGS = {
     homeBtnMemoir      : 'My Memoir',
     homeBtnEssay       : 'My Essays',
     homeBtnRecord      : 'Record',
-    homeBtnTalk        : 'Talk',
+    homeBtnTalk        : "Don't Save",
     homeBtnMyStories   : 'My Stories',
     homeBtnSamples     : 'Sample Stories',
   },
@@ -143,7 +146,7 @@ const HOME_MSGS = {
     homeBtnMemoir      : 'Mis memorias',
     homeBtnEssay       : 'Mis ensayos',
     homeBtnRecord      : 'Grabar',
-    homeBtnTalk        : 'Hablar',
+    homeBtnTalk        : 'Sin guardar',
     homeBtnMyStories   : 'Mis historias',
     homeBtnSamples     : 'Historias',
   },

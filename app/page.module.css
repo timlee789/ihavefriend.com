@@ -255,12 +255,22 @@
   justify-content: center;
   padding: 8px 0 4px;
 }
+/* 🔥 Task 84 — Bigger, bolder brand mark. Light bg → dark ink for
+   contrast against the cream background; dark mode flips to white via
+   @media block at the bottom of the file. */
 .logoLarge {
-  font-size: 24px;
+  font-size: 42px;
   font-weight: 800;
-  color: #ea580c;
-  letter-spacing: -0.02em;
+  color: #1a1410;
+  letter-spacing: -0.025em;
   margin: 0;
+  line-height: 1.05;
+}
+@media (max-width: 380px) {
+  .logoLarge { font-size: 32px; }
+}
+@media (min-width: 768px) {
+  .logoLarge { font-size: 56px; }
 }
 
 /* 🔥 Task 70 — All five CTAs use 100% opaque solid colors. Previously
@@ -643,6 +653,8 @@
   }
 
   .logo { color: #fb923c; }
+  /* 🔥 Task 84 — flip the brand to white on dark for max contrast. */
+  .logoLarge { color: #fff; }
   .greetingLine { color: rgba(255, 255, 255, 0.75); }
 
   .logoutBtn { color: #aaa; }
@@ -729,49 +741,92 @@
   gap: 12px;
 }
 
+/* 🔥 Task 84 — bigger touch target + 3D pop-out. The button has a
+   visible bottom edge (`box-shadow: 0 6px 0 0 <darker hue>`) so it
+   reads as physically raised; pressing it pulls the body down to meet
+   the edge for a satisfying "click" feel. CSS variables hold the per-
+   button accent colors so the shadow stack stays in one place. */
 .gridBtn {
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 8px;
+  gap: 12px;
+  padding: 12px;
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  background: var(--gridBtnBg, #4338ca);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease;
+  box-shadow:
+    0 6px 0 0 var(--gridBtnEdge, rgba(0, 0, 0, 0.30)),
+    0 8px 16px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.18);
   font-family: inherit;
 }
 
-.gridBtn:active { transform: scale(0.97); }
-.gridBtn:hover  { filter: brightness(0.94); }
+.gridBtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 8px 0 0 var(--gridBtnEdge, rgba(0, 0, 0, 0.30)),
+    0 12px 22px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.gridBtn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 0 var(--gridBtnEdge, rgba(0, 0, 0, 0.30)),
+    0 3px 6px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.20);
+}
+
+/* aspect-ratio fallback for iOS Safari < 15. Modern browsers ignore
+   this entire @supports block. */
+@supports not (aspect-ratio: 1 / 1) {
+  .gridBtn {
+    aspect-ratio: auto;
+    height: 0;
+    padding-bottom: 100%;
+    /* When using padding-bottom trick the flex children need a wrapper;
+       at our breakpoints aspect-ratio is universally supported in iOS
+       15+, so this branch is purely defensive. */
+  }
+}
 
 .gridIcon {
-  font-size: 36px;
+  font-size: 56px;
   line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
 .gridLabel {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
   text-align: center;
   line-height: 1.2;
   word-break: keep-all;
   letter-spacing: -0.01em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
 }
 
-/* Six fully-opaque hues. Memoir/essay distinct from each other so the
-   senior tells "내 자서전" apart from "내 수필집" instantly. */
-.gridBtnMemoir    { background: #c2410c; }   /* burnt orange */
-.gridBtnEssay     { background: #15803d; }   /* deep green */
-.gridBtnRecord    { background: #b45309; }   /* amber */
-.gridBtnTalk      { background: #4338ca; }   /* indigo */
-.gridBtnMyStories { background: #7c2d12; }   /* dark brown */
-.gridBtnSamples   { background: #0e7490; }   /* cyan */
+/* 🔥 Task 84 — three semantic color pairs. Each pair tells the senior
+   what kind of action they're picking before they even read the label.
+   Edge color is a hand-picked darker shade of the same hue so the 3D
+   pop-out reads as the same material, not as a generic black drop. */
+.gridBtnMemoir    { --gridBtnBg: #15803d; --gridBtnEdge: #14532d; }  /* book — deep green */
+.gridBtnEssay     { --gridBtnBg: #15803d; --gridBtnEdge: #14532d; }  /* book — deep green */
+.gridBtnRecord    { --gridBtnBg: #b45309; --gridBtnEdge: #78350f; }  /* talk — amber */
+.gridBtnTalk      { --gridBtnBg: #b45309; --gridBtnEdge: #78350f; }  /* talk — amber */
+.gridBtnMyStories { --gridBtnBg: #4338ca; --gridBtnEdge: #312e81; }  /* view — indigo */
+.gridBtnSamples   { --gridBtnBg: #4338ca; --gridBtnEdge: #312e81; }  /* view — indigo */
 
 /* Private-mode badge anchored top-right of the Talk button. Slightly
    translucent black so the white text reads cleanly without competing
@@ -793,10 +848,15 @@
 }
 
 @media (max-width: 380px) {
-  .gridBtn   { padding: 10px 6px; gap: 6px; }
-  .gridIcon  { font-size: 30px; }
-  .gridLabel { font-size: 12px; }
+  .gridBtn   { padding: 10px 8px; gap: 8px; border-radius: 16px; }
+  .gridIcon  { font-size: 44px; }
+  .gridLabel { font-size: 15px; }
   .gridPrivateBadge { font-size: 9px; padding: 2px 5px; top: 6px; right: 6px; }
+}
+
+@media (min-width: 768px) {
+  .gridIcon  { font-size: 64px; }
+  .gridLabel { font-size: 20px; }
 }
 
 /* DEPRECATED Task 83 — replaced by .gridBtn* family above. Kept here
