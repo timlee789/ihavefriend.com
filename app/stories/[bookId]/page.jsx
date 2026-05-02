@@ -34,7 +34,7 @@ export default async function BookTocPage({ params }) {
   return (
     <main className={s.page}>
       <header className={s.header}>
-        <Link href="/stories" className={s.backLink}>‹ 책 목록으로</Link>
+        <Link href="/sharing-stories" className={s.backLink}>‹ 책 목록으로</Link>
         <div className={s.kindBadge}>
           {book.type === 'memoir' ? '자서전' : '수필집'}
         </div>
