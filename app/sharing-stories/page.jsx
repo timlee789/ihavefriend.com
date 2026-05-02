@@ -126,7 +126,11 @@ export default function SharingStoriesPage() {
       {/* Header */}
       <div className={s.header}>
         <div className={s.headerLeft}>
-          <button className={s.backBtn} onClick={() => router.back()}>
+          <button
+            className={s.backBtn}
+            onClick={() => router.push('/')}
+            aria-label="홈으로"
+          >
             {msgs.backBtn}
           </button>
           <span className={s.pageTitle}>{msgs.pageTitle}</span>
