@@ -102,10 +102,31 @@ export async function POST(request) {
   const upstream = new FormData();
   upstream.append('file', audio, audio.name || 'recording.webm');
   upstream.append('model', model);
-  upstream.append('response_format', 'verbose_json');
+  // 🔥 Task 82b — switched from 'verbose_json' to plain 'json'.
+  //   verbose_json triggers Whisper's segment-level confidence
+  //   filtering which silently drops "uncertain" segments; on Korean
+  //   monologues that meant the back third of a 4-minute session
+  //   came back missing. Plain json returns the raw decoder output.
+  upstream.append('response_format', 'json');
   if (langParam) upstream.append('language', langParam);
-  // Tighter temperature reduces hallucination on quiet / silent tails.
-  upstream.append('temperature', '0');
+  // 🔥 Task 82b — temperature 0 → 0.2. Tim's 222s Korean recording
+  //   came back as 764 chars (~35% of expected). At t=0 the decoder
+  //   gives up on any segment it isn't fully confident about; a
+  //   small amount of sampling noise lets it commit to the most
+  //   likely Korean spelling instead of skipping. Whisper's docs
+  //   explicitly recommend ≥ 0.2 for cold long-form speech.
+  upstream.append('temperature', '0.2');
+  // 🔥 Task 82b — Korean prompt. Whisper accepts an `initial prompt`
+  //   that biases the decoder toward the expected vocabulary +
+  //   spelling style. For Korean we pre-prime it with a sentence in
+  //   complete-form 한국어 standard endings; on short clips this
+  //   raises faithfulness markedly without affecting other languages.
+  if (langParam === 'ko') {
+    upstream.append(
+      'prompt',
+      '안녕하세요. 다음은 한국어로 된 자유로운 이야기입니다. 문장 부호와 띄어쓰기를 자연스럽게 적용해 주세요.'
+    );
+  }
 
   let res, json;
   try {
@@ -165,11 +186,29 @@ export async function POST(request) {
     console.warn('[transcribe] usage log failed (non-fatal):', e?.message);
   }
 
+  // 🔥 Task 82b — quality diagnostics. bytesPerSec confirms the
+  //   browser is sending us proper 64 kbps audio (≈8000 bytes/s);
+  //   if it falls below ~3000 the recorder downgraded the bitrate.
+  //   charsPerSec catches the case where Whisper returns a thin
+  //   transcript even on good audio: Korean monologues land around
+  //   8–12 chars/sec, English 4–6. Anything under 4 cps is suspect.
+  const bytesPerSec = duration > 0 ? Math.round(size / duration) : 0;
+  const charsPerSec = duration > 0 ? +(transcript.length / duration).toFixed(2) : 0;
+  const lowQuality  = duration >= 30 && charsPerSec > 0 && charsPerSec < 4;
   console.log(
     `[transcribe] user=${user.id} session=${sessionId || '-'} ` +
     `lang=${langParam || 'auto'} detected=${detected || '?'} ` +
-    `bytes=${size} duration=${duration}s textLen=${transcript.length} ${latencyMs}ms`
+    `bytes=${size} duration=${duration}s textLen=${transcript.length} ` +
+    `bytesPerSec=${bytesPerSec} charsPerSec=${charsPerSec} ${latencyMs}ms`
   );
+  if (lowQuality) {
+    console.warn(
+      `[transcribe] ⚠️ low-quality transcript suspected: ` +
+      `${charsPerSec} chars/sec on ${duration}s of ${langParam || detected} audio. ` +
+      `Expected ≥ 4 cps for English, ≥ 8 cps for Korean. ` +
+      `Check browser audioBitsPerSecond and Whisper temperature.`
+    );
+  }
 
   return NextResponse.json({
     transcript,

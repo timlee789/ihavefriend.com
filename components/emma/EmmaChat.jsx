@@ -2288,7 +2288,13 @@ export default function EmmaChat({ initialMode }) {
           }
         }
         recorderMimeRef.current = chosenMime || 'audio/webm';
-        const recOpts = chosenMime ? { mimeType: chosenMime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 };
+        // 🔥 Task 82b — bitrate raised 32 kbps → 64 kbps. The
+        //   previous setting was telephony-grade and was clipping
+        //   the high frequencies Whisper relies on for sibilants
+        //   and Korean phoneme tails. 64 kbps opus is still tiny on
+        //   the wire (~2.5 MB for a 5-min session) but recovers the
+        //   detail Whisper needs.
+        const recOpts = chosenMime ? { mimeType: chosenMime, audioBitsPerSecond: 64000 } : { audioBitsPerSecond: 64000 };
         const recorder = new MediaRecorder(stream, recOpts);
         audioChunksRef.current = [];
         recorder.ondataavailable = (e) => {
