@@ -63,6 +63,9 @@ const HOME_MSGS = {
     homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
+
+    // 🔥 Task 86 — Brand tagline directly under the logo.
+    brandTagline       : '이야기하면 책이 됩니다',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -106,6 +109,9 @@ const HOME_MSGS = {
     homeBtnTalk        : "Don't Save",
     homeBtnMyStories   : 'My Stories',
     homeBtnSamples     : 'Sample Stories',
+
+    // 🔥 Task 86 — Brand tagline directly under the logo.
+    brandTagline       : "Tell your story. We'll make a book.",
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -149,6 +155,9 @@ const HOME_MSGS = {
     homeBtnTalk        : 'Sin guardar',
     homeBtnMyStories   : 'Mis historias',
     homeBtnSamples     : 'Historias',
+
+    // 🔥 Task 86 — Brand tagline directly under the logo.
+    brandTagline       : 'Cuenta tu historia. Lo convertimos en un libro.',
   },
 };
 
@@ -277,8 +286,12 @@ export default function Home() {
           small footer at the bottom of the screen because seniors set
           them once and rarely touch them again. The logo gets the
           full top of the viewport instead. */}
+      {/* 🔥 Task 86 — logo + tagline. Tagline narrates the value in one
+          line so the senior knows what this site does the moment they
+          land. */}
       <div className={s.brandHeader}>
         <h1 className={s.logoLarge}>SayAndKeep.com</h1>
+        <p className={s.brandTagline}>{msgs.brandTagline}</p>
       </div>
 
       {/* Greeting */}

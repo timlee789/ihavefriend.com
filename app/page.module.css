@@ -252,14 +252,18 @@
 /* 🔥 Task 70 — Brand header (logo, large, top-center). */
 .brandHeader {
   display: flex;
-  justify-content: center;
-  padding: 8px 0 4px;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 2px;
 }
 /* 🔥 Task 84 — Bigger, bolder brand mark. Light bg → dark ink for
    contrast against the cream background; dark mode flips to white via
-   @media block at the bottom of the file. */
+   @media block at the bottom of the file.
+   🔥 Task 86 — sized down ~25 % so the brand reads as a header rather
+   than dominating the viewport, making room for the new tagline
+   directly below. */
 .logoLarge {
-  font-size: 42px;
+  font-size: 32px;
   font-weight: 800;
   color: #1a1410;
   letter-spacing: -0.025em;
@@ -267,10 +271,31 @@
   line-height: 1.05;
 }
 @media (max-width: 380px) {
-  .logoLarge { font-size: 32px; }
+  .logoLarge { font-size: 26px; }
 }
 @media (min-width: 768px) {
-  .logoLarge { font-size: 56px; }
+  .logoLarge { font-size: 44px; }
+}
+
+/* 🔥 Task 86 — Tagline sits right under the logo, narrates the value
+   in one sentence so the senior knows what this site does the moment
+   they land. Color tracks the logo (dark on light, light on dark) at
+   slightly reduced opacity so the logo still leads the visual stack. */
+.brandTagline {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(26, 20, 16, 0.78);
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  word-break: keep-all;
+}
+@media (max-width: 380px) {
+  .brandTagline { font-size: 14px; }
+}
+@media (min-width: 768px) {
+  .brandTagline { font-size: 18px; }
 }
 
 /* 🔥 Task 70 — All five CTAs use 100% opaque solid colors. Previously
@@ -653,8 +678,10 @@
   }
 
   .logo { color: #fb923c; }
-  /* 🔥 Task 84 — flip the brand to white on dark for max contrast. */
+  /* 🔥 Task 84 — flip the brand to white on dark for max contrast.
+     🔥 Task 86 — tagline tracks the logo at ~85 % opacity. */
   .logoLarge { color: #fff; }
+  .brandTagline { color: rgba(255, 255, 255, 0.85); }
   .greetingLine { color: rgba(255, 255, 255, 0.75); }
 
   .logoutBtn { color: #aaa; }
