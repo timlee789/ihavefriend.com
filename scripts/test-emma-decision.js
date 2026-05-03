@@ -101,7 +101,7 @@ const SCENARIOS = [
   {
     id: 2,
     critical: false,
-    name: 'book minimal answer → follow_up or change_topic',
+    name: 'book minimal answer → follow_up or gentle_nudge',
     body: {
       mode: 'book', lang: 'ko',
       question: '어디서 태어나셨어요?',
@@ -119,8 +119,8 @@ const SCENARIOS = [
       lastEmmaAction: null,
     },
     expect(d) {
-      const ok = ['follow_up_specific','change_topic','gentle_nudge'].includes(d.action);
-      return { ok, notes: ok ? [] : [`expected follow_up_specific|change_topic|gentle_nudge got ${d.action}`] };
+      const ok = ['follow_up_specific','follow_up_deeper','gentle_nudge'].includes(d.action);
+      return { ok, notes: ok ? [] : [`expected follow_up_specific|follow_up_deeper|gentle_nudge got ${d.action}`] };
     },
   },
 
@@ -284,7 +284,7 @@ const SCENARIOS = [
       lastEmmaAction: null,
     },
     expect(d) {
-      const ok = ['follow_up_specific','gentle_nudge','change_topic','wait_listen'].includes(d.action);
+      const ok = ['follow_up_specific','follow_up_deeper','gentle_nudge','wait_listen','acknowledge_only'].includes(d.action);
       return { ok, notes: ok ? [] : [`unexpected action ${d.action}`] };
     },
   },
@@ -292,7 +292,7 @@ const SCENARIOS = [
   {
     id: 8,
     critical: false,
-    name: 'companion mode → no follow_up_specific',
+    name: 'companion mode → no narrative follow-ups',
     body: {
       mode: 'companion', lang: 'ko',
       question: '오늘 하루 어떠셨어요?',
@@ -310,8 +310,13 @@ const SCENARIOS = [
       lastEmmaAction: null,
     },
     expect(d) {
-      const ok = d.action !== 'follow_up_specific';
-      return { ok, notes: ok ? [] : ['companion mode should not use follow_up_specific'] };
+      // companion mode is not narrative-driven — neither follow_up_*
+      // action is appropriate per the prompt's mode priorities.
+      const narrativeFollow = d.action === 'follow_up_specific' || d.action === 'follow_up_deeper';
+      return {
+        ok: !narrativeFollow,
+        notes: narrativeFollow ? [`companion mode should not use ${d.action}`] : [],
+      };
     },
   },
 
