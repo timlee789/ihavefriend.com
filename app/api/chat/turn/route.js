@@ -212,6 +212,45 @@ User message: "${userMessage.substring(0, 300)}"` }]
       console.timeEnd(`[Turn] transcript-save turn=${turnNumber}`);
     }
 
+    // ── 5. 🆕 Stage 3 (Task 90) — Emma decision pipeline ──────────────────
+    //    Background analyze+decide that persists guidance to
+    //    emma_decisions for /api/emma/next-response to consume.
+    //    Gated behind EMMA_DECISION_ENGINE_ENABLED='true' (default OFF
+    //    in production until Tim verifies it in dev).
+    if (process.env.EMMA_DECISION_ENGINE_ENABLED === 'true') {
+      console.time(`[Turn] decision-pipeline turn=${turnNumber}`);
+      try {
+        const { runDecisionEngine } = require('@/lib/emmaDecisionPipeline');
+        // Pull the session row's mode + lang + accumulated coverage
+        // + last action so the pipeline can build the right context.
+        // transcript_data was just appended above so re-read after.
+        const sessRes = await db.query(
+          `SELECT conversation_mode, transcript_data,
+                  dimension_coverage, last_emma_action
+             FROM chat_sessions
+            WHERE id = $1`,
+          [sessionId]
+        );
+        const sess = sessRes.rows[0] || {};
+        const result = await runDecisionEngine({
+          db, apiKey,
+          userId: user.id, sessionId, turnNumber,
+          userMessage: userText || userMessage,
+          conversationMode: sess.conversation_mode,
+          lang: (user.lang || 'ko'),
+          transcript: sess.transcript_data,
+          previousCoverage: sess.dimension_coverage,
+          lastEmmaAction: sess.last_emma_action,
+        });
+        console.log(`[Turn] decision result turn=${turnNumber}: ${JSON.stringify(result)}`);
+      } catch (e) {
+        // Pipeline is fire-and-forget; surface the error in logs but
+        // never let it bubble into the rest of the IIFE.
+        console.warn(`[Turn] decision pipeline failed turn=${turnNumber}:`, e?.message);
+      }
+      console.timeEnd(`[Turn] decision-pipeline turn=${turnNumber}`);
+    }
+
     console.timeEnd(`[Turn] bg-total turn=${turnNumber}`);
     console.log(`[Turn] bg work done in ${Date.now() - tWork}ms  total=${Date.now() - t0}ms  turn=${turnNumber}`);
   })().catch(err => console.error('[Turn] bg error:', err?.message));

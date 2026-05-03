@@ -1211,6 +1211,14 @@ export default function EmmaChat({ initialMode }) {
   const turnsRef          = useRef(0);
   const transcriptRef     = useRef([]);
   const sessionIdRef      = useRef(null);
+  // 🆕 Stage 3 (Task 90) — most recent Emma decision fetched from
+  //   /api/emma/next-response after the previous turn. Stored as a
+  //   ref so a wait_listen action can extend the listening state on
+  //   the next turn without re-rendering the whole chat surface.
+  //   Shape (when present): { action, suggested_response, target_dimension,
+  //   ground_in, ... }. null until the first decision lands. Stage 4
+  //   wires this into the visible UI (silence timer + completion button).
+  const lastEmmaDecisionRef = useRef(null);
   const currentUserMsgRef = useRef('');
   const currentAiMsgRef   = useRef('');
   const rawAiTextRef      = useRef(''); // text parts from modelTurn (includes <emma_analysis>)
@@ -1981,6 +1989,45 @@ export default function EmmaChat({ initialMode }) {
               rawAiText:  rawAiText || null,  // includes <emma_analysis> block
             }),
           }).catch(() => {});
+
+          // 🆕 Stage 3 (Task 90) — pull whatever guidance the analyze+
+          //   decide pipeline produced for this turn. Fire-and-forget
+          //   with a 2s ceiling so a slow LLM round-trip can't stall
+          //   the mic loop. The endpoint always 200s; null means
+          //   "no guidance available, fall back to existing flow",
+          //   which is what the current EmmaChat does anyway. Tim's
+          //   Stage 4 work will surface wait_listen / suggested_response
+          //   in the UI; for now we just store + log so the prompt
+          //   behavior can be observed in real conversation.
+          ;(async () => {
+            try {
+              const ctrl = new AbortController();
+              const tm = setTimeout(() => ctrl.abort(), 2000);
+              const res = await fetch(`/api/emma/next-response?sessionId=${encodeURIComponent(sid)}`, {
+                headers: { Authorization: `Bearer ${t}` },
+                signal: ctrl.signal,
+              });
+              clearTimeout(tm);
+              if (!res.ok) return;
+              const data = await res.json().catch(() => null);
+              const dec = data?.decision || null;
+              if (dec) {
+                lastEmmaDecisionRef.current = { ...dec, _meta: data?.meta || null };
+                console.log(
+                  `[Emma decision] turn=${turnNum} action=${dec.action} ` +
+                  `target=${dec.target_dimension ?? '-'} ` +
+                  `ground=${dec.ground_in ? JSON.stringify(dec.ground_in) : '-'} ` +
+                  `resp=${dec.suggested_response ? JSON.stringify(String(dec.suggested_response).slice(0, 60)) : 'null'}`
+                );
+              } else {
+                lastEmmaDecisionRef.current = null;
+              }
+            } catch (e) {
+              if (e.name !== 'AbortError') {
+                console.warn('[Emma decision] fetch failed:', e?.message);
+              }
+            }
+          })();
         }
 
         // Check for reminder intent in user's message
