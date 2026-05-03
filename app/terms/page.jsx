@@ -78,7 +78,7 @@ const TERMS_MSGS = {
     s5_n1: '- 인쇄본이 인쇄소로 전송된 후',
     s5_n2: '- 결제 후 30일이 지난 경우',
     s5_n3: '- 디지털 콘텐츠를 이미 다운로드한 후',
-    s5_p4: '환불 신청은 contact@sayandkeep.com 으로 이메일 주시면 영업일 기준 3일 이내 처리됩니다.',
+    s5_p4: '환불 신청은 systeco@hotmail.com 으로 이메일 주시면 영업일 기준 3일 이내 처리됩니다.',
 
     s6_intro: '베타 사용자 (Tim 가족 + 초대받은 50명) 혜택:',
     s6_b1: '✅ Digital 영구 무료 (감사 표시)',
@@ -172,7 +172,7 @@ const TERMS_MSGS = {
     s5_n1: '- After printed books have been sent to the printer',
     s5_n2: '- After 30 days from purchase',
     s5_n3: '- After digital content has been downloaded',
-    s5_p4: 'Refund requests: email contact@sayandkeep.com (processed within 3 business days).',
+    s5_p4: 'Refund requests: email systeco@hotmail.com (processed within 3 business days).',
 
     s6_intro: 'Beta User (Tim\'s family + 50 invited members) Benefits:',
     s6_b1: '✅ Digital free forever (as our thanks)',
@@ -266,7 +266,7 @@ const TERMS_MSGS = {
     s5_n1: '- Después de enviar libros impresos a la imprenta',
     s5_n2: '- Después de 30 días desde la compra',
     s5_n3: '- Después de descargar contenido digital',
-    s5_p4: 'Solicitudes de reembolso: contact@sayandkeep.com (procesadas en 3 días laborales).',
+    s5_p4: 'Solicitudes de reembolso: systeco@hotmail.com (procesadas en 3 días laborales).',
 
     s6_intro: 'Beneficios para usuarios beta:',
     s6_b1: '✅ Digital gratis para siempre (como agradecimiento)',
