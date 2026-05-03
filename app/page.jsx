@@ -66,6 +66,9 @@ const HOME_MSGS = {
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : '이야기하면 책이 됩니다',
+
+    // 🔥 Task 87 — Terms of Service link in footer.
+    termsLabel         : '서비스 약관',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -112,6 +115,9 @@ const HOME_MSGS = {
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : "Tell your story. We'll make a book.",
+
+    // 🔥 Task 87 — Terms of Service link in footer.
+    termsLabel         : 'Terms of Service',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -158,6 +164,9 @@ const HOME_MSGS = {
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : 'Cuenta tu historia. Lo convertimos en un libro.',
+
+    // 🔥 Task 87 — Terms of Service link in footer.
+    termsLabel         : 'Términos del servicio',
   },
 };
 
@@ -371,6 +380,10 @@ export default function Home() {
       <footer className={s.homeFooter}>
         <div className={s.footerRow}>
           <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
+          {/* 🔥 Task 87 — Terms link. Public, no auth required. */}
+          <button className={s.footerTermsBtn} onClick={() => router.push('/terms')}>
+            {msgs.termsLabel}
+          </button>
           {isLoggedIn ? (
             <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
           ) : (

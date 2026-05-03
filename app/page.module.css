@@ -471,8 +471,37 @@
 }
 .footerRow {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
+}
+
+/* 🔥 Task 87 — Terms link, sized like .footerLogoutBtn so the row
+   reads as a single utility cluster. white-space:nowrap stops the
+   3-language label from wrapping awkwardly inside its pill. */
+.footerTermsBtn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.footerTermsBtn:hover {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+}
+@media (prefers-color-scheme: light) {
+  .footerTermsBtn { color: rgba(26, 20, 16, 0.55); }
+  .footerTermsBtn:hover {
+    color: rgba(26, 20, 16, 0.85);
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 .footerTemplatesBtn {
   background: transparent;
