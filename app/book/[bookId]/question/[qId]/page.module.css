@@ -196,6 +196,40 @@
 }
 .importBtn:hover { background: rgba(99, 102, 241, 0.25); }
 
+/* 🆕 Task 93 — typed-answer alternative. Sits between the primary
+   voice button (.startBtn / .redoBtn, orange) and the importer
+   (.importBtn, indigo). Green identity to match the book/green hue
+   from Task 84 — distinct from voice (orange) and import (indigo). */
+.writeBtn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: rgba(34, 197, 94, 0.15);
+  color: rgba(187, 247, 208, 0.95);
+  border: 1px solid rgba(134, 239, 172, 0.40);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+.writeBtn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(134, 239, 172, 0.65);
+}
+@media (prefers-color-scheme: light) {
+  .writeBtn {
+    background: rgba(21, 128, 61, 0.10);
+    color: #14532d;
+    border-color: rgba(21, 128, 61, 0.40);
+  }
+  .writeBtn:hover {
+    background: rgba(21, 128, 61, 0.18);
+    border-color: rgba(21, 128, 61, 0.65);
+  }
+}
+
 /* Modal */
 .modalBackdrop {
   position: fixed;

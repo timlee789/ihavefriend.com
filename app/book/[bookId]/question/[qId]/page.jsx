@@ -306,6 +306,20 @@ export default function QuestionDetailPage() {
           </button>
         )}
 
+        {/* 🆕 Task 93 — typed-answer alternative for users who prefer
+            (or need) the keyboard. /write?bookId=...&bookQuestionId=...
+            saves a fragment then attaches it via the import endpoint
+            (same surface /chat?mode=book uses), so the resulting
+            response row is indistinguishable from a voice answer. */}
+        <button
+          className={s.writeBtn}
+          onClick={() =>
+            router.push(`/write?bookId=${encodeURIComponent(bookId)}&bookQuestionId=${encodeURIComponent(qId)}`)
+          }
+        >
+          {m.startWriteAnswer}
+        </button>
+
         {/* 🆕 Stage 5 — open the importer */}
         <button className={s.importBtn} onClick={openImporter}>
           {m.importExisting}

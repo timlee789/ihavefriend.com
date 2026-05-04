@@ -1088,10 +1088,24 @@
   color: rgba(255,255,255,0.92);
 }
 
-/* Card 1 & 2: Fixed height cards */
+/* Card 1, 2, 3: Fixed height cards */
 .companionCard,
-.storyCard {
+.storyCard,
+.writeCard {
   min-height: 96px;  /* generous touch target */
+  flex-shrink: 0;
+}
+
+/* 🆕 Task 93 — Write card. Uses an emoji "✏️" instead of MicSvgSmall
+   so the senior reads it as a typing alternative at a glance. Same
+   light/dark surface as the other welcome cards. */
+.writeIcon {
+  font-size: 22px;
+  line-height: 1;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 

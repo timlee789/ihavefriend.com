@@ -329,6 +329,9 @@ const WELCOME_MSGS = {
       storyCountEmpty  : '아직 이야기가 없어요',
       fragmentListHead : '나의 이야기들',
       fragmentListEmpty: '첫 번째 이야기를 남겨보세요',
+      // 🆕 Task 93 — typed writing as an alternative to voice.
+      writeTitle       : '글로 쓰기',
+      writeSubtitle    : '말 대신 타이핑으로',
     },
   },
   EN: {
@@ -364,6 +367,9 @@ const WELCOME_MSGS = {
       storyCountEmpty  : 'No stories yet',
       fragmentListHead : 'My Stories',
       fragmentListEmpty: 'Record your first story',
+      // 🆕 Task 93 — typed writing as an alternative to voice.
+      writeTitle       : 'Write it',
+      writeSubtitle    : 'Type instead of speak',
     },
   },
   ES: {
@@ -399,6 +405,9 @@ const WELCOME_MSGS = {
       storyCountEmpty  : 'Sin historias aún',
       fragmentListHead : 'Mis historias',
       fragmentListEmpty: 'Graba tu primera historia',
+      // 🆕 Task 93 — typed writing as an alternative to voice.
+      writeTitle       : 'Escribirlo',
+      writeSubtitle    : 'Escribir en vez de hablar',
     },
   },
 };
@@ -2928,7 +2937,25 @@ export default function EmmaChat({ initialMode }) {
                 <div className={styles.cardSpacer} />
               </button>
 
-              {/* Card 3: Fragment list (scrollable) — entire section links to /my-stories */}
+              {/* 🆕 Task 93 — typed-writing entry. Alternative to voice
+                  for users who prefer (or need) the keyboard. Routes to
+                  /write — never establishes a Gemini Live session, so
+                  it bypasses the entire voice/STT pipeline. */}
+              <button
+                type="button"
+                className={`${styles.welcomeCard} ${styles.writeCard} ${isDay ? styles.cardDay : styles.cardNight}`}
+                onClick={() => { disconnect(); router.push('/write'); }}
+                disabled={isConnected}
+              >
+                <div className={styles.cardHeader}>
+                  <span className={styles.writeIcon} aria-hidden="true">✏️</span>
+                  <span className={styles.cardTitle}>{nw.writeTitle}</span>
+                </div>
+                <div className={styles.cardMeta}>{nw.writeSubtitle}</div>
+                <div className={styles.cardSpacer} />
+              </button>
+
+              {/* Card 4: Fragment list (scrollable) — entire section links to /my-stories */}
               <button
                 type="button"
                 className={`${styles.fragmentListCard} ${isDay ? styles.cardDay : styles.cardNight}`}

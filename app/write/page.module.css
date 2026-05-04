@@ -1,0 +1,256 @@
+/* /write — Text Fragment Writer (Task 93)
+   Senior-friendly typography (18-20 px body), generous spacing, dark
+   theme that matches the book/chapter/question pages. KO/EN/ES share
+   the same layout — only labels swap. */
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  background: #1a1410;
+  color: #fdfdfd;
+  font-family: inherit;
+}
+
+.loading {
+  min-height: 100dvh;
+  background: #1a1410;
+}
+
+/* Header — back button + page title in a single row, mirrors the book
+   pages so the senior recognizes the surface. */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 16px;
+}
+
+.backBtn {
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(134, 239, 172, 0.40);
+  color: rgba(220, 252, 231, 0.95);
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 44px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+.backBtn:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(134, 239, 172, 0.65);
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: #fb923c;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 12px 0 4px;
+  letter-spacing: 0.01em;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  line-height: 1.5;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #2a2520;
+  color: #fdfdfd;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(251, 146, 60, 0.55);
+  background: #2f2925;
+}
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.textarea {
+  font-size: 19px;
+  line-height: 1.65;
+  min-height: 320px;
+  resize: vertical;
+  padding: 18px;
+}
+
+.charCount {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: right;
+  margin-top: 2px;
+}
+.autosaveNote { color: rgba(251, 146, 60, 0.65); }
+
+/* Banners */
+.errBanner {
+  margin: 16px 0 4px;
+  padding: 12px 14px;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #fca5a5;
+  border-radius: 10px;
+  font-size: 15px;
+}
+.warnBanner {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.saveBtn,
+.finishBtn {
+  flex: 1 1 auto;
+  min-height: 52px;
+  padding: 14px 22px;
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.saveBtn:hover,
+.finishBtn:hover { background: #c2410c; }
+.saveBtn:active,
+.finishBtn:active { transform: scale(0.98); }
+.saveBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #9a3412;
+}
+
+.cancelBtn,
+.photosNowBtn {
+  min-height: 52px;
+  padding: 14px 22px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cancelBtn:hover,
+.photosNowBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.40);
+}
+.cancelBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Photos section */
+.photosSection {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.photosLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+.photosHint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  font-style: italic;
+}
+
+/* Mobile-small tightening */
+@media (max-width: 380px) {
+  .container { padding: 12px; }
+  .pageTitle { font-size: 19px; }
+  .input { font-size: 17px; padding: 12px 14px; }
+  .textarea { font-size: 18px; padding: 14px; min-height: 260px; }
+  .saveBtn, .finishBtn { font-size: 17px; min-height: 48px; }
+  .cancelBtn, .photosNowBtn { font-size: 15px; min-height: 48px; }
+}
+
+/* Light-mode override (some users browse from a non-dark device — the
+   page should still be legible). All current callers (chat surface,
+   question page) are dark, but /write is reachable from /my-stories
+   and /book/select pages too, so we hedge. */
+@media (prefers-color-scheme: light) {
+  .container { background: #fdf8f4; color: #1a1410; }
+  .loading { background: #fdf8f4; }
+  .pageTitle { color: #c2410c; }
+  .label { color: rgba(26, 20, 16, 0.78); }
+  .input, .textarea {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #1a1410;
+  }
+  .input:focus, .textarea:focus {
+    border-color: #c2410c;
+    background: #fff;
+  }
+  .charCount { color: rgba(26, 20, 16, 0.50); }
+  .autosaveNote { color: #c2410c; }
+  .photosSection { border-top-color: rgba(0, 0, 0, 0.08); }
+  .photosLabel { color: rgba(26, 20, 16, 0.78); }
+  .photosHint  { color: rgba(26, 20, 16, 0.55); }
+  .cancelBtn, .photosNowBtn {
+    color: rgba(26, 20, 16, 0.78);
+    border-color: rgba(0, 0, 0, 0.20);
+  }
+  .cancelBtn:hover, .photosNowBtn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.35);
+  }
+  .backBtn {
+    background: rgba(21, 128, 61, 0.08);
+    border-color: rgba(21, 128, 61, 0.40);
+    color: #14532d;
+  }
+  .backBtn:hover {
+    background: rgba(21, 128, 61, 0.14);
+    border-color: rgba(21, 128, 61, 0.65);
+  }
+}
