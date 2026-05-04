@@ -178,11 +178,13 @@ export default function FragmentModal({
                 </span>
               </div>
 
-              {/* 🆕 Task 94 — voice + typed continuation side-by-side.
-                  Voice routes through the existing Gemini Live path
-                  (/chat?continueFragment=…); typed routes through
-                  /write?continueFragmentId=… which posts to
-                  POST /api/fragments with parent_fragment_id set. */}
+              {/* 🆕 Task 95 — voice continuation + unified edit/append.
+                  Voice still creates a child fragment via the Gemini
+                  Live path (/chat?continueFragment=…). The "글 수정 /
+                  이어쓰기" button now opens /write?fragmentId=… in EDIT
+                  mode — the senior can revise existing words and append
+                  new ones in the same surface (Tim's mental model:
+                  "이어글쓰기'와 '페이지 수정'이 같아야 합니다"). */}
               <div className={s.continueRow}>
                 <button
                   className={s.continueBtn}
@@ -192,7 +194,7 @@ export default function FragmentModal({
                 </button>
                 <button
                   className={s.continueByWritingBtn}
-                  onClick={() => router.push(`/write?continueFragmentId=${encodeURIComponent(fragment.id)}`)}
+                  onClick={() => router.push(`/write?fragmentId=${encodeURIComponent(fragment.id)}`)}
                 >
                   {vm.continueByWritingLabel}
                 </button>
@@ -280,8 +282,15 @@ export default function FragmentModal({
                 </div>
               )}
 
+              {/* 🆕 Task 95 — the inline Edit button is removed. The
+                  "✏️ 글 수정 / 이어쓰기" button at the top of the modal
+                  now serves as the single entry point for editing,
+                  routed to /write?fragmentId=… so the senior gets the
+                  full senior-friendly editor (large textarea, photos
+                  immediately available, edit-with-append in one place).
+                  The inline edit JSX further down is left intact for
+                  back-compat / testing but the trigger is gone. */}
               <div className={s.modalActions}>
-                <button className={s.editBtn} onClick={() => setMode('edit')}>{vm.editMode}</button>
                 <button className={s.visibilityBtn} onClick={() => setMode('confirmVisibility')}>
                   {currentVis === 'private' ? vm.toggleToPublic : vm.toggleToPrivate}
                 </button>

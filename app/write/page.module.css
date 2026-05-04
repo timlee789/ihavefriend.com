@@ -163,6 +163,33 @@
   font-size: 15px;
 }
 
+/* 🆕 Task 95 — brief "Saved ✓" pulse after a successful PATCH in edit
+   mode. Doesn't lock the form (Tim wants the senior to keep editing
+   afterward), so the indicator self-clears in ~1.8 s via setTimeout. */
+.savedFlash {
+  margin: 12px 0 4px;
+  padding: 10px 14px;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(134, 239, 172, 0.40);
+  color: rgba(187, 247, 208, 0.95);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  animation: savedFlashFade 0.25s ease;
+}
+@keyframes savedFlashFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-color-scheme: light) {
+  .savedFlash {
+    background: rgba(21, 128, 61, 0.10);
+    border-color: rgba(21, 128, 61, 0.45);
+    color: #14532d;
+  }
+}
+
 /* Actions */
 .actions {
   display: flex;

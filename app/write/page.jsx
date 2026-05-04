@@ -1,22 +1,32 @@
 'use client';
 
 /**
- * /write — Text Fragment Writer (Task 93).
+ * /write — Text Fragment Writer (Tasks 93 + 94 + 95).
  *
- * Two flows in one page:
- *   1. Free-form: /write           → POST /api/fragments → /my-stories
- *   2. Book-mode: /write?bookId=X&bookQuestionId=Y
- *      → POST /api/fragments → POST /api/book/X/question/Y/import → /book/X/question/Y
+ * Three flows in one page, selected by URL params:
  *
- * UI mirrors FragmentModal's edit mode (title + subtitle + content) so a
- * senior who edited a fragment before sees the same shape. Keyboard +
- * voice paths preserved elsewhere; this page is purely the typed entry.
+ *   1. NEW (free-form):     /write
+ *      → POST /api/fragments → /my-stories
  *
- * Photos: PhotoUploader is enabled only AFTER the first save, because the
- * uploader needs a real fragment.id. Until save the user sees a hint.
+ *   2. NEW (book answer):   /write?bookId=X&bookQuestionId=Y
+ *      → POST /api/fragments
+ *        → POST /api/book/X/question/Y/import
+ *        → /book/X/question/Y
  *
- * Senior-friendly: 18-20px body text, generous padding, dark theme by
- * default. KO / EN / ES via localStorage('lang').
+ *   3. EDIT (Task 95):      /write?fragmentId=X
+ *      Backward-compat alias: /write?continueFragmentId=X
+ *      → GET /api/fragments/X to prefill form (title + subtitle + content)
+ *      → PATCH /api/fragments/X on save
+ *      → /my-stories
+ *
+ * Tim's call (2026-05-04) replaced Task 94's child-fragment continuation
+ * with direct edit of the original. The voice-continuation path (chat?
+ * continueFragment=…) still creates a child fragment — that flow is
+ * untouched.
+ *
+ * Photos: PhotoUploader is enabled IMMEDIATELY in edit mode (the
+ * fragment.id is known from the GET) and AFTER first save in create
+ * mode (we need the id back from POST first).
  */
 
 import { useEffect, useState, Suspense } from 'react';
@@ -28,10 +38,9 @@ const WRITE_MSGS = {
   KO: {
     pageTitle      : '글로 쓰기',
     pageTitleBook  : '글로 답변하기',
-    pageTitleContinue: '이어서 글쓰기',
-    continueContext: (title) => `📝 "${title || '이 이야기'}"에 이어서 추가합니다`,
-    continueContextHint: '원본은 그대로 두고, 이 글이 새 페이지로 추가됩니다.',
-    continueLoadFail: '원본 이야기를 불러오지 못했어요. 그래도 새 글로 저장할 수 있어요.',
+    pageTitleEdit  : '이야기 다듬기',
+    editInfoHint   : '💡 내용을 자유롭게 수정하거나 끝에 이어서 쓸 수 있어요.',
+    editLoadFail   : '원본 이야기를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
     backHome       : '← 뒤로',
     titleLabel     : '제목 *',
     titlePlaceholder: '예: 내 첫 차에 대한 추억',
@@ -40,13 +49,15 @@ const WRITE_MSGS = {
     contentLabel   : '내용 *',
     contentPlaceholder: '편하게 적으세요. 길게 쓰셔도 좋고, 짧게 쓰셔도 좋아요.',
     saveBtn        : '저장하기',
+    saveEditBtn    : '변경 저장',
     savingBtn      : '저장 중…',
-    savedBtn       : '저장됨 — 사진 추가하기 ↓',
+    savedFlash     : '저장됨 ✓',
     cancelBtn      : '취소',
-    photosLabel    : '📷 사진 (저장 후 추가 가능)',
-    photosHint     : '저장한 후에 사진을 최대 2장까지 첨부할 수 있어요.',
+    photosLabel    : '📷 사진 (최대 2장)',
+    photosHintCreate: '저장한 후에 사진을 최대 2장까지 첨부할 수 있어요.',
     photosNowBtn   : '📷 사진 추가하기',
     finishBtn      : '✓ 끝내기',
+    finishEditBtn  : '✓ 끝내기',
     bookFinishBtn  : '✓ 끝내고 질문으로 돌아가기',
     titleRequired  : '제목을 입력해 주세요.',
     contentRequired: '내용을 입력해 주세요.',
@@ -58,10 +69,9 @@ const WRITE_MSGS = {
   EN: {
     pageTitle      : 'Write a Story',
     pageTitleBook  : 'Write an Answer',
-    pageTitleContinue: 'Write More',
-    continueContext: (title) => `📝 Adding to "${title || 'this story'}"`,
-    continueContextHint: 'The original stays untouched — this becomes a new addition.',
-    continueLoadFail: "Couldn't load the original story. You can still save this as a new page.",
+    pageTitleEdit  : 'Refine Your Story',
+    editInfoHint   : '💡 You can revise the existing words or keep writing at the end — both at once.',
+    editLoadFail   : "Couldn't load the original story. Please try again in a moment.",
     backHome       : '← Back',
     titleLabel     : 'Title *',
     titlePlaceholder: 'e.g. Memories of my first car',
@@ -70,13 +80,15 @@ const WRITE_MSGS = {
     contentLabel   : 'Content *',
     contentPlaceholder: 'Write at your own pace. Long or short, both are fine.',
     saveBtn        : 'Save',
+    saveEditBtn    : 'Save changes',
     savingBtn      : 'Saving…',
-    savedBtn       : 'Saved — add photos ↓',
+    savedFlash     : 'Saved ✓',
     cancelBtn      : 'Cancel',
-    photosLabel    : '📷 Photos (available after saving)',
-    photosHint     : 'Once saved, you can attach up to 2 photos.',
+    photosLabel    : '📷 Photos (up to 2)',
+    photosHintCreate: 'Once saved, you can attach up to 2 photos.',
     photosNowBtn   : '📷 Add photos',
     finishBtn      : '✓ Done',
+    finishEditBtn  : '✓ Done',
     bookFinishBtn  : '✓ Done — back to the question',
     titleRequired  : 'Please enter a title.',
     contentRequired: 'Please enter some content.',
@@ -88,10 +100,9 @@ const WRITE_MSGS = {
   ES: {
     pageTitle      : 'Escribir una historia',
     pageTitleBook  : 'Escribir una respuesta',
-    pageTitleContinue: 'Escribir más',
-    continueContext: (title) => `📝 Añadiendo a "${title || 'esta historia'}"`,
-    continueContextHint: 'El original queda intacto — esto se añade como una nueva continuación.',
-    continueLoadFail: 'No se pudo cargar la historia original. Aún puedes guardar esto como una entrada nueva.',
+    pageTitleEdit  : 'Refinar tu historia',
+    editInfoHint   : '💡 Puedes revisar lo que ya escribiste o seguir escribiendo al final — todo a la vez.',
+    editLoadFail   : 'No se pudo cargar la historia original. Inténtalo de nuevo en un momento.',
     backHome       : '← Atrás',
     titleLabel     : 'Título *',
     titlePlaceholder: 'p. ej. Recuerdos de mi primer coche',
@@ -100,13 +111,15 @@ const WRITE_MSGS = {
     contentLabel   : 'Contenido *',
     contentPlaceholder: 'Escribe a tu ritmo. Largo o corto, ambos están bien.',
     saveBtn        : 'Guardar',
+    saveEditBtn    : 'Guardar cambios',
     savingBtn      : 'Guardando…',
-    savedBtn       : 'Guardado — añade fotos ↓',
+    savedFlash     : 'Guardado ✓',
     cancelBtn      : 'Cancelar',
-    photosLabel    : '📷 Fotos (disponibles tras guardar)',
-    photosHint     : 'Una vez guardado, puedes añadir hasta 2 fotos.',
+    photosLabel    : '📷 Fotos (hasta 2)',
+    photosHintCreate: 'Una vez guardado, puedes añadir hasta 2 fotos.',
     photosNowBtn   : '📷 Añadir fotos',
     finishBtn      : '✓ Listo',
+    finishEditBtn  : '✓ Listo',
     bookFinishBtn  : '✓ Listo — volver a la pregunta',
     titleRequired  : 'Por favor escribe un título.',
     contentRequired: 'Por favor escribe el contenido.',
@@ -134,11 +147,15 @@ function useLang() {
 function Inner() {
   const router       = useRouter();
   const search       = useSearchParams();
+
+  // 🆕 Task 95 — fragmentId is the new canonical edit param.
+  //   continueFragmentId stays accepted as an alias so old links /
+  //   old FragmentModal builds keep working through the same path.
+  const fragmentId   = search.get('fragmentId') || search.get('continueFragmentId') || null;
   const bookId       = search.get('bookId') || null;
   const bookQId      = search.get('bookQuestionId') || null;
-  const continueId   = search.get('continueFragmentId') || null;
-  const isBookMode   = !!(bookId && bookQId);
-  const isContinue   = !!continueId;
+  const isEdit       = !!fragmentId;
+  const isBookMode   = !!(bookId && bookQId) && !isEdit;  // edit takes precedence
 
   const lang = useLang();
   const m    = WRITE_MSGS[lang] || WRITE_MSGS.KO;
@@ -149,7 +166,6 @@ function Inner() {
     if (typeof window === 'undefined') return;
     const t = localStorage.getItem('token');
     if (!t) {
-      // Bounce visitors to /login, preserving the post-login redirect.
       try {
         sessionStorage.setItem('postLoginRedirect',
           window.location.pathname + window.location.search);
@@ -165,39 +181,54 @@ function Inner() {
   const [subtitle, setSubtitle] = useState('');
   const [content,  setContent]  = useState('');
 
-  // Save state.
-  const [saving,         setSaving]         = useState(false);
-  const [savedFragment,  setSavedFragment]  = useState(null); // { id, title, ... } once persisted
-  const [linkErr,        setLinkErr]        = useState('');
-  const [saveErr,        setSaveErr]        = useState('');
-  const [showPhotos,     setShowPhotos]     = useState(false);
+  // Save / lifecycle state.
+  const [saving,        setSaving]        = useState(false);
+  const [savedFragment, setSavedFragment] = useState(null); // set after POST (create) or initial GET (edit)
+  const [editLoading,   setEditLoading]   = useState(false);
+  const [editLoadErr,   setEditLoadErr]   = useState('');
+  const [linkErr,       setLinkErr]       = useState('');
+  const [saveErr,       setSaveErr]       = useState('');
+  const [editFlash,     setEditFlash]     = useState(false); // brief "saved ✓" pulse after PATCH
+  const [showPhotos,    setShowPhotos]    = useState(false);
 
-  // 🆕 Task 94 — typed continuation. When ?continueFragmentId is set we
-  //   fetch the parent fragment so the senior sees the title they're
-  //   adding to. Failure to load is non-fatal — the page renders the
-  //   form anyway and saves a top-level fragment as fallback.
-  const [parentFragment,  setParentFragment]  = useState(null);
-  const [parentLoadErr,   setParentLoadErr]   = useState('');
+  // 🆕 Task 95 — edit mode prefill. Pull the fragment, populate the
+  //   form, and set savedFragment={id,…} so PhotoUploader is usable
+  //   immediately. The form fields stay editable in edit mode (unlike
+  //   create mode, which locks after first save to prevent duplicates).
   useEffect(() => {
-    if (!token || !continueId) return;
+    if (!token || !fragmentId) return;
     let cancelled = false;
+    setEditLoading(true);
+    setEditLoadErr('');
     (async () => {
       try {
-        const res = await fetch(`/api/fragments/${encodeURIComponent(continueId)}`, {
+        const res = await fetch(`/api/fragments/${encodeURIComponent(fragmentId)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          if (!cancelled) setParentLoadErr(m.continueLoadFail);
+          if (!cancelled) setEditLoadErr(m.editLoadFail);
           return;
         }
         const data = await res.json();
-        if (!cancelled) setParentFragment(data.fragment || null);
+        const f = data.fragment;
+        if (!f?.id) {
+          if (!cancelled) setEditLoadErr(m.editLoadFail);
+          return;
+        }
+        if (cancelled) return;
+        setTitle(f.title || '');
+        setSubtitle(f.subtitle || '');
+        setContent(f.content || '');
+        setSavedFragment(f);
+        setShowPhotos(true); // edit mode → uploader visible from the start
       } catch {
-        if (!cancelled) setParentLoadErr(m.continueLoadFail);
+        if (!cancelled) setEditLoadErr(m.editLoadFail);
+      } finally {
+        if (!cancelled) setEditLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [token, continueId, m]);
+  }, [token, fragmentId, m]);
 
   function validate() {
     setSaveErr('');
@@ -207,15 +238,40 @@ function Inner() {
   }
 
   async function handleSave() {
-    if (!token || saving || savedFragment) return;
+    if (!token || saving) return;
+    // Create mode locks after first save; edit mode allows repeated saves.
+    if (!isEdit && savedFragment) return;
     if (!validate()) return;
     setSaving(true);
     setSaveErr('');
     setLinkErr('');
     try {
-      // 1. Create the fragment (free-form by default — book_id stays NULL on
-      //    the row even when the page is in book mode; the import endpoint
-      //    is what attaches it to the question).
+      if (isEdit) {
+        // ── EDIT (PATCH the original) ─────────────────────────────
+        const res = await fetch(`/api/fragments/${encodeURIComponent(fragmentId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            title:    title.trim(),
+            subtitle: subtitle.trim() || null,
+            content:  content.trim(),
+          }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          setSaveErr(j.error || m.saveError);
+          return;
+        }
+        const data = await res.json();
+        if (data.fragment?.id) setSavedFragment(data.fragment);
+        // Brief "Saved ✓" indicator instead of locking the form — Tim
+        // expects the senior to keep editing if they want.
+        setEditFlash(true);
+        setTimeout(() => setEditFlash(false), 1800);
+        return;
+      }
+
+      // ── CREATE (POST a new fragment) ─────────────────────────────
       const res = await fetch('/api/fragments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -224,13 +280,7 @@ function Inner() {
           subtitle: subtitle.trim() || null,
           content:  content.trim(),
           language: langLower,
-          generated_by: isContinue ? 'manual_write_continuation' : 'manual_write',
-          // 🆕 Task 94 — typed continuation: parent_fragment_id flows
-          //   straight to createFragment, which verifies ownership and
-          //   computes the next thread_order. If the parent isn't owned
-          //   by this user, the row falls back to a top-level fragment
-          //   instead of corrupting the thread (server-side fallback).
-          parent_fragment_id: continueId || null,
+          generated_by: 'manual_write',
         }),
       });
       if (!res.ok) {
@@ -246,8 +296,8 @@ function Inner() {
       }
       setSavedFragment(frag);
 
-      // 2. If we came from a book question, attach. Failure is non-fatal —
-      //    fragment is alive in /my-stories and Tim can re-link manually.
+      // If we came from a book question, attach. Failure is non-fatal —
+      // fragment is alive in /my-stories and Tim can re-link manually.
       if (isBookMode) {
         try {
           const linkRes = await fetch(
@@ -273,9 +323,11 @@ function Inner() {
   }
 
   function handleFinish() {
+    if (isEdit) {
+      router.push('/my-stories');
+      return;
+    }
     if (isBookMode) {
-      // Book flow: even if linkErr, the fragment is alive — fall through
-      // to /my-stories so the user can verify and manually re-link.
       if (linkErr) {
         router.push('/my-stories');
       } else {
@@ -283,18 +335,14 @@ function Inner() {
       }
       return;
     }
-    // 🆕 Task 94 — for typed continuations, send the user back to /my-
-    //   stories so they see the parent fragment with the new thread
-    //   item underneath. (We don't deep-link to the parent fragment
-    //   modal directly — /my-stories' modal pattern reopens it on click.)
     router.push('/my-stories');
   }
 
   function handleCancel() {
-    if (isBookMode && bookId && bookQId) {
-      router.push(`/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`);
-    } else if (isContinue) {
+    if (isEdit) {
       router.push('/my-stories');
+    } else if (isBookMode && bookId && bookQId) {
+      router.push(`/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`);
     } else {
       router.push('/');
     }
@@ -304,6 +352,19 @@ function Inner() {
     return <div className={s.loading} />;
   }
 
+  // In edit mode the form is editable from the start AND remains editable
+  // after each save (re-save allowed). In create mode the form locks after
+  // the first save so the user can't accidentally double-submit.
+  const formDisabled = saving || (!isEdit && !!savedFragment);
+
+  // Save button enabled rule: in edit mode allow re-save anytime the
+  // required fields are present and we're not already mid-flight; in
+  // create mode also require that we haven't saved yet.
+  const canSave = !saving
+    && title.trim().length > 0
+    && content.trim().length > 0
+    && (isEdit || !savedFragment);
+
   return (
     <div className={s.container}>
       <header className={s.header}>
@@ -311,26 +372,22 @@ function Inner() {
           {m.backHome}
         </button>
         <h1 className={s.pageTitle}>
-          {isContinue ? m.pageTitleContinue
+          {isEdit ? m.pageTitleEdit
             : isBookMode ? m.pageTitleBook
             : m.pageTitle}
         </h1>
       </header>
 
-      {/* 🆕 Task 94 — continuation context box. Only renders when the
-          parent fragment loaded successfully; if the load failed we
-          show a softer warning above the form instead of pretending
-          to know the parent's title. */}
-      {isContinue && parentFragment && (
+      {/* 🆕 Task 95 — edit-mode info banner. Tells the senior they can
+          revise existing text AND append. Only shows when actually
+          editing; new-fragment flows skip this entirely. */}
+      {isEdit && !editLoadErr && (
         <div className={s.continueContextBox}>
-          <div className={s.continueContextTitle}>
-            {m.continueContext(parentFragment.title)}
-          </div>
-          <div className={s.continueContextHint}>{m.continueContextHint}</div>
+          <div className={s.continueContextTitle}>{m.editInfoHint}</div>
         </div>
       )}
-      {isContinue && parentLoadErr && (
-        <div className={s.warnBanner}>⚠️ {parentLoadErr}</div>
+      {isEdit && editLoadErr && (
+        <div className={s.warnBanner}>⚠️ {editLoadErr}</div>
       )}
 
       {/* ── Form ────────────────────────────────────────────── */}
@@ -343,7 +400,7 @@ function Inner() {
           maxLength={TITLE_MAX}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={m.titlePlaceholder}
-          disabled={!!savedFragment || saving}
+          disabled={formDisabled}
           aria-label={m.titleLabel}
         />
         <div className={s.charCount}>{title.length} / {TITLE_MAX} {m.charCountSuffix}</div>
@@ -356,7 +413,7 @@ function Inner() {
           maxLength={SUBTITLE_MAX}
           onChange={(e) => setSubtitle(e.target.value)}
           placeholder={m.subtitlePlaceholder}
-          disabled={!!savedFragment || saving}
+          disabled={formDisabled}
           aria-label={m.subtitleLabel}
         />
 
@@ -367,26 +424,46 @@ function Inner() {
           maxLength={CONTENT_MAX}
           onChange={(e) => setContent(e.target.value)}
           placeholder={m.contentPlaceholder}
-          disabled={!!savedFragment || saving}
+          disabled={formDisabled}
           aria-label={m.contentLabel}
           rows={14}
         />
         <div className={s.charCount}>
           {content.length.toLocaleString()} / {CONTENT_MAX.toLocaleString()} {m.charCountSuffix}
-          {!savedFragment && <span className={s.autosaveNote}> · {m.autosaveOff}</span>}
+          {!isEdit && !savedFragment && (
+            <span className={s.autosaveNote}> · {m.autosaveOff}</span>
+          )}
         </div>
 
-        {saveErr && <div className={s.errBanner}>⚠️ {saveErr}</div>}
-        {linkErr && <div className={s.warnBanner}>⚠️ {linkErr}</div>}
+        {saveErr  && <div className={s.errBanner}>⚠️ {saveErr}</div>}
+        {linkErr  && <div className={s.warnBanner}>⚠️ {linkErr}</div>}
+        {editFlash && <div className={s.savedFlash}>{m.savedFlash}</div>}
 
         {/* ── Save / Finish actions ───────────────────────────── */}
         <div className={s.actions}>
-          {!savedFragment ? (
+          {isEdit ? (
             <>
               <button
                 className={s.saveBtn}
                 onClick={handleSave}
-                disabled={saving || !title.trim() || !content.trim()}
+                disabled={!canSave || editLoading}
+              >
+                {saving ? m.savingBtn : m.saveEditBtn}
+              </button>
+              <button
+                className={s.finishBtn}
+                onClick={handleFinish}
+                disabled={saving}
+              >
+                {m.finishEditBtn}
+              </button>
+            </>
+          ) : !savedFragment ? (
+            <>
+              <button
+                className={s.saveBtn}
+                onClick={handleSave}
+                disabled={!canSave}
               >
                 {saving ? m.savingBtn : m.saveBtn}
               </button>
@@ -414,18 +491,19 @@ function Inner() {
           )}
         </div>
 
-        {/* ── Photos (post-save only) ─────────────────────────── */}
+        {/* ── Photos ─────────────────────────────────────────────
+            Edit mode: uploader visible from the start (savedFragment
+            populated by initial GET).
+            Create mode: hint until first save, then uploader. */}
         <div className={s.photosSection}>
           <div className={s.photosLabel}>{m.photosLabel}</div>
-          {!savedFragment ? (
-            <div className={s.photosHint}>{m.photosHint}</div>
-          ) : showPhotos ? (
+          {savedFragment && (showPhotos || isEdit) ? (
             <PhotoUploader
               fragmentId={savedFragment.id}
               lang={langLower}
             />
           ) : (
-            <div className={s.photosHint}>{m.photosHint}</div>
+            <div className={s.photosHint}>{m.photosHintCreate}</div>
           )}
         </div>
       </div>

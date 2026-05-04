@@ -30,9 +30,15 @@ export const VIS_MSGS = {
     saving           : '변경 중…',
     errMsg           : '변경에 실패했습니다. 다시 시도해주세요.',
     continueLabel    : '💬 이어서 말하기',
-    continueByWritingLabel : '✏️ 이어서 글쓰기',     // 🔥 Task 94
-    continueContextLabel   : (title) => `📝 "${title || '이 이야기'}"에 이어서 추가합니다`,  // 🔥 Task 94
-    continueHint     : '원본은 그대로 두고, 이 이야기에 새로운 내용을 추가합니다.',
+    // 🔥 Task 95 — the typed path is now edit-and-append on the
+    //   ORIGINAL fragment (not a child). The label reflects Tim's
+    //   mental model: same button serves "fix the wording" and
+    //   "add more at the end".
+    continueByWritingLabel : '✏️ 글 수정 / 이어쓰기',
+    // continueContextLabel kept for back-compat with anything that
+    // imported it; not used by FragmentModal anymore.
+    continueContextLabel   : (title) => `📝 "${title || '이 이야기'}"에 이어서 추가합니다`,
+    continueHint     : '원본의 내용을 다듬거나 끝에 이어서 쓸 수 있습니다.',
     threadTitle      : '추가된 이야기',
     tabStories       : '내 이야기들',
     tabCollections   : '모음집',
@@ -139,9 +145,10 @@ export const VIS_MSGS = {
     saving           : 'Updating…',
     errMsg           : 'Could not update. Please try again.',
     continueLabel    : '💬 Add to this story',
-    continueByWritingLabel : '✏️ Write more',                       // 🔥 Task 94
-    continueContextLabel   : (title) => `📝 Adding to "${title || 'this story'}"`,  // 🔥 Task 94
-    continueHint     : 'The original stays untouched — your new words will be added as a continuation.',
+    // 🔥 Task 95 — typed path is now edit-and-append on the original.
+    continueByWritingLabel : '✏️ Edit / Write more',
+    continueContextLabel   : (title) => `📝 Adding to "${title || 'this story'}"`,
+    continueHint     : "Refine what's there or keep writing at the end — both at once.",
     threadTitle      : 'Added later',
     tabStories       : 'My Stories',
     tabCollections   : 'Collections',
@@ -248,9 +255,10 @@ export const VIS_MSGS = {
     saving           : 'Actualizando…',
     errMsg           : 'No se pudo actualizar. Inténtalo de nuevo.',
     continueLabel    : '💬 Añadir a esta historia',
-    continueByWritingLabel : '✏️ Escribir más',                                // 🔥 Task 94
-    continueContextLabel   : (title) => `📝 Añadiendo a "${title || 'esta historia'}"`,  // 🔥 Task 94
-    continueHint     : 'El original queda intacto — tus nuevas palabras se añadirán como continuación.',
+    // 🔥 Task 95 — typed path is now edit-and-append on the original.
+    continueByWritingLabel : '✏️ Editar / Escribir más',
+    continueContextLabel   : (title) => `📝 Añadiendo a "${title || 'esta historia'}"`,
+    continueHint     : 'Puedes corregir lo que ya escribiste o seguir al final — ambas cosas a la vez.',
     threadTitle      : 'Añadido después',
     tabStories       : 'Mis historias',
     tabCollections   : 'Colecciones',
