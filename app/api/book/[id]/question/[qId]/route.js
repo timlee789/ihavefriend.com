@@ -85,6 +85,11 @@ export async function GET(request, { params }) {
       // 🔥 Task 79 — pull each fragment's photos alongside the body
       //   so the new FragmentModal on the question page can render
       //   thumbnails / open the uploader without a second round-trip.
+      // 🔥 Task 92 — Tim's bug: a deleted fragment kept showing up on
+      //   the question page after the soft-delete because user_book_
+      //   responses.fragment_ids retains the dead UUID. Filter
+      //   status != 'DELETED' here so the UI hides them immediately,
+      //   even before the array_remove cleanup in deleteFragment runs.
       const fragRes = await db.query(
         `SELECT
            f.id, f.title, f.subtitle, f.content, f.created_at,
@@ -107,6 +112,7 @@ export async function GET(request, { params }) {
            ), '[]'::json) AS photos
          FROM story_fragments f
         WHERE f.id = ANY($1::uuid[])
+          AND f.status != 'DELETED'::"FragmentStatus"
         ORDER BY f.created_at DESC`,
         [allIds]
       );

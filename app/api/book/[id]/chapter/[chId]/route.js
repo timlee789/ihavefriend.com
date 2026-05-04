@@ -51,9 +51,13 @@ export async function GET(request, { params }) {
 
     const fragmentMap = Object.create(null);
     if (allFragmentIds.length > 0) {
+      // 🔥 Task 92 — same DELETED-leak guard as the question API:
+      //   chapter overview was counting deleted fragments toward
+      //   fragment_count and showing a stale preview.
       const fragRes = await db.query(
         `SELECT id, content, created_at, title FROM story_fragments
-          WHERE id = ANY($1::uuid[])`,
+          WHERE id = ANY($1::uuid[])
+            AND status != 'DELETED'::"FragmentStatus"`,
         [allFragmentIds]
       );
       for (const f of fragRes.rows) {
