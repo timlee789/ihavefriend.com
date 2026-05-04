@@ -178,12 +178,25 @@ export default function FragmentModal({
                 </span>
               </div>
 
-              <button
-                className={s.continueBtn}
-                onClick={() => router.push(`/chat?continueFragment=${fragment.id}`)}
-              >
-                {vm.continueLabel}
-              </button>
+              {/* 🆕 Task 94 — voice + typed continuation side-by-side.
+                  Voice routes through the existing Gemini Live path
+                  (/chat?continueFragment=…); typed routes through
+                  /write?continueFragmentId=… which posts to
+                  POST /api/fragments with parent_fragment_id set. */}
+              <div className={s.continueRow}>
+                <button
+                  className={s.continueBtn}
+                  onClick={() => router.push(`/chat?continueFragment=${fragment.id}`)}
+                >
+                  {vm.continueLabel}
+                </button>
+                <button
+                  className={s.continueByWritingBtn}
+                  onClick={() => router.push(`/write?continueFragmentId=${encodeURIComponent(fragment.id)}`)}
+                >
+                  {vm.continueByWritingLabel}
+                </button>
+              </div>
               <div className={s.continueHint}>{vm.continueHint}</div>
 
               <div className={s.modalContent}>

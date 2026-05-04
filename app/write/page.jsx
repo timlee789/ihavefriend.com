@@ -28,6 +28,10 @@ const WRITE_MSGS = {
   KO: {
     pageTitle      : '글로 쓰기',
     pageTitleBook  : '글로 답변하기',
+    pageTitleContinue: '이어서 글쓰기',
+    continueContext: (title) => `📝 "${title || '이 이야기'}"에 이어서 추가합니다`,
+    continueContextHint: '원본은 그대로 두고, 이 글이 새 페이지로 추가됩니다.',
+    continueLoadFail: '원본 이야기를 불러오지 못했어요. 그래도 새 글로 저장할 수 있어요.',
     backHome       : '← 뒤로',
     titleLabel     : '제목 *',
     titlePlaceholder: '예: 내 첫 차에 대한 추억',
@@ -54,6 +58,10 @@ const WRITE_MSGS = {
   EN: {
     pageTitle      : 'Write a Story',
     pageTitleBook  : 'Write an Answer',
+    pageTitleContinue: 'Write More',
+    continueContext: (title) => `📝 Adding to "${title || 'this story'}"`,
+    continueContextHint: 'The original stays untouched — this becomes a new addition.',
+    continueLoadFail: "Couldn't load the original story. You can still save this as a new page.",
     backHome       : '← Back',
     titleLabel     : 'Title *',
     titlePlaceholder: 'e.g. Memories of my first car',
@@ -80,6 +88,10 @@ const WRITE_MSGS = {
   ES: {
     pageTitle      : 'Escribir una historia',
     pageTitleBook  : 'Escribir una respuesta',
+    pageTitleContinue: 'Escribir más',
+    continueContext: (title) => `📝 Añadiendo a "${title || 'esta historia'}"`,
+    continueContextHint: 'El original queda intacto — esto se añade como una nueva continuación.',
+    continueLoadFail: 'No se pudo cargar la historia original. Aún puedes guardar esto como una entrada nueva.',
     backHome       : '← Atrás',
     titleLabel     : 'Título *',
     titlePlaceholder: 'p. ej. Recuerdos de mi primer coche',
@@ -124,7 +136,9 @@ function Inner() {
   const search       = useSearchParams();
   const bookId       = search.get('bookId') || null;
   const bookQId      = search.get('bookQuestionId') || null;
+  const continueId   = search.get('continueFragmentId') || null;
   const isBookMode   = !!(bookId && bookQId);
+  const isContinue   = !!continueId;
 
   const lang = useLang();
   const m    = WRITE_MSGS[lang] || WRITE_MSGS.KO;
@@ -158,6 +172,33 @@ function Inner() {
   const [saveErr,        setSaveErr]        = useState('');
   const [showPhotos,     setShowPhotos]     = useState(false);
 
+  // 🆕 Task 94 — typed continuation. When ?continueFragmentId is set we
+  //   fetch the parent fragment so the senior sees the title they're
+  //   adding to. Failure to load is non-fatal — the page renders the
+  //   form anyway and saves a top-level fragment as fallback.
+  const [parentFragment,  setParentFragment]  = useState(null);
+  const [parentLoadErr,   setParentLoadErr]   = useState('');
+  useEffect(() => {
+    if (!token || !continueId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/fragments/${encodeURIComponent(continueId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          if (!cancelled) setParentLoadErr(m.continueLoadFail);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) setParentFragment(data.fragment || null);
+      } catch {
+        if (!cancelled) setParentLoadErr(m.continueLoadFail);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, continueId, m]);
+
   function validate() {
     setSaveErr('');
     if (!title.trim())   { setSaveErr(m.titleRequired);   return false; }
@@ -183,7 +224,13 @@ function Inner() {
           subtitle: subtitle.trim() || null,
           content:  content.trim(),
           language: langLower,
-          generated_by: 'manual_write',
+          generated_by: isContinue ? 'manual_write_continuation' : 'manual_write',
+          // 🆕 Task 94 — typed continuation: parent_fragment_id flows
+          //   straight to createFragment, which verifies ownership and
+          //   computes the next thread_order. If the parent isn't owned
+          //   by this user, the row falls back to a top-level fragment
+          //   instead of corrupting the thread (server-side fallback).
+          parent_fragment_id: continueId || null,
         }),
       });
       if (!res.ok) {
@@ -236,12 +283,18 @@ function Inner() {
       }
       return;
     }
+    // 🆕 Task 94 — for typed continuations, send the user back to /my-
+    //   stories so they see the parent fragment with the new thread
+    //   item underneath. (We don't deep-link to the parent fragment
+    //   modal directly — /my-stories' modal pattern reopens it on click.)
     router.push('/my-stories');
   }
 
   function handleCancel() {
     if (isBookMode && bookId && bookQId) {
       router.push(`/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`);
+    } else if (isContinue) {
+      router.push('/my-stories');
     } else {
       router.push('/');
     }
@@ -258,9 +311,27 @@ function Inner() {
           {m.backHome}
         </button>
         <h1 className={s.pageTitle}>
-          {isBookMode ? m.pageTitleBook : m.pageTitle}
+          {isContinue ? m.pageTitleContinue
+            : isBookMode ? m.pageTitleBook
+            : m.pageTitle}
         </h1>
       </header>
+
+      {/* 🆕 Task 94 — continuation context box. Only renders when the
+          parent fragment loaded successfully; if the load failed we
+          show a softer warning above the form instead of pretending
+          to know the parent's title. */}
+      {isContinue && parentFragment && (
+        <div className={s.continueContextBox}>
+          <div className={s.continueContextTitle}>
+            {m.continueContext(parentFragment.title)}
+          </div>
+          <div className={s.continueContextHint}>{m.continueContextHint}</div>
+        </div>
+      )}
+      {isContinue && parentLoadErr && (
+        <div className={s.warnBanner}>⚠️ {parentLoadErr}</div>
+      )}
 
       {/* ── Form ────────────────────────────────────────────── */}
       <div className={s.form}>

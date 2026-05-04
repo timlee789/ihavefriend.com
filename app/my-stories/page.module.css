@@ -940,11 +940,23 @@
   margin: 3px 0;
 }
 
-/* 🆕 2026-04-25: Continuation thread + continue button */
-.continueBtn {
-  display: block;
-  width: 100%;
+/* 🆕 2026-04-25: Continuation thread + continue button.
+   🆕 Task 94 — voice + typed continuation share a single row, 50/50,
+      with flex-wrap so a narrow viewport stacks them instead of
+      overflowing. Voice keeps the original orange; typed adopts the
+      green book identity (Task 84) so the pair reads as
+      "voice or text, same intent". */
+.continueRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin: 12px 0 6px;
+}
+
+.continueBtn {
+  flex: 1 1 calc(50% - 5px);
+  min-width: 160px;
+  display: block;
   padding: 14px 16px;
   background: linear-gradient(135deg, #ff9a4d 0%, #ff7a1f 100%);
   color: #fff;
@@ -958,6 +970,27 @@
   box-shadow: 0 2px 6px rgba(255, 122, 31, 0.3);
 }
 .continueBtn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(255, 122, 31, 0.4); }
+
+.continueByWritingBtn {
+  flex: 1 1 calc(50% - 5px);
+  min-width: 160px;
+  display: block;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #4ade80 0%, #15803d 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.30);
+}
+.continueByWritingBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.40);
+}
 .continueHint {
   font-size: 12px;
   color: #8a6a55;
