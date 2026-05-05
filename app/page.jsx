@@ -56,10 +56,10 @@ const HOME_MSGS = {
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
     homeBtnMemoir      : '내 자서전',
     homeBtnEssay       : '내 수필집',
-    homeBtnRecord      : '기록하기',
-    // 🔥 Task 84 — Tim 결정: companion mode은 "기록되지 않음"이
-    //   핵심 가치라서 라벨이 그 사실을 직접 말해야 함. 🔒 Private
-    //   Mode 배지는 그대로 유지.
+    // 🔥 Task 99 — Tim 결정 (2026-05-04): 메인 home 4개 버튼.
+    //   '기록하기' → '내 이야기' 라벨 변경. '기록하지 않기'와
+    //   '샘플 이야기 보기'는 footer 작은 링크로 이동.
+    homeBtnRecord      : '내 이야기',
     homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
@@ -69,6 +69,9 @@ const HOME_MSGS = {
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : '서비스 약관',
+    // 🔥 Task 99 — Footer secondary links (기록하지 않기 + 샘플).
+    footerDontSave     : '기록하지 않기',
+    footerSamples      : '샘플 이야기',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -108,9 +111,10 @@ const HOME_MSGS = {
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
     homeBtnMemoir      : 'My Memoir',
     homeBtnEssay       : 'My Essays',
-    homeBtnRecord      : 'Record',
+    // 🔥 Task 99 — Record renamed to clearer label.
+    homeBtnRecord      : 'My Stories',
     homeBtnTalk        : "Don't Save",
-    homeBtnMyStories   : 'My Stories',
+    homeBtnMyStories   : 'View My Stories',
     homeBtnSamples     : 'Sample Stories',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -118,6 +122,9 @@ const HOME_MSGS = {
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Terms of Service',
+    // 🔥 Task 99 — Footer secondary links.
+    footerDontSave     : "Don't Save Mode",
+    footerSamples      : 'Sample Stories',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -157,16 +164,20 @@ const HOME_MSGS = {
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
     homeBtnMemoir      : 'Mis memorias',
     homeBtnEssay       : 'Mis ensayos',
-    homeBtnRecord      : 'Grabar',
+    // 🔥 Task 99 — Grabar renombrado a etiqueta más clara.
+    homeBtnRecord      : 'Mis historias',
     homeBtnTalk        : 'Sin guardar',
-    homeBtnMyStories   : 'Mis historias',
-    homeBtnSamples     : 'Historias',
+    homeBtnMyStories   : 'Ver mis historias',
+    homeBtnSamples     : 'Historias de ejemplo',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : 'Cuenta tu historia. Lo convertimos en un libro.',
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Términos del servicio',
+    // 🔥 Task 99 — Footer secondary links.
+    footerDontSave     : 'Modo sin guardar',
+    footerSamples      : 'Historias de ejemplo',
   },
 };
 
@@ -311,13 +322,11 @@ export default function Home() {
         {isLoggedIn ? msgs.greeting(userName) : msgs.tagline}
       </div>
 
-      {/* 🔥 Task 83 — 2×3 square grid replaces the 5 horizontal CTAs.
-          Memoir/Essay split into their own buttons; if a book of that
-          template_category is already in flight we resume into it,
-          otherwise the tap lands on /book/templates filtered to that
-          type. */}
-      {/* 🔥 Task 83 (revised) — Tim 요청: 2 columns × 3 rows. 한 줄에
-          버튼 2개씩, 총 3줄. */}
+      {/* 🔥 Task 99 (2026-05-04) — 4개 버튼 그리드 (2x2):
+          1행: 내 자서전 / 내 수필집
+          2행: 내 이야기 (음성 story 모드) / 내 이야기 보기
+          '기록하지 않기'와 '샘플 이야기'는 footer의 작은
+          링크로 이동 (Tim 결정). */}
       <div className={s.gridContainer}>
         <div className={s.gridRow}>
           <button
@@ -346,17 +355,10 @@ export default function Home() {
             <div className={s.gridLabel}>{msgs.homeBtnRecord}</div>
           </button>
 
-          <button
-            className={`${s.gridBtn} ${s.gridBtnTalk}`}
-            onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
-          >
-            <div className={s.gridIcon}>💬</div>
-            <div className={s.gridLabel}>{msgs.homeBtnTalk}</div>
-            <span className={s.gridPrivateBadge}>🔒 {msgs.privateLabel}</span>
-          </button>
-        </div>
-
-        <div className={s.gridRow}>
+          {/* 🔥 Task 99 — "내 이야기 보기"가 "내 이야기" 염으로
+              이동. Record와 같은 배경색 (gridBtnRecord) 대신 고유
+              스타일로 구분을 적게 유지 — 4개가 다 다른 색이면
+              시각적 소음. 같은 느낌 조용으로. */}
           <button
             className={`${s.gridBtn} ${s.gridBtnMyStories}`}
             onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
@@ -364,22 +366,27 @@ export default function Home() {
             <div className={s.gridIcon}>📖</div>
             <div className={s.gridLabel}>{msgs.homeBtnMyStories}</div>
           </button>
-
-          <button
-            className={`${s.gridBtn} ${s.gridBtnSamples}`}
-            onClick={() => router.push('/sharing-stories')}
-          >
-            <div className={s.gridIcon}>🌐</div>
-            <div className={s.gridLabel}>{msgs.homeBtnSamples}</div>
-          </button>
         </div>
       </div>
 
-      {/* 🔥 Task 83 — Footer. The book templates link was removed (the
-          memoir/essay grid buttons cover the same path now). */}
+      {/* 🔥 Task 99 — Footer. "기록하지 않기"와 "샘플 이야기"
+          는 메인 그리드에서 내려서 서비스 약관과 같은 크기의
+          작은 링크로 이동. 메인 4개 버튼이 핵심이고 이다에
+          해당하지 않는 부가적 펜션. */}
       <footer className={s.homeFooter}>
         <div className={s.footerRow}>
           <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
+          {/* 🔥 Task 99 — 기록하지 않기 (companion mode) */}
+          <button
+            className={s.footerTermsBtn}
+            onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
+          >
+            {msgs.footerDontSave}
+          </button>
+          {/* 🔥 Task 99 — 샘플 이야기 (sharing-stories) */}
+          <button className={s.footerTermsBtn} onClick={() => router.push('/sharing-stories')}>
+            {msgs.footerSamples}
+          </button>
           {/* 🔥 Task 87 — Terms link. Public, no auth required. */}
           <button className={s.footerTermsBtn} onClick={() => router.push('/terms')}>
             {msgs.termsLabel}
