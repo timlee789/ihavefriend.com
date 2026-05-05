@@ -57,3 +57,4 @@ next-env.d.ts
 
 # local scratch (removed-code backups, experiment notes)
 /tmp/
+sayandkeep_samples/
