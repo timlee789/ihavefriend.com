@@ -1378,6 +1378,13 @@ export default function EmmaChat({ initialMode }) {
   //   2. Force story mode — continuation only makes sense for story sessions
   //   3. Auto-trigger connect() so they don't have to tap a card again
   const continueAutoStartedRef = useRef(false);
+  // 🔥 Task 98 — when a voice continuation extends a BOOK fragment,
+  //   the SessionEndBanner CTA should route back to that book's
+  //   question page (matching FragmentModal Task 97 fallback). We
+  //   capture the parent's book_id / book_question_id during the
+  //   intro fetch. Free-form parents leave this null and the banner
+  //   falls back to /my-stories as before.
+  const [parentBookContext, setParentBookContext] = useState(null);
   useEffect(() => {
     if (!continueFragmentId) return;
     if (continueAutoStartedRef.current) return;
@@ -1394,7 +1401,15 @@ export default function EmmaChat({ initialMode }) {
         });
         if (res.ok) {
           const data = await res.json();
-          parentTitle = data?.fragment?.title || data?.title || '';
+          const f = data?.fragment || data || {};
+          parentTitle = f.title || '';
+          // 🔥 Task 98 — capture book attachment for the post-session banner.
+          if (f.book_id && f.book_question_id) {
+            setParentBookContext({
+              bookId: f.book_id,
+              bookQuestionId: f.book_question_id,
+            });
+          }
         }
       } catch (e) {
         console.warn('[EmmaChat] continueFragment title fetch failed:', e.message);
@@ -2517,19 +2532,71 @@ export default function EmmaChat({ initialMode }) {
           }
         }
 
+        // 🔴 Task 98 — CRITICAL data-loss fix. The previous fetch
+        //   here had no keepalive flag, so the moment the senior
+        //   tapped "내 이야기 확인하기" / "책으로 돌아가기" on the
+        //   SessionEndBanner the component unmounted and this in-
+        //   flight POST got cancelled. Whisper had already returned
+        //   the full transcript, but it never reached chat/end and
+        //   the voice continuation silently disappeared.
+        //
+        //   Two-tier fix mirrors forceStop():
+        //     1. fetch with keepalive: true — the browser keeps the
+        //        request alive past unmount/navigation.
+        //     2. sendBeacon fallback — used only if (1) threw AND
+        //        the JSON body fits inside the ~64 KB browser cap
+        //        (a long Korean story easily exceeds this, hence
+        //        keepalive is the primary path).
+        const endBody = JSON.stringify({
+          sessionId       : sid,
+          transcript      : transcriptSnapshot,
+          conversationMode,
+          whisperTranscript,
+        });
+        const BEACON_LIMIT = 60_000;
+        let chatEndOk = false;
         try {
-          await fetch('/api/chat/end', {
+          const res = await fetch('/api/chat/end', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-            body: JSON.stringify({
+            body: endBody,
+            keepalive: true,
+          });
+          if (res?.ok) {
+            chatEndOk = true;
+            console.log(`[chat/end] ✅ keepalive fetch succeeded (sid=${sid}, body=${endBody.length}B)`);
+          } else {
+            console.warn(`[chat/end] keepalive fetch returned non-OK: ${res?.status}`);
+          }
+        } catch (e) {
+          console.warn('[chat/end] keepalive fetch failed:', e?.message);
+        }
+        if (!chatEndOk && endBody.length <= BEACON_LIMIT) {
+          try {
+            // Beacon endpoint can't carry an Authorization header, so
+            // we stash the token in the body — chat/end already accepts
+            // it on the forceStop path via the same `_token` field.
+            const beaconBody = JSON.stringify({
               sessionId       : sid,
               transcript      : transcriptSnapshot,
               conversationMode,
               whisperTranscript,
-            }),
-          });
-        } catch (e) {
-          console.warn('[chat/end] post failed:', e?.message);
+              _token          : t,
+            });
+            const beaconOk = navigator.sendBeacon(
+              '/api/chat/end',
+              new Blob([beaconBody], { type: 'application/json' })
+            );
+            if (beaconOk) {
+              console.log(`[chat/end] ✅ sendBeacon fallback queued (sid=${sid}, body=${beaconBody.length}B)`);
+            } else {
+              console.warn('[chat/end] sendBeacon returned false — browser refused to queue');
+            }
+          } catch (e) {
+            console.warn('[chat/end] sendBeacon threw:', e?.message);
+          }
+        } else if (!chatEndOk) {
+          console.warn(`[chat/end] payload exceeds beacon cap (${endBody.length}B > ${BEACON_LIMIT}B); relying on keepalive fetch above.`);
         }
       })();
 
@@ -3017,7 +3084,13 @@ export default function EmmaChat({ initialMode }) {
             lang={lang}
             isDay={isDay}
             sessionStartedAt={sessionStartRef.current /* may be null after reset */}
-            bookContext={isBookMode ? { bookId, bookQuestionId } : null}
+            // 🔥 Task 98 — book-mode session takes priority; otherwise
+            //   fall back to the continued parent's book (if any).
+            bookContext={
+              isBookMode
+                ? { bookId, bookQuestionId }
+                : parentBookContext
+            }
           />
         )}
       </div>
