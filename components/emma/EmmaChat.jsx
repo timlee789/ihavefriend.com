@@ -2374,9 +2374,20 @@ export default function EmmaChat({ initialMode }) {
         recorder.onerror = (e) => {
           console.warn('[whisper-rec] recorder error:', e?.error?.message || e);
         };
-        // Cut chunks every second so a hard kill (refresh / crash) at
-        // most loses the last 1s of audio.
-        recorder.start(1000);
+        // 🔴 Task 99 — DO NOT pass a timeslice. With start(timeslice) the
+        //   browser emits one self-contained WebM container per chunk
+        //   (each with its own header + duration metadata). When those
+        //   chunks are concatenated as a single .webm Blob, Whisper's
+        //   ffmpeg only honors the duration of the first container and
+        //   stops decoding partway through, then hallucinates Korean-
+        //   sounding nonsense for the rest. Tim's "3분 → 1.5분만 기록 +
+        //   끝부분 말이 안 됨" matches this exactly.
+        //
+        //   Without a timeslice MediaRecorder emits a SINGLE coherent
+        //   WebM on stop(). forceStop's payload doesn't carry audio
+        //   (only the Gemini-Live STT transcript), so removing the
+        //   timeslice has zero downside for the crash-safety path.
+        recorder.start();
         mediaRecorderRef.current = recorder;
         console.log('[whisper-rec] started, mime=', chosenMime || 'auto');
       } catch (e) {
@@ -2488,21 +2499,30 @@ export default function EmmaChat({ initialMode }) {
       (async () => {
         let whisperTranscript = null;
         const recorder = mediaRecorderRef.current;
-        const chunks   = audioChunksRef.current || [];
         mediaRecorderRef.current = null;
-        audioChunksRef.current   = [];
+        let chunks = [];
         if (recorder) {
           try {
             // Wait for the final dataavailable event to flush.
+            // 🔴 Task 99 — read chunks AFTER stop() awaits, not before.
+            //   The previous order snapshotted audioChunksRef.current
+            //   into a local before stop() could deliver its final
+            //   dataavailable event, so the last chunk never made it
+            //   into the upload. With start() (no timeslice) this is
+            //   especially severe — there's only ONE chunk and it
+            //   arrives via the stop()-driven dataavailable, so the
+            //   snapshot has to come AFTER awaiting stop.
             await new Promise((resolve) => {
               const done = () => resolve();
               recorder.addEventListener('stop', done, { once: true });
               try { recorder.stop(); } catch { resolve(); }
-              setTimeout(resolve, 4000); // safety
+              setTimeout(resolve, 8000); // safety raised for long sessions
             });
           } catch (e) {
             console.warn('[whisper-rec] stop failed:', e?.message);
           }
+          chunks = audioChunksRef.current || [];
+          audioChunksRef.current = [];
           if (chunks.length > 0) {
             const mime = recorderMimeRef.current || 'audio/webm';
             const blob = new Blob(chunks, { type: mime });
