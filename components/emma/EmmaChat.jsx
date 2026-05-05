@@ -2622,12 +2622,14 @@ export default function EmmaChat({ initialMode }) {
 
       // Show "내 이야기 확인하기" banner in chat area
       setSessionEnded(true);
-      // Show feedback modal after conversation with enough turns
+      // 🔥 Tim 2026-05-04 — Feedback 모달 임시 비활성화.
+      //   대화 종료 후 다음 질문으로 자연스럽게 넘어가도록.
+      //   필요한 로직만 남겨두고, modal trigger만 주석 처리.
       feedbackSessionRef.current = sid;
       setFeedbackRating(0);
       setFeedbackComment('');
       setFeedbackSent(false);
-      setShowFeedback(true);
+      // setShowFeedback(true);  // 임시 비활성화 — 복구하려면 이 줄 주석 해제
     } else {
       sessionIdRef.current = null;
       setStatusMsg('');
