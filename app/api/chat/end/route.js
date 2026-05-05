@@ -541,6 +541,87 @@ Rules:
               // future refactors could theoretically omit the field.
               const truncatedFlag = fragmentJson.truncated ?? false;
 
+              // 🔥 Task 97 — voice continuation now appends to the parent's
+              //   content instead of creating a child fragment. Tim's bug:
+              //   the typed editor only fetches the parent body, so an
+              //   appended-via-voice child wasn't visible there. By writing
+              //   the new turn directly into parent.content, both surfaces
+              //   show the same text.
+              //
+              //   Safety: parent must be (1) owned by this user and
+              //   (2) not DELETED. If either check fails we fall back to
+              //   inserting a top-level fragment so the user's recording
+              //   is never lost (effectiveParentId/Order are nulled out).
+              //
+              //   Existing child fragments from the pre-Task-97 era stay
+              //   in place — they continue to render under the parent in
+              //   FragmentModal's continuation thread section.
+              let appendedToParent     = false;
+              let effectiveParentId    = continuationParentId;
+              let effectiveThreadOrder = nextThreadOrder;
+              if (continuationParentId) {
+                try {
+                  const parentRow = await db.query(
+                    `SELECT id, content, language, source_session_ids, status
+                       FROM story_fragments
+                      WHERE id = $1 AND user_id = $2`,
+                    [continuationParentId, userId]
+                  );
+                  const parent = parentRow.rows[0];
+                  const parentDeleted =
+                    parent && String(parent.status || '').toUpperCase() === 'DELETED';
+                  if (parent && !parentDeleted) {
+                    const parentLang = (parent.language || userLang || 'ko').toLowerCase();
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    const separatorLabel =
+                      parentLang === 'en' ? `Added ${dateStr}` :
+                      parentLang === 'es' ? `Añadido ${dateStr}` :
+                                            `${dateStr} 추가됨`;
+                    const separator   = `\n\n---\n*[${separatorLabel}]*\n\n`;
+                    const newBody     = (parent.content || '') + separator + (fragmentJson.content || '');
+                    const newWordCount = newBody.length;
+
+                    await db.query(
+                      `UPDATE story_fragments
+                          SET content            = $2,
+                              word_count         = $3,
+                              source_session_ids = (
+                                SELECT ARRAY(
+                                  SELECT DISTINCT u FROM unnest(
+                                    COALESCE(source_session_ids, '{}'::uuid[]) || $4::uuid[]
+                                  ) AS u
+                                )
+                              )
+                        WHERE id = $1 AND user_id = $5`,
+                      [continuationParentId, newBody, newWordCount, [sessionId], userId]
+                    );
+
+                    appendedToParent = true;
+                    console.log(
+                      `[chat/end:bg] 🔗 Appended continuation to parent ${continuationParentId} — ` +
+                      `session=${sessionId} +${(fragmentJson.content || '').length} chars total=${newWordCount} truncated=${truncatedFlag}`
+                    );
+                  } else {
+                    if (parentDeleted) {
+                      console.warn(`[chat/end:bg] continuation parent ${continuationParentId} is DELETED — falling back to top-level INSERT`);
+                    } else {
+                      console.warn(`[chat/end:bg] continuation parent ${continuationParentId} not owned by user ${userId} — falling back to top-level INSERT`);
+                    }
+                    effectiveParentId    = null;
+                    effectiveThreadOrder = null;
+                  }
+                } catch (appendErr) {
+                  console.error('[chat/end:bg] continuation append failed, falling back to INSERT:', appendErr.message);
+                  effectiveParentId    = null;
+                  effectiveThreadOrder = null;
+                }
+              }
+
+              // Append succeeded — the parent now carries the new content.
+              // Skip the INSERT and the book question mapping (the parent is
+              // already linked to its book question if it was a book answer).
+              if (appendedToParent) return;
+
               console.log(`[chat/end:bg] INSERT story_fragments — session=${sessionId} title="${fragmentJson.title}" subtitleLen=${fragmentJson.subtitle?.length ?? 0} contentLen=${wordCount} tagsTheme=${fragmentJson.tags_theme?.length ?? 0} truncated=${truncatedFlag}`);
 
               const insertRes = await db.query(
@@ -576,8 +657,8 @@ Rules:
                   fragmentStatusToDb('draft'),       // $15 — 'DRAFT' (v2 enum)
                   'gemini-2.5-flash',                // $16
                   truncatedFlag,                     // $17
-                  continuationParentId,              // $18 🆕 2026-04-25
-                  nextThreadOrder,                   // $19 🆕 2026-04-25
+                  effectiveParentId,                 // $18 🔥 Task 97 — null after invalid-parent fallback
+                  effectiveThreadOrder,              // $19 🔥 Task 97 — null after invalid-parent fallback
                   bookId,                            // $20 🆕 Task 60 Stage 3
                   bookQuestionId,                    // $21 🆕 Task 60 Stage 3
                 ]

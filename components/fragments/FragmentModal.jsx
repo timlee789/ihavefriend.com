@@ -196,8 +196,14 @@ export default function FragmentModal({
                   🔥 Task 96 — when the modal is rendered from a book
                   question page (bookContext set), append fromBookId /
                   fromQuestionId so /write can route the user back to
-                  the same question page on Cancel / Finish instead of
-                  dropping them in /my-stories. */}
+                  the same question page on Cancel / Finish.
+                  🔥 Task 97 — auto-fallback to fragment.book_id /
+                  fragment.book_question_id when bookContext is absent.
+                  Fixes Tim's "/my-stories → 책 fragment 글 수정 → 무한
+                  루프" bug: a book-attached fragment now routes back
+                  to its book regardless of where the modal was opened
+                  from. Free-form fragments still default to /my-stories
+                  because their book_id is NULL. */}
               <div className={s.continueRow}>
                 <button
                   className={s.continueBtn}
@@ -209,8 +215,12 @@ export default function FragmentModal({
                   className={s.continueByWritingBtn}
                   onClick={() => {
                     const params = new URLSearchParams({ fragmentId: fragment.id });
-                    if (bookContext?.bookId)     params.set('fromBookId',     bookContext.bookId);
-                    if (bookContext?.questionId) params.set('fromQuestionId', bookContext.questionId);
+                    const returnBookId =
+                      bookContext?.bookId || fragment.book_id || null;
+                    const returnQuestionId =
+                      bookContext?.questionId || fragment.book_question_id || null;
+                    if (returnBookId)     params.set('fromBookId',     returnBookId);
+                    if (returnQuestionId) params.set('fromQuestionId', returnQuestionId);
                     router.push(`/write?${params.toString()}`);
                   }}
                 >
