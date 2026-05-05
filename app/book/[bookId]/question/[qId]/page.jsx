@@ -221,6 +221,10 @@ export default function QuestionDetailPage() {
               onUpdated={() => loadDetail()}
               onPhotosChanged={() => loadDetail()}
               onDeleted={() => loadDetail()}
+              // 🔥 Task 96 — book-aware return path for the typed
+              //   editor: clicking "글 수정 / 이어쓰기" now sends
+              //   the user back HERE, not /my-stories.
+              bookContext={{ bookId, questionId: qId }}
             />
           ))}
         </div>
@@ -241,6 +245,7 @@ export default function QuestionDetailPage() {
                 onUpdated={() => loadDetail()}
                 onPhotosChanged={() => loadDetail()}
                 onDeleted={() => loadDetail()}
+                bookContext={{ bookId, questionId: qId }}
               />
               <button
                 className={s.removeImportBtn}

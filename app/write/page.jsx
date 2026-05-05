@@ -154,6 +154,12 @@ function Inner() {
   const fragmentId   = search.get('fragmentId') || search.get('continueFragmentId') || null;
   const bookId       = search.get('bookId') || null;
   const bookQId      = search.get('bookQuestionId') || null;
+  // 🔥 Task 96 — return-path hints set by FragmentModal when the modal
+  //   was opened from a book question page. Used by handleCancel +
+  //   handleFinish to route the user back to /book/X/question/Y
+  //   instead of dropping them at /my-stories.
+  const fromBookId   = search.get('fromBookId')     || null;
+  const fromQId      = search.get('fromQuestionId') || null;
   const isEdit       = !!fragmentId;
   const isBookMode   = !!(bookId && bookQId) && !isEdit;  // edit takes precedence
 
@@ -322,30 +328,49 @@ function Inner() {
     }
   }
 
+  // 🔥 Task 96 — single helper for "where to send the user when they
+  //   leave this page". Edit flow now respects the fromBookId /
+  //   fromQuestionId hints so a user who opened the editor from a
+  //   book question page is returned there instead of being dumped
+  //   at /my-stories. Falls back to /my-stories (edit mode default)
+  //   or /book/X/question/Y (book-create mode) or / (generic create).
+  function returnPath() {
+    // Book-context return takes precedence in any mode.
+    if (fromBookId && fromQId) {
+      return `/book/${encodeURIComponent(fromBookId)}/question/${encodeURIComponent(fromQId)}`;
+    }
+    if (fromBookId) {
+      return `/book/${encodeURIComponent(fromBookId)}`;
+    }
+    if (isEdit) return '/my-stories';
+    if (isBookMode) {
+      return `/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`;
+    }
+    return '/';
+  }
+
   function handleFinish() {
     if (isEdit) {
-      router.push('/my-stories');
+      router.push(returnPath());
       return;
     }
     if (isBookMode) {
+      // Book-create flow: linkErr means the import failed even though
+      // the fragment saved — fall through to /my-stories so the user
+      // can verify and re-link manually instead of bouncing into a
+      // half-attached question page.
       if (linkErr) {
         router.push('/my-stories');
       } else {
-        router.push(`/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`);
+        router.push(returnPath());
       }
       return;
     }
-    router.push('/my-stories');
+    router.push(returnPath() || '/my-stories');
   }
 
   function handleCancel() {
-    if (isEdit) {
-      router.push('/my-stories');
-    } else if (isBookMode && bookId && bookQId) {
-      router.push(`/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`);
-    } else {
-      router.push('/');
-    }
+    router.push(returnPath());
   }
 
   if (!token) {

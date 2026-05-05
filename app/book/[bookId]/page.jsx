@@ -85,7 +85,10 @@ export default function BookOverviewPage() {
   if (loading) return <div className={s.loading}>{m.loading}</div>;
   if (!data?.book) return <div className={s.loading}>{m.bookNotFound}</div>;
 
-  const { book, suggested_next, chapters } = data;
+  // 🔥 Task 96 — suggested_next no longer destructured (the "다음 질문"
+  //   card was removed from the page). API still returns it, so a
+  //   future revival is just `data.suggested_next`.
+  const { book, chapters } = data;
   const errFallback = { retry: m.failedRetry, generic: m.failedGeneric };
   const bookTitle = titleOf(book.title_i18n, lang) || book.title || m.bookDefaultTitle;
 
@@ -186,22 +189,11 @@ export default function BookOverviewPage() {
       )}
       {pdfError && <div className={s.bookActionsError}>⚠️ {pdfError}</div>}
 
-      {suggested_next && (
-        <div className={s.nextCard}>
-          <div className={s.nextLabel}>{m.nextQuestion}</div>
-          <div className={s.nextChapter}>📖 {titleOf(suggested_next.chapter_title, lang)}</div>
-          <div className={s.nextPrompt}>{titleOf(suggested_next.prompt, lang)}</div>
-          {suggested_next.hint && (
-            <div className={s.nextHint}>💡 {titleOf(suggested_next.hint, lang)}</div>
-          )}
-          <button
-            className={s.nextBtn}
-            onClick={() => router.push(`/book/${bookId}/question/${suggested_next.question_id}`)}
-          >
-            {m.startThisStory}
-          </button>
-        </div>
-      )}
+      {/* 🔥 Task 96 — "다음 질문" suggested-next card removed. Tim's
+          beta polish: book home now shows only progress + chapter
+          list, so the senior taps the chapter they want directly.
+          The suggested_next field still arrives from /api/book/[id]/
+          progress (no API change), it's just not rendered here. */}
 
       <h2 className={s.sectionTitle}>{m.chapterProgress}</h2>
       <div className={s.chapterList}>

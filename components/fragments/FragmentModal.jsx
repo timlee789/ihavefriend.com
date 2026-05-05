@@ -50,6 +50,14 @@ export default function FragmentModal({
   //   no back/close/handle controls — just the content. All edit /
   //   delete / photo / continuation behavior is otherwise identical.
   inline = false,
+  // 🔥 Task 96 — surface the "where did the user come from" context
+  //   so the typed-edit page can route them back. Shape:
+  //     { bookId, questionId } → /book/X/question/Y is the return
+  //     { bookId }             → /book/X is the return (rare, future use)
+  //     null                   → /my-stories is the return (default)
+  //   Only the question page passes this; /my-stories leaves it null
+  //   so the existing "back to /my-stories" behavior keeps working.
+  bookContext = null,
 }) {
   const router = useRouter();
   const [mode, setMode]           = useState('view');  // 'view' | 'edit' | 'confirmDelete' | 'confirmVisibility'
@@ -184,7 +192,12 @@ export default function FragmentModal({
                   이어쓰기" button now opens /write?fragmentId=… in EDIT
                   mode — the senior can revise existing words and append
                   new ones in the same surface (Tim's mental model:
-                  "이어글쓰기'와 '페이지 수정'이 같아야 합니다"). */}
+                  "이어글쓰기'와 '페이지 수정'이 같아야 합니다").
+                  🔥 Task 96 — when the modal is rendered from a book
+                  question page (bookContext set), append fromBookId /
+                  fromQuestionId so /write can route the user back to
+                  the same question page on Cancel / Finish instead of
+                  dropping them in /my-stories. */}
               <div className={s.continueRow}>
                 <button
                   className={s.continueBtn}
@@ -194,7 +207,12 @@ export default function FragmentModal({
                 </button>
                 <button
                   className={s.continueByWritingBtn}
-                  onClick={() => router.push(`/write?fragmentId=${encodeURIComponent(fragment.id)}`)}
+                  onClick={() => {
+                    const params = new URLSearchParams({ fragmentId: fragment.id });
+                    if (bookContext?.bookId)     params.set('fromBookId',     bookContext.bookId);
+                    if (bookContext?.questionId) params.set('fromQuestionId', bookContext.questionId);
+                    router.push(`/write?${params.toString()}`);
+                  }}
                 >
                   {vm.continueByWritingLabel}
                 </button>
