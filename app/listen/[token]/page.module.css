@@ -1,0 +1,266 @@
+/* /listen/[token] — public listen page styles
+ *
+ * Senior-friendly:
+ *   - Large readable font (16-18px base, 18-24px headings)
+ *   - High contrast (light bg, dark text)
+ *   - Generous padding + line-height (1.6-1.8)
+ *   - No fancy animations — calm + still
+ *   - Mobile-first (most family members scan QR with phone)
+ */
+
+.page {
+  min-height: 100dvh;
+  background: #fdf8f4;
+  color: #2c2419;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 24px;
+}
+
+.brandLink {
+  text-decoration: none;
+  color: #8b6f47;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.brandName {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brandTagline {
+  font-size: 12px;
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+/* ── Loading + not-found states ─────────────────────────── */
+.loadingState {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.notFoundCard {
+  text-align: center;
+  padding: 48px 24px;
+  margin-top: 32px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(139, 111, 71, 0.08);
+}
+
+.notFoundEmoji {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.notFoundTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #2c2419;
+}
+
+.notFoundDesc {
+  font-size: 15px;
+  opacity: 0.7;
+  line-height: 1.6;
+}
+
+/* ── Headline (sender + section label) ──────────────────── */
+.headline {
+  text-align: center;
+  margin: 24px 0 32px;
+}
+
+.giftIcon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.senderLine {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #4a3d2c;
+}
+
+.senderName {
+  font-weight: 700;
+  color: #8b6f47;
+  margin-right: 4px;
+}
+
+.sectionLabel {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2c2419;
+  letter-spacing: -0.01em;
+}
+
+/* ── Question prompt card ────────────────────────────────── */
+.questionCard {
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.06);
+  border-left: 4px solid #ea580c;
+}
+
+.questionLabel {
+  font-size: 13px;
+  color: #8b6f47;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.questionText {
+  font-size: 17px;
+  line-height: 1.5;
+  color: #2c2419;
+  font-weight: 500;
+}
+
+/* ── Audio card ─────────────────────────────────────────── */
+.audioCard {
+  background: #fff;
+  padding: 24px 20px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(139, 111, 71, 0.1);
+}
+
+.audioPlayer {
+  width: 100%;
+  height: 48px;
+  display: block;
+}
+
+.playCount {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 12px;
+}
+
+/* ── Story card ─────────────────────────────────────────── */
+.storyCard {
+  background: #fff;
+  padding: 24px 20px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(139, 111, 71, 0.06);
+}
+
+.storySectionLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b6f47;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.storyTitle {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 6px 0;
+  color: #2c2419;
+}
+
+.storySubtitle {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0 0 20px 0;
+  color: #6b5a44;
+  font-style: italic;
+}
+
+.storyContent {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #2c2419;
+}
+
+.storyContent p {
+  margin: 0 0 14px 0;
+}
+
+.storyContent p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Mobile tuning (most family will scan QR with phone) ─── */
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+  }
+  .sectionLabel {
+    font-size: 20px;
+  }
+  .storyTitle {
+    font-size: 22px;
+  }
+  .storyContent {
+    font-size: 16px;
+  }
+}
+
+/* ── Dark mode (system preference) ──────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .page {
+    background: #1a1612;
+    color: #f0e8de;
+  }
+  .brandLink {
+    color: #c9a982;
+  }
+  .notFoundCard,
+  .questionCard,
+  .audioCard,
+  .storyCard {
+    background: #2a2218;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+  .senderLine {
+    color: #d4c4ac;
+  }
+  .senderName {
+    color: #e8c39a;
+  }
+  .sectionLabel,
+  .storyTitle,
+  .questionText,
+  .storyContent {
+    color: #f0e8de;
+  }
+  .questionLabel,
+  .storySectionLabel {
+    color: #c9a982;
+  }
+  .storySubtitle {
+    color: #b8a890;
+  }
+  .questionCard {
+    border-left-color: #f97316;
+  }
+}
