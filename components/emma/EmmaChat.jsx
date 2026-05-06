@@ -2471,8 +2471,17 @@ export default function EmmaChat({ initialMode }) {
     releaseWakeLock();
 
     const t = tokenRef.current;
+    // 🔥 Step 07 (Voice QR) — capture session duration BEFORE the
+    //   sessionStartRef.current = null line clears it. We need this
+    //   value down in the audio-upload block (inside the async IIFE
+    //   below, after chat/end resolves) for fragment_audios.duration_sec.
+    //   Math is identical to the existing `mins` calc — just expressed
+    //   in seconds — so the existing /api/usage payload is unchanged.
+    let sessionDurationSec = 0;
     if (sessionStartRef.current && t) {
-      const mins = (Date.now() - sessionStartRef.current) / 60000;
+      const elapsedMs = Date.now() - sessionStartRef.current;
+      sessionDurationSec = Math.round(elapsedMs / 1000);
+      const mins = elapsedMs / 60000;
       fetch('/api/usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
@@ -2575,6 +2584,7 @@ export default function EmmaChat({ initialMode }) {
         });
         const BEACON_LIMIT = 60_000;
         let chatEndOk = false;
+        let chatEndFragmentId = null;  // 🔥 Step 07 — Voice QR audio upload target
         try {
           const res = await fetch('/api/chat/end', {
             method: 'POST',
@@ -2584,12 +2594,79 @@ export default function EmmaChat({ initialMode }) {
           });
           if (res?.ok) {
             chatEndOk = true;
-            console.log(`[chat/end] ✅ keepalive fetch succeeded (sid=${sid}, body=${endBody.length}B)`);
+            // 🔥 Step 07 (Voice QR) — parse fragmentId from response.
+            //   For continuation flow, fragmentId = continuationParentId,
+            //   so we can immediately upload the audio Blob to attach
+            //   it to the parent fragment. For new fragments fragmentId
+            //   is null (INSERT runs in after() background) and the
+            //   audio gets attached later via FragmentModal (Step 08).
+            try {
+              const json = await res.json();
+              chatEndFragmentId = json?.fragmentId || null;
+            } catch {}
+            console.log(`[chat/end] ✅ keepalive fetch succeeded (sid=${sid}, body=${endBody.length}B, fragmentId=${chatEndFragmentId || 'null'})`);
           } else {
             console.warn(`[chat/end] keepalive fetch returned non-OK: ${res?.status}`);
           }
         } catch (e) {
           console.warn('[chat/end] keepalive fetch failed:', e?.message);
+        }
+
+        // 🔥 Step 07 (Voice QR) — upload the audio Blob to R2 if we
+        //   have both a fragmentId (continuation case) and audio
+        //   chunks captured by the MediaRecorder. Independent of
+        //   Whisper upload above — either can fail without affecting
+        //   the other.
+        //
+        //   Only runs in the user-initiated disconnect() path (this
+        //   function), NOT in forceStop() which is unmount/emergency
+        //   teardown. forceStop's complexity is already at its limit.
+        //
+        //   durationSec uses sessionDurationSec captured before
+        //   sessionStartRef was cleared (Task 50 path above).
+        if (chatEndFragmentId && chunks && chunks.length > 0) {
+          try {
+            const mime = recorderMimeRef.current || 'audio/webm';
+            const audioBlob = new Blob(chunks, { type: mime });
+
+            const audioFd = new FormData();
+            audioFd.append('audio', audioBlob, 'recording.webm');
+            audioFd.append('duration', String(sessionDurationSec));
+            // whisperText is sent if we got it back from /api/transcribe
+            // above. The audio CRUD endpoint stores it in whisper_text
+            // for future search/highlighting. Optional — null is fine.
+            if (whisperTranscript) {
+              audioFd.append('whisperText', whisperTranscript);
+            }
+
+            const audioRes = await fetch(`/api/fragments/${chatEndFragmentId}/audio`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${t}` },
+              body: audioFd,
+              keepalive: true,
+            });
+
+            if (audioRes?.ok) {
+              const audioData = await audioRes.json().catch(() => ({}));
+              console.log(
+                `[audio upload] ✅ fragment=${chatEndFragmentId} ` +
+                `size=${audioBlob.size}B duration=${sessionDurationSec}s ` +
+                `r2Key=${audioData?.audio?.r2_key || '?'} ` +
+                `publicToken=${audioData?.audio?.public_token || '?'}`
+              );
+            } else {
+              console.warn(
+                `[audio upload] non-OK status=${audioRes?.status} ` +
+                `fragment=${chatEndFragmentId}`
+              );
+            }
+          } catch (e) {
+            console.warn('[audio upload] failed:', e?.message);
+          }
+        } else if (chatEndFragmentId && (!chunks || chunks.length === 0)) {
+          console.log(`[audio upload] skipped — fragmentId=${chatEndFragmentId} but no audio chunks`);
+        } else if (!chatEndFragmentId && chunks && chunks.length > 0) {
+          console.log(`[audio upload] skipped — chunks captured (${chunks.length}) but fragmentId=null (new fragment, INSERT in background)`);
         }
         if (!chatEndOk && endBody.length <= BEACON_LIMIT) {
           try {
