@@ -54,13 +54,25 @@ export async function GET(request, { params }) {
   // Look up the audio row by public_token. is_public=TRUE filter is
   // critical: a user toggling sharing OFF must immediately stop family
   // playback even on cached QR scans.
+  //
+  // 🔥 2026-05-06 (Photobook v3 P5) — UNION across both audio tables.
+  //   fragment_audios       : 자서전 음성 (multi-audio, audio_order)
+  //   photobook_page_audios : 사진앨범 페이지 음성 (1 per page)
+  //   public_token 은 둘 다 UNIQUE → 충돌 없음. is_public 필터 양쪽 모두
+  //   적용되므로 token 1 개로 최대 1 행만 hit (또는 0 행 → 404).
   let row;
   try {
     const result = await db.query(
       `SELECT r2_key, mime_type, size_bytes
          FROM fragment_audios
         WHERE public_token = $1
-          AND is_public    = TRUE`,
+          AND is_public    = TRUE
+       UNION ALL
+       SELECT r2_key, mime_type, size_bytes
+         FROM photobook_page_audios
+        WHERE public_token = $1
+          AND is_public    = TRUE
+        LIMIT 1`,
       [token]
     );
     if (result.rows.length === 0) {
