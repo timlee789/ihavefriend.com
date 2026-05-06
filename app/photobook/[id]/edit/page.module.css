@@ -1,0 +1,154 @@
+/* ===========================
+   /photobook/[id]/edit — editor shell.
+   Mobile-first full-screen page.
+   =========================== */
+
+.page {
+  min-height: 100dvh;
+  background: #1a1410;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* No max-width — editor needs the full viewport on mobile.
+     The PageCanvas wraps itself at 560px. */
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(26, 20, 16, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.backBtn {
+  flex-shrink: 0;
+  background: rgba(251, 146, 60, 0.16);
+  border: none;
+  cursor: pointer;
+  width: 44px; height: 44px;
+  border-radius: 22px;
+  color: #fb923c;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.backBtn:active { transform: scale(0.94); }
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  color: #fdf8f4;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: -0.3px;
+  padding: 8px 4px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.titleInput:focus { border-bottom-color: rgba(251, 146, 60, 0.5); }
+.titleInput::placeholder { color: rgba(255, 255, 255, 0.38); font-weight: 500; }
+
+.savingHint {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #86efac;
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+}
+
+/* ── Editor body ── */
+.body {
+  /* PageCanvas brings its own padding + max-width.
+     We only need to keep room for the fixed bottom navigator (handled
+     in PageCanvas .canvas's padding-bottom). */
+}
+
+/* ── Empty state — first page CTA ── */
+.empty {
+  text-align: center;
+  padding: 80px 28px 200px;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 560px;
+  margin: 0 auto;
+}
+.emptyIcon { font-size: 56px; margin-bottom: 14px; }
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8px;
+}
+.emptyDesc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 24px;
+}
+.emptyCta {
+  display: inline-block;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.emptyCta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Spinner ── */
+.spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 0;
+}
+.spinnerDot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #fb923c;
+  animation: bounce 0.9s infinite ease-in-out;
+  margin: 0 4px;
+}
+.spinnerDot:nth-child(2) { animation-delay: 0.15s; }
+.spinnerDot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1410;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 13.5px;
+  font-weight: 600;
+  z-index: 200;
+  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+}

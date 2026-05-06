@@ -1,0 +1,119 @@
+/* ===========================
+   /photobook/new — single-screen create flow.
+   =========================== */
+
+.page {
+  min-height: 100dvh;
+  background: #1a1410;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(26, 20, 16, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.backBtn {
+  background: rgba(251, 146, 60, 0.16);
+  border: none;
+  cursor: pointer;
+  width: 44px; height: 44px;
+  border-radius: 22px;
+  color: #fb923c;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.backBtn:active { transform: scale(0.94); }
+
+.pageTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fdf8f4;
+  letter-spacing: -0.4px;
+}
+
+.body {
+  padding: 24px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fdf8f4;
+  letter-spacing: -0.4px;
+  margin: 4px 0 8px;
+}
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0.2px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 17px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus       { border-color: #fb923c; }
+.input::placeholder { color: rgba(255, 255, 255, 0.38); }
+
+.errorBox {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cta {
+  margin-top: 8px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -0.2px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.cta:hover:not(:disabled) { opacity: 0.92; }
+.cta:active { transform: scale(0.98); }
+.cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
