@@ -800,46 +800,22 @@ export default function MyStoriesPage() {
             />
           ) : (
           <>
-          {/* ── Stats Bar ── */}
-          <div className={s.statsBar}>
-            <div className={s.statItem}>
-              <div className={s.statValue}>{fragments.length}</div>
-              <div className={s.statLabel}>{vm.statLabelStories}</div>
-            </div>
-            <div className={s.statItem}>
-              <div className={s.statValue}>
-                {totalChars >= 1000 ? `${(totalChars / 1000).toFixed(1)}k` : totalChars}
-              </div>
-              <div className={s.statLabel}>{vm.statLabelChars}</div>
-            </div>
-            <div className={s.statItem}>
-              <div className={s.statValue} style={{ fontSize: 14 }}>{lastCreated}</div>
-              <div className={s.statLabel}>{vm.statLabelLatest}</div>
-            </div>
-          </div>
+          {/* 🔥 Tim 2026-05-06 — Stats Bar (이야기 갯수 / 글자수 / 최근 날짜)
+              제거. 시니어에겐 본인이 쌓아 올린 정량 지표보다 이야기
+              자체가 더 중요하다는 Tim 의 단순화 결정. 빈 화면 위쪽 공간을
+              실제 이야기 카드에 양보. */}
 
-          {/* ── Confirmed Fragments ── */}
-          {confirmedFragments.length > 0 && (
-            <>
-              <div className={s.sectionTitle}>{vm.sectionConfirmed}</div>
-              <div className={s.cardList}>
-                {confirmedFragments.map(f => (
+          {/* 🔥 Tim 2026-05-06 — "확정됨" / "초안" 섹션 구분 제거.
+              시니어에겐 둘의 차이가 의미있지 않음. 하나의 통합 리스트로
+              관심이 이야기 자체에 집중하게 함. 날짜 내림차순 정렬. */}
+          {fragments.length > 0 && (
+            <div className={s.cardList}>
+              {[...fragments]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map(f => (
                   <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
                 ))}
-              </div>
-            </>
-          )}
-
-          {/* ── Draft Fragments ── */}
-          {draftFragments.length > 0 && (
-            <>
-              <div className={s.sectionTitle}>{vm.sectionDraft}</div>
-              <div className={s.cardList}>
-                {draftFragments.map(f => (
-                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
-                ))}
-              </div>
-            </>
+            </div>
           )}
 
           {/* ── Empty State ── */}
@@ -853,39 +829,10 @@ export default function MyStoriesPage() {
             </div>
           )}
 
-          {/* ── Ebook Section ── */}
-          <div className={s.ebookSection}>
-            <div className={s.ebookSectionTitle}>{vm.ebookSectionTitle}</div>
-            <div className={s.ebookSectionDesc}>{vm.ebookSectionDesc}</div>
-
-            {/* Existing books */}
-            {books.length > 0 && (
-              <div className={s.ebookStatusList}>
-                {books.map(book => {
-                  const info = getBookStatusInfo(book.status, vm);
-                  return (
-                    <div key={book.id} className={`${s.ebookStatusCard} ${s[info.card]}`}>
-                      <div className={s.ebookStatusTitle}>{book.title}</div>
-                      <div className={`${s.ebookStatusMsg} ${s[info.cls]}`}>{info.msg}</div>
-                      {(book.status === 'completed' || book.status === 'published') && book.has_output && (
-                        <button className={s.downloadBtn}
-                          onClick={() => handleDownload(book.id, book.title, vm)}>
-                          {vm.ebookDownload}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <button
-              className={s.ctaBtn}
-              onClick={() => setShowEbook(true)}
-              disabled={fragments.length === 0}>
-              {fragments.length === 0 ? vm.ebookRequestEmpty : vm.ebookRequestBtn}
-            </button>
-          </div>
+          {/* 🔥 Tim 2026-05-06 — ebook 섹션 제거.
+              "내 이야기" 페이지는 이제 이야기 목록 전용.
+              책 만들기 흐름은 홈의 "내 자서전" / "내 수필집" 버튼으로
+              이동. 이 페이지에서는 조각 자체에 집중. */}
           </>
           )}
         </>
@@ -903,15 +850,9 @@ export default function MyStoriesPage() {
         />
       )}
 
-      {/* ── Ebook Request Modal ── */}
-      {showEbook && (
-        <EbookModal
-          fragments={fragments}
-          lang={lang}
-          onClose={() => setShowEbook(false)}
-          onSuccess={handleEbookSuccess}
-        />
-      )}
+      {/* 🔥 Tim 2026-05-06 — EbookModal 제거 (책 만들기 흐름은 홈으로 이동).
+          showEbook state 와 EbookModal 컴포넌트는 파일 상단에 남아있으나
+          UI 에서는 더 이상 호출되지 않음. 다음 정리 시 완전 제거 예정. */}
 
       {/* ── Toast ── */}
       {toast && <div className={s.toast}>{toast}</div>}
@@ -950,28 +891,19 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
         </div>
       </div>
 
-      {f.subtitle && <div className={s.cardSubtitle}>{f.subtitle}</div>}
-
-      <div className={s.cardPreview}>{preview(f.content, 100)}</div>
-
-      {/* 🔥 Task 75 — photo thumbnails (max 2) right under the preview
-          so the user recognizes a story by its picture, not just text. */}
-      {Array.isArray(f.photos) && f.photos.length > 0 && (
-        <div className={s.cardPhotos}>
-          {f.photos.slice(0, 2).map(p => (
-            <img key={p.id} src={p.blob_url} alt="" className={s.cardThumb} />
-          ))}
+      {/* 🔥 Tim 2026-05-06 — 제목 바로 아래 큰 날짜 + 인라인 인디으로
+          "책에 포함됨" / "포함된 사진". 시니어가 한 눈에 "언제 쓴 글이고
+          책에 속한지, 사진이 있는지" 판단 가능. */}
+      <div className={s.cardMeta}>
+        <div className={s.cardDateLarge}>{fmtDateShort(f.created_at)}</div>
+        <div className={s.cardIndicators}>
+          {Array.isArray(f.photos) && f.photos.length > 0 && (
+            <span className={s.photoIndicator}>📷 사진</span>
+          )}
+          {f.book_id && (
+            <span className={s.bookBadge}>📚 책에 포함됨</span>
+          )}
         </div>
-      )}
-
-      <div className={s.cardFooter}>
-        <span className={s.cardDate}>{fmtDateShort(f.created_at)}</span>
-        {/* 🆕 Stage 7 — fragments saved as a book question answer get a
-            small purple "책에 포함됨" pill so the senior can tell at a
-            glance which entries are wired into a book vs free-form. */}
-        {f.book_id && (
-          <span className={s.bookBadge}>📚 책에 포함됨</span>
-        )}
       </div>
 
       {f.truncated && (

@@ -134,7 +134,7 @@ export default function PageCanvas({
           flex-direction: column;
           gap: 16px;
           padding: 16px;
-          padding-bottom: 130px; /* room for the fixed bottom navigator */
+          padding-bottom: 32px; /* navigator 가 상단 sticky 로 옮겨서 하단 마지는 일반 수준 */
           max-width: 560px;
           margin: 0 auto;
         }

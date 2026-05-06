@@ -129,6 +129,7 @@ export default function AudioPlayerCard({
       </div>
 
       <audio
+        key={audio.id}
         controls
         preload="metadata"
         src={`/api/audio/${audio.public_token}`}

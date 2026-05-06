@@ -171,9 +171,13 @@ export default function PhotoSlot({
   }
 
   if (photo) {
+    // 🔥 2026-05-06 (Tim) — src goes through /api/photobook-photo/[id]
+    // proxy. Loading R2's pub-*.r2.dev URL directly is blocked by
+    // Chrome's SafeBrowsing dev-URL filter (same issue as audio in
+    // FragmentModal). Proxying through our own domain bypasses it.
     return (
       <div className="slot filled">
-        <img src={photo.r2_url} alt="" />
+        <img src={`/api/photobook-photo/${photo.id}`} alt="" />
 
         <button
           type="button"

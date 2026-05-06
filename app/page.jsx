@@ -67,7 +67,7 @@ const HOME_MSGS = {
     //   교체하고, "내 이야기" (3번째) 가 /my-stories 목록 페이지로
     //   이동하도록 변경. 자서전·수필집·내 이야기·사진앨범 4개로 컨셉
     //   단순화. tellStoryFromList 는 my-stories 상단 CTA 에서 사용.
-    homeBtnPhotobook   : '사진앨범',
+    homeBtnPhotobook   : '사진 앨범집',
     tellStoryFromList  : '이야기 하기',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -123,7 +123,7 @@ const HOME_MSGS = {
     homeBtnMyStories   : 'View My Stories',
     homeBtnSamples     : 'Sample Stories',
     // Tim 2026-05-06 — see KO block above.
-    homeBtnPhotobook   : 'Photobooks',
+    homeBtnPhotobook   : 'Photobook Collections',
     tellStoryFromList  : 'Tell a Story',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -179,7 +179,7 @@ const HOME_MSGS = {
     homeBtnMyStories   : 'Ver mis historias',
     homeBtnSamples     : 'Historias de ejemplo',
     // Tim 2026-05-06 — ver bloque KO arriba.
-    homeBtnPhotobook   : 'Álbumes de fotos',
+    homeBtnPhotobook   : 'Colecciones de álbumes',
     tellStoryFromList  : 'Contar una historia',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.

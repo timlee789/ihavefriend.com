@@ -13,17 +13,21 @@
 export const PB_MSGS = {
   KO: {
     // ── 책 목록 / 메인 진입 ──
-    pageTitleList   : '사진앨범',
-    newBookBtn      : '+ 새 사진앨범',
-    listEmptyTitle  : '첫 사진앨범을 만들어 보세요',
+    // 🔥 Tim 2026-05-06 — "사진앨범" → "사진앨범집" 용어 통일.
+    //   '앨범' 은 모든 사진 서비스가 쓰는 일반어. SayAndKeep 은 '앨범집'
+    //   이라는 차별화된 용어를 사진 화보집/책을 만들어주는 서비스라는
+    //   정체성 표현.
+    pageTitleList   : '사진 앨범집',
+    newBookBtn      : '+ 새 사진 앨범집',
+    listEmptyTitle  : '첫 사진 앨범집을 만들어 보세요',
     listEmptyDesc   : '사진 한 장에 추억 한 줄.\n가족과 함께 펼쳐볼 작은 책.',
     pageCountLabel  : (n) => `${n}쪽`,
-    untitledBook    : '제목 없는 사진앨범',
+    untitledBook    : '제목 없는 사진 앨범집',
     coverPhotoAlt   : '표지 사진',
     loadFailed      : '책을 불러오지 못했어요.',
 
     // ── 새 책 만들기 ──
-    pageTitleNew    : '새 사진앨범 만들기',
+    pageTitleNew    : '새 사진 앨범집 만들기',
     titleLabel      : '제목',
     titlePlaceholder: '예: 신혼여행 추억',
     titleRequired   : '제목을 입력해 주세요.',
@@ -34,7 +38,7 @@ export const PB_MSGS = {
     createFailed    : '만들지 못했어요. 다시 시도해 주세요.',
 
     // ── 편집기 ──
-    pageTitleEdit         : '사진앨범 편집',
+    pageTitleEdit         : '사진 앨범집 편집',
     bookTitlePlaceholder  : '책 제목',
     addPageBtn            : '+ 페이지 추가',
     editorEmptyTitle      : '첫 페이지를 만들어 보세요',
@@ -126,16 +130,16 @@ export const PB_MSGS = {
   },
 
   EN: {
-    pageTitleList   : 'Photobooks',
-    newBookBtn      : '+ New photobook',
-    listEmptyTitle  : 'Make your first photobook',
+    pageTitleList   : 'Photobook Collections',
+    newBookBtn      : '+ New collection',
+    listEmptyTitle  : 'Make your first photobook collection',
     listEmptyDesc   : 'One memory per photo.\nA little book to share with family.',
     pageCountLabel  : (n) => `${n} ${n === 1 ? 'page' : 'pages'}`,
-    untitledBook    : 'Untitled photobook',
+    untitledBook    : 'Untitled collection',
     coverPhotoAlt   : 'Cover photo',
     loadFailed      : 'Could not load your books.',
 
-    pageTitleNew    : 'New photobook',
+    pageTitleNew    : 'New photobook collection',
     titleLabel      : 'Title',
     titlePlaceholder: 'e.g. Honeymoon memories',
     titleRequired   : 'Please enter a title.',
@@ -145,7 +149,7 @@ export const PB_MSGS = {
     creating        : 'Creating…',
     createFailed    : 'Could not create the book. Please try again.',
 
-    pageTitleEdit         : 'Edit photobook',
+    pageTitleEdit         : 'Edit collection',
     bookTitlePlaceholder  : 'Book title',
     addPageBtn            : '+ Add page',
     editorEmptyTitle      : 'Make your first page',
@@ -231,16 +235,16 @@ export const PB_MSGS = {
   },
 
   ES: {
-    pageTitleList   : 'Álbumes',
-    newBookBtn      : '+ Nuevo álbum',
-    listEmptyTitle  : 'Crea tu primer álbum',
+    pageTitleList   : 'Colecciones de álbumes',
+    newBookBtn      : '+ Nueva colección',
+    listEmptyTitle  : 'Crea tu primera colección',
     listEmptyDesc   : 'Un recuerdo por foto.\nUn libro pequeño para compartir.',
     pageCountLabel  : (n) => `${n} ${n === 1 ? 'página' : 'páginas'}`,
-    untitledBook    : 'Álbum sin título',
+    untitledBook    : 'Colección sin título',
     coverPhotoAlt   : 'Foto de portada',
     loadFailed      : 'No se pudieron cargar los álbumes.',
 
-    pageTitleNew    : 'Nuevo álbum',
+    pageTitleNew    : 'Nueva colección',
     titleLabel      : 'Título',
     titlePlaceholder: 'Ej.: Recuerdos de luna de miel',
     titleRequired   : 'Por favor escribe un título.',
@@ -250,7 +254,7 @@ export const PB_MSGS = {
     creating        : 'Creando…',
     createFailed    : 'No se pudo crear. Inténtalo de nuevo.',
 
-    pageTitleEdit         : 'Editar álbum',
+    pageTitleEdit         : 'Editar colección',
     bookTitlePlaceholder  : 'Título del libro',
     addPageBtn            : '+ Añadir página',
     editorEmptyTitle      : 'Crea tu primera página',

@@ -1776,6 +1776,41 @@
   background: #2a2520;
   flex-shrink: 0;
 }
+
+/* 🔥 Tim 2026-05-06 — 카드 재구성:
+   제목 바로 아래 큰 날짜 + 우측에 인라인 인디죄터 (사진 / 책 포함).
+   시니어에게 날짜는 가장 있여다 되는 식별자. 한 줄에 정리해
+   수직 공간 절약 및 카드 컴팩트함 유지. */
+.cardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.cardDateLarge {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: -0.2px;
+}
+.cardIndicators {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.photoIndicator {
+  display: inline-block;
+  font-size: 12px;
+  background: rgba(56, 132, 224, 0.18);
+  color: #93c5fd;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(56, 132, 224, 0.30);
+}
 .photosSection {
   margin-top: 18px;
   padding-top: 14px;

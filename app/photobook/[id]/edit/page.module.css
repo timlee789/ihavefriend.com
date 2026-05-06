@@ -72,6 +72,31 @@
   letter-spacing: 0.2px;
 }
 
+/* 🔥 Tim 2026-05-06 — header 우측 상단 "+ 페이지 추가" 버튼.
+   이전에는 하단 navigator 안에 들어있어 시선이 아래로 멀어졌음.
+   header 의 title input 염에 두니 시니어가 첫 액션 (새 페이지)
+   을 자연스럽게 찾음. 적당한 크기 — navigator 의 nav 화살표와
+   비슷한 44px 높이, 소시적으로 주활계 그라디언트로 하이라키
+   레벨 유지. */
+.headerAddBtn {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.headerAddBtn:hover:not(:disabled) { opacity: 0.92; }
+.headerAddBtn:active { transform: scale(0.97); }
+.headerAddBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
 /* ── Editor body ── */
 .body {
   /* PageCanvas brings its own padding + max-width.
@@ -138,7 +163,7 @@
 /* ── Toast ── */
 .toast {
   position: fixed;
-  bottom: 96px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.92);

@@ -99,8 +99,12 @@ export default function PhotobookListPage() {
               type="button"
             >
               <div className={s.cover}>
-                {b.cover_photo_url ? (
-                  <img src={b.cover_photo_url} alt={m.coverPhotoAlt} className={s.coverImg} />
+                {b.cover_photo_id ? (
+                  <img
+                    src={`/api/photobook-photo/${b.cover_photo_id}`}
+                    alt={m.coverPhotoAlt}
+                    className={s.coverImg}
+                  />
                 ) : (
                   <div className={s.coverBlank}>📷</div>
                 )}

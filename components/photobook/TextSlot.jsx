@@ -66,19 +66,35 @@ export default function TextSlot({
 
   function handleRecorderSaved({ transcript, audio }) {
     setRecOpen(false);
-    // Append (or replace if empty) the transcript into the textarea.
-    // We don't auto-save the caption — let the user blur to commit so
-    // they can edit first.
+    // Append (or replace if empty) the transcript into the textarea
+    // AND auto-save it to the server immediately.
+    //
+    // 🔥 2026-05-06 (Tim) — previously this only set local textarea
+    // state; the user had to blur the textarea for the caption to
+    // save. If they navigated to another page first, the transcript
+    // was lost when the textarea reset from the empty parent caption
+    // on return. Saving here closes that gap.
+    let nextText = text;
     if (transcript) {
-      setText(prev => {
-        const trimmed = (prev || '').trim();
-        if (!trimmed) return transcript;
-        // Only replace if the previous text was clearly a stale Whisper
-        // result (matches captionRaw exactly). Otherwise append a
-        // separator and let the user merge by hand.
-        if (captionRaw && trimmed === (captionRaw || '').trim()) return transcript;
-        return `${trimmed}\n\n${transcript}`;
-      });
+      const trimmed = (text || '').trim();
+      if (!trimmed) {
+        nextText = transcript;
+      } else if (captionRaw && trimmed === (captionRaw || '').trim()) {
+        // Previous text was a stale Whisper result — replace it.
+        nextText = transcript;
+      } else {
+        // Otherwise append, separated by a blank line, so the user
+        // can merge by hand.
+        nextText = `${trimmed}\n\n${transcript}`;
+      }
+      setText(nextText);
+      // Persist immediately so it survives page navigation. lastSavedRef
+      // updates so the next blur won't re-fire an identical save.
+      const trimmedNext = nextText.trim();
+      if (trimmedNext !== (lastSavedRef.current || '')) {
+        lastSavedRef.current = trimmedNext;
+        onSaveCaption?.(trimmedNext);
+      }
     }
     onAudioSaved?.({ transcript, audio });
   }

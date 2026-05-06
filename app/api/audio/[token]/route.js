@@ -55,33 +55,41 @@ export async function GET(request, { params }) {
   // critical: a user toggling sharing OFF must immediately stop family
   // playback even on cached QR scans.
   //
-  // 🔥 2026-05-06 (Photobook v3 P5) — UNION across both audio tables.
-  //   fragment_audios       : 자서전 음성 (multi-audio, audio_order)
-  //   photobook_page_audios : 사진앨범 페이지 음성 (1 per page)
-  //   public_token 은 둘 다 UNIQUE → 충돌 없음. is_public 필터 양쪽 모두
-  //   적용되므로 token 1 개로 최대 1 행만 hit (또는 0 행 → 404).
+  // 🔥 2026-05-06 (Photobook v3 P5) — search both audio tables. token
+  //   is UNIQUE in each, so at most one row across the union matches.
+  //   Done as two separate queries (clearer than UNION ALL with LIMIT,
+  //   which has parsing edge cases across PG versions); the second
+  //   query only runs if the first misses.
   let row;
   try {
-    const result = await db.query(
+    const fragQ = await db.query(
       `SELECT r2_key, mime_type, size_bytes
          FROM fragment_audios
-        WHERE public_token = $1
-          AND is_public    = TRUE
-       UNION ALL
-       SELECT r2_key, mime_type, size_bytes
-         FROM photobook_page_audios
         WHERE public_token = $1
           AND is_public    = TRUE
         LIMIT 1`,
       [token]
     );
-    if (result.rows.length === 0) {
-      return new Response(JSON.stringify({ error: 'not found or not public' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (fragQ.rows.length > 0) {
+      row = fragQ.rows[0];
+    } else {
+      const pbQ = await db.query(
+        `SELECT r2_key, mime_type, size_bytes
+           FROM photobook_page_audios
+          WHERE public_token = $1
+            AND is_public    = TRUE
+          LIMIT 1`,
+        [token]
+      );
+      if (pbQ.rows.length > 0) {
+        row = pbQ.rows[0];
+      } else {
+        return new Response(JSON.stringify({ error: 'not found or not public' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
-    row = result.rows[0];
   } catch (e) {
     console.error('[GET /api/audio/:token] db lookup failed:', e?.message);
     return new Response(JSON.stringify({ error: 'lookup failed' }), {

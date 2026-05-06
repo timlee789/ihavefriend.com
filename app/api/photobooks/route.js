@@ -50,13 +50,13 @@ export async function GET(request) {
              WHERE p.user_book_id = b.id),
            0
          ) AS page_count,
-         (SELECT pp.r2_url
+         (SELECT pp.id
             FROM photobook_pages p
             JOIN photobook_page_photos pp ON pp.page_id = p.id
            WHERE p.user_book_id = b.id
            ORDER BY p.page_number ASC
            LIMIT 1
-         ) AS cover_photo_url
+         ) AS cover_photo_id
        FROM user_books b
       WHERE b.user_id   = $1
         AND b.book_type = 'photobook'

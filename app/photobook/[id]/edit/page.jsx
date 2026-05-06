@@ -210,6 +210,14 @@ export default function PhotobookEditPage() {
           maxLength={200}
         />
         {titleSaving && <span className={s.savingHint}>{m.saving}</span>}
+        <button
+          type="button"
+          className={s.headerAddBtn}
+          onClick={handleAddPage}
+          disabled={busy}
+        >
+          {busy ? m.addingPage : m.addPageBtn}
+        </button>
       </header>
 
       {loading ? (

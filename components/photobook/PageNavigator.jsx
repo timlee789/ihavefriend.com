@@ -96,14 +96,8 @@ export default function PageNavigator({
           aria-label={m.nextPage}
         >›</button>
 
-        <button
-          type="button"
-          className="addBtn"
-          onClick={onAdd}
-          disabled={busy}
-        >
-          {busy ? m.addingPage : m.addPageBtn}
-        </button>
+        {/* 🔥 Tim 2026-05-06 — "+ 페이지 추가" 버튼 제거.
+            header 우측 상단으로 이동했기 때문에 여기엔 년은 입니다. */}
 
         <button
           type="button"
@@ -162,20 +156,26 @@ export default function PageNavigator({
       )}
 
       <style jsx>{`
+        /* 🔥 Tim 2026-05-06 — navigator 를 하단 fixed 에서 상단 sticky
+           로 이동. 사진 바로 위에 언제나 보이도록 해서 시니어가
+           이전/다음 페이지로 이동을 알고 싶을 때 눈을 아래로 내릴
+           필요 없도록. "+ 페이지 추가" 는 header 로 옮겼고 이곳은
+           이전/카운터/다음 + ⋮ 만 남아 layout 이 원술해졌음. */
         .navBar {
-          position: fixed;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 50;
+          position: sticky;
+          top: 64px; /* header 높이 아래 — 스크롤 시 함께 이동하다
+                       상단 고정 */
+          z-index: 15;
           background: rgba(26, 20, 16, 0.96);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 8px 12px;
           display: flex;
           align-items: center;
           gap: 8px;
+          max-width: 560px;
+          margin: 0 auto;
         }
         .navBtn {
           width: 44px; height: 44px;
@@ -192,34 +192,14 @@ export default function PageNavigator({
         .navBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); }
         .navBtn:disabled { opacity: 0.32; cursor: not-allowed; }
         .counter {
-          flex-shrink: 0;
-          min-width: 56px;
+          flex: 1;
           text-align: center;
           color: rgba(255, 255, 255, 0.85);
           font-size: 14px;
           font-weight: 600;
           font-variant-numeric: tabular-nums;
         }
-        .addBtn {
-          flex: 1;
-          min-width: 0;
-          height: 44px;
-          padding: 0 12px;
-          border-radius: 12px;
-          border: none;
-          background: linear-gradient(135deg, #fb923c, #ea580c);
-          color: #fff;
-          font-size: 14px;
-          font-weight: 700;
-          font-family: inherit;
-          cursor: pointer;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .addBtn:hover:not(:disabled) { opacity: 0.92; }
-        .addBtn:active { transform: scale(0.98); }
-        .addBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+        /* 🔥 .addBtn 제거 — header 우측 상단 .headerAddBtn 으로 이동 */
         .moreBtn {
           width: 44px; height: 44px;
           border-radius: 12px;
