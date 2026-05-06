@@ -95,6 +95,27 @@ export const VIS_MSGS = {
     tagsLabel        : '태그',
     backToList       : '← 나의 이야기들',
     confirmDeleteFragment   : '정말 이 이야기를 삭제할까요? 되돌릴 수 없습니다.',
+    // 🆕 Step 08 (Voice QR) — audio section
+    audioSectionLabel       : '🎙️ 녹음된 음성',
+    audioNoAudio            : '아직 녹음된 음성이 없어요',
+    audioShareToggleOn      : '🌐 가족과 공유 중',
+    audioShareToggleOff     : '🔒 비공개 (나만 듣기)',
+    audioShareDesc          : 'QR 코드를 가족에게 보내면 음성을 들을 수 있어요',
+    audioShareDescOff       : 'QR 코드 공유를 끄면 가족이 더 이상 들을 수 없어요',
+    audioQrLabel            : '📱 QR 코드',
+    audioCopyLink           : '🔗 링크 복사',
+    audioLinkCopied         : '✅ 복사됨!',
+    audioPlayCount          : (n) => n === 1 ? '1번 들었어요' : `${n}번 들었어요`,
+    audioDuration           : (s) => {
+      const min = Math.floor(s / 60);
+      const sec = s % 60;
+      return min > 0 ? `${min}분 ${sec}초` : `${sec}초`;
+    },
+    audioReRecord           : '🎙️ 다시 녹음',
+    audioDelete             : '🗑️ 음성 삭제',
+    audioDeleteConfirm      : '음성을 삭제할까요? 글은 그대로 남습니다.',
+    audioDeleteConfirmYes   : '네, 음성만 삭제',
+    audioDeleting           : '삭제 중…',
     confirmDeleteYes : '네, 삭제합니다',
     deletingMsg      : '삭제 중…',
     savingMsg        : '저장 중…',
@@ -205,6 +226,27 @@ export const VIS_MSGS = {
     tagsLabel        : 'Tags',
     backToList       : '← My stories',
     confirmDeleteFragment   : 'Really delete this story? This cannot be undone.',
+    // 🆕 Step 08 (Voice QR) — audio section
+    audioSectionLabel       : '🎙️ Voice recording',
+    audioNoAudio            : 'No voice recording yet',
+    audioShareToggleOn      : '🌐 Sharing with family',
+    audioShareToggleOff     : '🔒 Private (only you can hear)',
+    audioShareDesc          : 'Send the QR code to family so they can listen',
+    audioShareDescOff       : 'Turn sharing off and family can no longer listen',
+    audioQrLabel            : '📱 QR Code',
+    audioCopyLink           : '🔗 Copy link',
+    audioLinkCopied         : '✅ Copied!',
+    audioPlayCount          : (n) => n === 1 ? 'Played 1 time' : `Played ${n} times`,
+    audioDuration           : (s) => {
+      const min = Math.floor(s / 60);
+      const sec = s % 60;
+      return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+    },
+    audioReRecord           : '🎙️ Record again',
+    audioDelete             : '🗑️ Delete audio',
+    audioDeleteConfirm      : 'Delete the audio? The story stays.',
+    audioDeleteConfirmYes   : 'Yes, delete audio only',
+    audioDeleting           : 'Deleting…',
     confirmDeleteYes : 'Yes, delete',
     deletingMsg      : 'Deleting…',
     savingMsg        : 'Saving…',
@@ -315,6 +357,27 @@ export const VIS_MSGS = {
     tagsLabel        : 'Etiquetas',
     backToList       : '← Mis historias',
     confirmDeleteFragment   : '¿Eliminar esta historia? No se puede deshacer.',
+    // 🆕 Step 08 (Voice QR) — audio section
+    audioSectionLabel       : '🎙️ Grabación de voz',
+    audioNoAudio            : 'Aún no hay grabación',
+    audioShareToggleOn      : '🌐 Compartido con la familia',
+    audioShareToggleOff     : '🔒 Privado (solo tú escuchas)',
+    audioShareDesc          : 'Envía el código QR a tu familia para que escuche',
+    audioShareDescOff       : 'Si lo apagas, tu familia no podrá escuchar',
+    audioQrLabel            : '📱 Código QR',
+    audioCopyLink           : '🔗 Copiar enlace',
+    audioLinkCopied         : '✅ ¡Copiado!',
+    audioPlayCount          : (n) => n === 1 ? 'Escuchado 1 vez' : `Escuchado ${n} veces`,
+    audioDuration           : (s) => {
+      const min = Math.floor(s / 60);
+      const sec = s % 60;
+      return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+    },
+    audioReRecord           : '🎙️ Grabar de nuevo',
+    audioDelete             : '🗑️ Eliminar audio',
+    audioDeleteConfirm      : '¿Eliminar el audio? La historia se queda.',
+    audioDeleteConfirmYes   : 'Sí, eliminar solo el audio',
+    audioDeleting           : 'Eliminando…',
     confirmDeleteYes : 'Sí, eliminar',
     deletingMsg      : 'Eliminando…',
     savingMsg        : 'Guardando…',

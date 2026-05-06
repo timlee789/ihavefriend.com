@@ -27,9 +27,10 @@
  * own duplicate CSS.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import QRCode from 'qrcode';
 import PhotoUploader from '@/components/photos/PhotoUploader';
 import FragmentCollectionPicker from './FragmentCollectionPicker';
 import { VIS_MSGS } from './fragmentI18n';
@@ -69,6 +70,14 @@ export default function FragmentModal({
   const [continuations, setContinuations] = useState(fragment.continuations || []);
   const [fragmentCollections, setFragmentCollections] = useState(fragment.collections || []);
   const [showPicker, setShowPicker] = useState(false);
+
+  // 🆕 Step 08 (Voice QR) — audio state
+  const [audio, setAudio] = useState(null);          // FragmentAudio row | null | 'loading'
+  const [audioBusy, setAudioBusy] = useState(false); // toggle / delete in flight
+  const [qrDataUrl, setQrDataUrl] = useState('');    // base64 PNG of QR
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [confirmDeleteAudio, setConfirmDeleteAudio] = useState(false);
+
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
   const reloadFragmentMeta = useCallback(async () => {
@@ -101,6 +110,50 @@ export default function FragmentModal({
     return () => { cancelled = true; };
   }, [fragment.id]);
 
+  // 🆕 Step 08 (Voice QR) — load audio metadata
+  useEffect(() => {
+    let cancelled = false;
+    setAudio('loading');
+    (async () => {
+      try {
+        const res = await authFetch(`/api/fragments/${fragment.id}/audio`);
+        if (!res.ok) {
+          if (!cancelled) setAudio(null);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) setAudio(data?.audio || null);
+      } catch (e) {
+        console.warn('[FragmentModal] audio load failed:', e.message);
+        if (!cancelled) setAudio(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fragment.id]);
+
+  // 🆕 Step 08 (Voice QR) — generate QR data URL when audio + is_public
+  useEffect(() => {
+    if (!audio || audio === 'loading' || !audio.is_public || !audio.public_token) {
+      setQrDataUrl('');
+      return;
+    }
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/listen/${audio.public_token}`
+      : `/listen/${audio.public_token}`;
+    let cancelled = false;
+    QRCode.toDataURL(url, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#1a1a1a', light: '#ffffff' },
+    })
+      .then(dataUrl => { if (!cancelled) setQrDataUrl(dataUrl); })
+      .catch(e => {
+        console.warn('[FragmentModal] QR generation failed:', e.message);
+        if (!cancelled) setQrDataUrl('');
+      });
+    return () => { cancelled = true; };
+  }, [audio]);
+
   const allTags = [
     ...(fragment.tags_theme   || []).map(t => ({ text: t, cls: s.tagTheme })),
     ...(fragment.tags_emotion || []).map(t => ({ text: t, cls: s.tagEmotion })),
@@ -132,6 +185,62 @@ export default function FragmentModal({
     } finally {
       setSaving(false);
     }
+  }
+
+  // 🆕 Step 08 (Voice QR) — audio handlers
+  async function handleToggleAudioShare() {
+    if (!audio || audio === 'loading') return;
+    setAudioBusy(true);
+    try {
+      const res = await authFetch(`/api/fragments/${fragment.id}/audio`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_public: !audio.is_public }),
+      });
+      const data = await res.json();
+      if (data?.audio) {
+        setAudio(data.audio);
+      } else {
+        alert(vm.errMsg);
+      }
+    } catch (e) {
+      console.warn('[FragmentModal] audio share toggle failed:', e.message);
+      alert(vm.errMsg);
+    } finally {
+      setAudioBusy(false);
+    }
+  }
+
+  async function handleDeleteAudio() {
+    if (!audio || audio === 'loading') return;
+    setAudioBusy(true);
+    try {
+      const res = await authFetch(`/api/fragments/${fragment.id}/audio`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setAudio(null);
+        setConfirmDeleteAudio(false);
+      } else {
+        alert(vm.errMsg);
+      }
+    } catch (e) {
+      console.warn('[FragmentModal] audio delete failed:', e.message);
+      alert(vm.errMsg);
+    } finally {
+      setAudioBusy(false);
+    }
+  }
+
+  function handleCopyAudioLink() {
+    if (!audio?.public_token || typeof window === 'undefined') return;
+    const url = `${window.location.origin}/listen/${audio.public_token}`;
+    navigator.clipboard?.writeText(url).then(
+      () => {
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+      },
+      () => alert(vm.errMsg)
+    );
   }
 
   async function handleToggleVisibility() {
@@ -243,6 +352,151 @@ export default function FragmentModal({
                   lang={String(lang).toLowerCase()}
                   onChange={(photos) => onPhotosChanged && onPhotosChanged(fragment.id, photos)}
                 />
+              </div>
+
+              {/* 🆕 Step 08 (Voice QR) — audio section */}
+              <div className={s.audioSection} style={{ marginTop: 16, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className={s.audioSectionLabel} style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+                  {vm.audioSectionLabel}
+                </div>
+
+                {audio === 'loading' && (
+                  <div style={{ fontSize: 13, opacity: 0.6, padding: 8 }}>
+                    {vm.loading || '…'}
+                  </div>
+                )}
+
+                {audio === null && (
+                  <div style={{ fontSize: 13, opacity: 0.6, padding: 8 }}>
+                    {vm.audioNoAudio}
+                  </div>
+                )}
+
+                {audio && audio !== 'loading' && (
+                  <>
+                    {/* Audio player */}
+                    <audio
+                      src={audio.r2_url}
+                      controls
+                      preload="metadata"
+                      style={{ width: '100%', marginBottom: 8 }}
+                    />
+
+                    {/* Metadata */}
+                    <div style={{ display: 'flex', gap: 12, fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
+                      <span>{vm.audioDuration(audio.duration_sec || 0)}</span>
+                      {audio.play_count > 0 && (
+                        <span>{vm.audioPlayCount(audio.play_count)}</span>
+                      )}
+                    </div>
+
+                    {/* Share toggle */}
+                    <div style={{ marginBottom: 12 }}>
+                      <button
+                        onClick={handleToggleAudioShare}
+                        disabled={audioBusy}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: audio.is_public ? 'rgba(34,197,94,0.18)' : 'rgba(168,85,247,0.18)',
+                          color: 'currentColor',
+                          fontSize: 14,
+                          fontWeight: 500,
+                          cursor: audioBusy ? 'wait' : 'pointer',
+                          opacity: audioBusy ? 0.6 : 1,
+                        }}
+                      >
+                        {audio.is_public ? vm.audioShareToggleOn : vm.audioShareToggleOff}
+                      </button>
+                      <div style={{ fontSize: 11, opacity: 0.6, marginTop: 6, lineHeight: 1.4 }}>
+                        {audio.is_public ? vm.audioShareDesc : vm.audioShareDescOff}
+                      </div>
+                    </div>
+
+                    {/* QR code (only when public + token + qr generated) */}
+                    {audio.is_public && qrDataUrl && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 12, background: '#fff', borderRadius: 8, marginBottom: 12 }}>
+                        <div style={{ fontSize: 12, color: '#666', marginBottom: 8, fontWeight: 500 }}>
+                          {vm.audioQrLabel}
+                        </div>
+                        <img src={qrDataUrl} alt="QR code" style={{ width: 200, height: 200 }} />
+                        <button
+                          onClick={handleCopyAudioLink}
+                          style={{
+                            marginTop: 8,
+                            padding: '6px 12px',
+                            border: '1px solid #ddd',
+                            borderRadius: 6,
+                            background: '#f5f5f5',
+                            color: '#333',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {linkCopied ? vm.audioLinkCopied : vm.audioCopyLink}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Delete audio (rare action, less prominent) */}
+                    {!confirmDeleteAudio ? (
+                      <button
+                        onClick={() => setConfirmDeleteAudio(true)}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 10px',
+                          background: 'transparent',
+                          border: '1px solid rgba(239,68,68,0.3)',
+                          borderRadius: 6,
+                          color: 'rgba(239,68,68,0.85)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {vm.audioDelete}
+                      </button>
+                    ) : (
+                      <div style={{ padding: 10, background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
+                        <div style={{ fontSize: 13, marginBottom: 8 }}>
+                          {vm.audioDeleteConfirm}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            onClick={handleDeleteAudio}
+                            disabled={audioBusy}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'rgba(239,68,68,0.85)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              opacity: audioBusy ? 0.6 : 1,
+                            }}
+                          >
+                            {audioBusy ? vm.audioDeleting : vm.audioDeleteConfirmYes}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteAudio(false)}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'transparent',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              color: 'currentColor',
+                            }}
+                          >
+                            {vm.cancelBtn}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {fragment.truncated && (
