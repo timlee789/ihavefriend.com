@@ -75,7 +75,7 @@ export async function POST(request) {
   }
 
   if (!sessionId) {
-    return Response.json({ ok: true, memoriesExtracted: 0 });
+    return Response.json({ ok: true, memoriesExtracted: 0, fragmentId: null });
   }
 
   const db = createDb();
@@ -127,12 +127,12 @@ export async function POST(request) {
   if (!apiKey) {
     console.warn('[chat/end] GEMINI_API_KEY not set — cannot extract memories');
     await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sessionId]);
-    return Response.json({ ok: true, memoriesExtracted: 0 });
+    return Response.json({ ok: true, memoriesExtracted: 0, fragmentId: null });
   }
   if (transcript.length < 2) {
     console.warn('[chat/end] Transcript too short — skipping extraction');
     await db.query(`UPDATE chat_sessions SET ended_at = NOW() WHERE id = $1`, [sessionId]);
-    return Response.json({ ok: true, memoriesExtracted: 0 });
+    return Response.json({ ok: true, memoriesExtracted: 0, fragmentId: null });
   }
 
   // Convert transcript format: [{role, text}] → [{role, content}]
@@ -447,7 +447,13 @@ Rules:
       );
       if (existing.rows.length > 0) {
         console.log(`[chat/end] ⏭ Fragment already exists for session ${sessionId} (${existing.rows[0].id}) — skipping duplicate save`);
-        return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0, fragmentJobQueued: false, alreadyExists: true });
+        return Response.json({
+          ok: true,
+          memoriesExtracted: result.memoriesExtracted || 0,
+          fragmentJobQueued: false,
+          alreadyExists: true,
+          fragmentId: existing.rows[0].id,
+        });
       }
 
       // Step 1: Mark session as fragment candidate. fragment may be null
@@ -722,5 +728,16 @@ Rules:
     console.log(`[chat/end] No fragment generated for session ${sessionId} — ${generationReason}`);
   }
 
-  return Response.json({ ok: true, memoriesExtracted: result.memoriesExtracted || 0, fragmentJobQueued: !!fragmentJobId });
+  // 🔥 Step 06 (Voice QR) — return fragmentId for continuation flow.
+  // For continuation (이어쓰기), the user spoke into an existing parent
+  // fragment, so we already know the id. Step 07 (EmmaChat) uses this
+  // to upload the audio immediately. For new fragments, INSERT happens
+  // in after() background — fragmentId stays null and the audio is
+  // attached later via FragmentModal (Step 08) or polling.
+  return Response.json({
+    ok: true,
+    memoriesExtracted: result.memoriesExtracted || 0,
+    fragmentJobQueued: !!fragmentJobId,
+    fragmentId: continuationParentId || null,
+  });
 }
