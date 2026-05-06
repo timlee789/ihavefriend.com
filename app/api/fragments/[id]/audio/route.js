@@ -1,19 +1,30 @@
 /**
- * GET    /api/fragments/[id]/audio  — fetch audio metadata for owner
- * POST   /api/fragments/[id]/audio  — upload audio (multipart) → R2 + DB
- * PATCH  /api/fragments/[id]/audio  — toggle is_public (sharing on/off)
- * DELETE /api/fragments/[id]/audio  — permanent delete (R2 + DB)
+ * GET    /api/fragments/[id]/audio  — fetch ALL audios for a fragment (array)
+ * POST   /api/fragments/[id]/audio  — append a new audio (multipart) → R2 + DB
+ * PATCH  /api/fragments/[id]/audio  — toggle is_public (sharing on/off) for ALL audios
+ * DELETE /api/fragments/[id]/audio  — delete a specific audio_order, or all
  *
- * Voice QR System Phase 1 (Step 04). See:
+ * Voice QR System Phase 1 (Step 12). See:
  *   experiments/100-voice-qr-system-phase-1.md
  *
- * Auth: requireAuth on all methods. Ownership enforced via JOIN on
- *   story_fragments (a user can only touch audio attached to their
- *   own fragments).
+ * 🔥 2026-05-06 (Tim) — Multi-audio support.
  *
- * On re-upload (POST when audio already exists), the previous R2
- *   object is deleted before the new one is inserted, similar to
- *   the photos endpoint's slot-replacement semantics.
+ *   Originally one row per fragment; now N rows per fragment, ordered by
+ *   audio_order (1, 2, 3, ...). Each fragment_audios row keeps its own
+ *   public_token, but the FIRST row's token is what the QR encodes —
+ *   /api/listen/[token] returns all sibling audios in order so the
+ *   family page can render N <audio> players in one experience.
+ *
+ *   Limits enforced server-side (easier to tune than DB constraints):
+ *     - 5 min per recording (300s)
+ *     - 10 recordings per fragment
+ *     - 30 recordings per user per day
+ *
+ *   Limits return 429 with a structured `code` so the client can show
+ *   a friendly message; see LIMIT_CODES below.
+ *
+ * Auth: requireAuth on all methods. Ownership enforced via JOIN on
+ *   story_fragments.
  */
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
@@ -25,15 +36,26 @@ import {
   generatePublicToken,
 } from '@/lib/r2Client';
 
-// 30MB ceiling. Whisper itself caps at 25MB; this is a server-side
-// safety margin. EmmaChat clips never approach this in practice.
-const MAX_AUDIO_SIZE = 30 * 1024 * 1024;
+// ─────────────────────────────────────────────────────────────────
+// Limits — see Tim decision 2026-05-06
+// ─────────────────────────────────────────────────────────────────
+const MAX_AUDIO_SIZE = 30 * 1024 * 1024;   // 30MB byte ceiling
+const MAX_DURATION_SEC = 300;              // 5 minutes per recording
+const MAX_AUDIOS_PER_FRAGMENT = 10;        // 10 recordings per fragment
+const MAX_AUDIOS_PER_DAY = 30;             // 30 recordings per user per day
 const ALLOWED_MIME_PREFIX = 'audio/';
 
-export const maxDuration = 30; // seconds, Vercel function timeout
+const LIMIT_CODES = {
+  TOO_LONG:    'AUDIO_TOO_LONG',         // single recording > 5 min
+  TOO_MANY:    'TOO_MANY_PER_FRAGMENT',  // > 10 in one fragment
+  DAILY_QUOTA: 'DAILY_QUOTA_EXCEEDED',   // > 30 today
+  TOO_LARGE:   'AUDIO_TOO_LARGE',        // > 30MB byte size
+};
+
+export const maxDuration = 30; // Vercel function timeout (seconds)
 
 // ─────────────────────────────────────────────────────────────────
-// POST — upload audio
+// POST — upload (append) audio
 // ─────────────────────────────────────────────────────────────────
 export async function POST(request, { params }) {
   const { user, error } = await requireAuth(request);
@@ -78,30 +100,90 @@ export async function POST(request, { params }) {
   }
   if (typeof audio.size === 'number' && audio.size > MAX_AUDIO_SIZE) {
     return NextResponse.json(
-      { error: `Audio too large (max ${MAX_AUDIO_SIZE / 1024 / 1024}MB).` },
-      { status: 400 }
+      {
+        error: `Audio too large (max ${MAX_AUDIO_SIZE / 1024 / 1024}MB).`,
+        code:  LIMIT_CODES.TOO_LARGE,
+      },
+      { status: 413 }
     );
   }
   if (!Number.isFinite(durationSec) || durationSec < 0) {
     return NextResponse.json({ error: 'invalid duration' }, { status: 400 });
   }
 
-  // Re-upload: delete prior R2 object first.
-  const existing = await db.query(
-    `SELECT id, r2_key FROM fragment_audios WHERE fragment_id = $1`,
-    [fragmentId]
-  );
-  if (existing.rows.length > 0) {
-    try {
-      await deleteAudio(existing.rows[0].r2_key);
-    } catch (e) {
-      // R2 delete failures aren't fatal — we proceed and overwrite the
-      // DB row. Worst case: an orphan blob in R2.
-      console.warn('[audio POST] del old R2 object failed:', e?.message);
-    }
+  // ─────── Limit 1: per-recording duration ───────
+  if (durationSec > MAX_DURATION_SEC) {
+    console.warn(`[audio POST] reject — duration ${durationSec}s > ${MAX_DURATION_SEC}s limit (user=${user.id})`);
+    return NextResponse.json(
+      {
+        error:    `Recording exceeds ${MAX_DURATION_SEC / 60} minute limit.`,
+        code:     LIMIT_CODES.TOO_LONG,
+        max_sec:  MAX_DURATION_SEC,
+        actual:   durationSec,
+      },
+      { status: 429 }
+    );
   }
 
-  // Upload new audio to R2.
+  // ─────── Limit 2: per-fragment count ───────
+  const countRow = await db.query(
+    `SELECT COUNT(*)::int AS cnt FROM fragment_audios WHERE fragment_id = $1`,
+    [fragmentId]
+  );
+  const currentCount = countRow.rows[0]?.cnt || 0;
+  if (currentCount >= MAX_AUDIOS_PER_FRAGMENT) {
+    console.warn(`[audio POST] reject — fragment ${fragmentId} already has ${currentCount} audios (limit ${MAX_AUDIOS_PER_FRAGMENT})`);
+    return NextResponse.json(
+      {
+        error:   `This fragment already has ${MAX_AUDIOS_PER_FRAGMENT} recordings.`,
+        code:    LIMIT_CODES.TOO_MANY,
+        max:     MAX_AUDIOS_PER_FRAGMENT,
+        current: currentCount,
+      },
+      { status: 429 }
+    );
+  }
+
+  // ─────── Limit 3: per-user per-day count ───────
+  // Counts audios created in the last 24 hours (rolling window — simpler
+  // than midnight reset and prevents end-of-day spam).
+  const dailyRow = await db.query(
+    `SELECT COUNT(*)::int AS cnt
+       FROM fragment_audios
+      WHERE user_id = $1
+        AND created_at > NOW() - INTERVAL '24 hours'`,
+    [user.id]
+  );
+  const dailyCount = dailyRow.rows[0]?.cnt || 0;
+  if (dailyCount >= MAX_AUDIOS_PER_DAY) {
+    console.warn(`[audio POST] reject — user ${user.id} already has ${dailyCount} audios in 24h (limit ${MAX_AUDIOS_PER_DAY})`);
+    return NextResponse.json(
+      {
+        error:   `Daily recording limit (${MAX_AUDIOS_PER_DAY}) reached. Try again tomorrow.`,
+        code:    LIMIT_CODES.DAILY_QUOTA,
+        max:     MAX_AUDIOS_PER_DAY,
+        current: dailyCount,
+      },
+      { status: 429 }
+    );
+  }
+
+  // ─────── Determine next audio_order ───────
+  // First recording → 1, continuation → max(audio_order)+1.
+  // Race condition: two simultaneous POSTs could both compute the same
+  // next order, but the composite UNIQUE (fragment_id, audio_order)
+  // catches that — we'd see a 23505 unique_violation and could retry.
+  // Beta path is sequential (user records, hits stop, uploads) so the
+  // race is extremely unlikely; we'll handle it with a try/catch.
+  const orderRow = await db.query(
+    `SELECT COALESCE(MAX(audio_order), 0) + 1 AS next_order
+       FROM fragment_audios
+      WHERE fragment_id = $1`,
+    [fragmentId]
+  );
+  const nextOrder = orderRow.rows[0]?.next_order || 1;
+
+  // ─────── Upload to R2 ───────
   let r2Result;
   try {
     const buffer = Buffer.from(await audio.arrayBuffer());
@@ -112,70 +194,64 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'storage upload failed' }, { status: 502 });
   }
 
-  // Insert/update DB row. On insert failure, roll back the R2 object.
+  // ─────── Insert DB row ───────
+  // Each audio gets its own public_token. The QR code only encodes the
+  // first audio's token; /api/listen/[token] returns all siblings.
+  // Giving every row a token keeps things flexible (e.g. future "share
+  // just this one part" feature).
   try {
-    let result;
-    if (existing.rows.length > 0) {
-      // Update existing row, keep public_token + analytics.
-      result = await db.query(
-        `UPDATE fragment_audios
-            SET r2_key       = $1,
-                r2_url       = $2,
-                duration_sec = $3,
-                size_bytes   = $4,
-                mime_type    = $5,
-                whisper_text = $6,
-                updated_at   = NOW()
-          WHERE fragment_id = $7
-        RETURNING *`,
-        [
-          r2Result.key,
-          r2Result.url,
-          durationSec,
-          audio.size || 0,
-          mime,
-          whisperText,
-          fragmentId,
-        ]
-      );
-    } else {
-      // Fresh insert.
-      const publicToken = generatePublicToken();
-      result = await db.query(
-        `INSERT INTO fragment_audios
-           (fragment_id, user_id, r2_key, r2_url, duration_sec,
-            size_bytes, mime_type, whisper_text, public_token)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         RETURNING *`,
-        [
-          fragmentId,
-          user.id,
-          r2Result.key,
-          r2Result.url,
-          durationSec,
-          audio.size || 0,
-          mime,
-          whisperText,
-          publicToken,
-        ]
-      );
-    }
+    const publicToken = generatePublicToken();
+    const result = await db.query(
+      `INSERT INTO fragment_audios
+         (fragment_id, user_id, audio_order, r2_key, r2_url,
+          duration_sec, size_bytes, mime_type, whisper_text, public_token)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        fragmentId,
+        user.id,
+        nextOrder,
+        r2Result.key,
+        r2Result.url,
+        durationSec,
+        audio.size || 0,
+        mime,
+        whisperText,
+        publicToken,
+      ]
+    );
     const row = result.rows[0];
     console.log(
-      `[audio POST] fragment=${fragmentId} duration=${durationSec}s ` +
-      `size=${audio.size} key=${r2Result.key}`
+      `[audio POST] fragment=${fragmentId} order=${nextOrder} duration=${durationSec}s ` +
+      `size=${audio.size} key=${r2Result.key} (count now ${currentCount + 1}/${MAX_AUDIOS_PER_FRAGMENT})`
     );
     return NextResponse.json({ audio: row }, { status: 201 });
   } catch (e) {
     console.error('[audio POST] db write failed:', e?.message);
+    // Roll back the R2 object on DB failure so we don't leak storage.
     try { await deleteAudio(r2Result.key); } catch {}
+
+    // 23505 = unique_violation — race on (fragment_id, audio_order).
+    // Tell client to retry.
+    if (e?.code === '23505') {
+      return NextResponse.json(
+        { error: 'concurrent upload — please retry', code: 'RACE_CONDITION' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: 'db write failed' }, { status: 500 });
   }
 }
 
 // ─────────────────────────────────────────────────────────────────
-// GET — fetch audio metadata (owner only)
+// GET — fetch ALL audios for the fragment (owner only)
 // ─────────────────────────────────────────────────────────────────
+// Returns { audios: [...] } as an array ordered by audio_order ASC.
+//
+// Backward compat: callers that previously read `data.audio` (singular)
+// now get `null` — they should switch to `data.audios[0]` or the array.
+// FragmentModal is updated to use the array (Step 14). The /listen
+// page already calls a different endpoint and is unaffected.
 export async function GET(request, { params }) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
@@ -191,15 +267,21 @@ export async function GET(request, { params }) {
     `SELECT a.*
        FROM fragment_audios a
        JOIN story_fragments f ON f.id = a.fragment_id
-      WHERE a.fragment_id = $1 AND f.user_id = $2`,
+      WHERE a.fragment_id = $1 AND f.user_id = $2
+      ORDER BY a.audio_order ASC`,
     [fragmentId, user.id]
   );
-  return NextResponse.json({ audio: result.rows[0] || null });
+
+  return NextResponse.json({ audios: result.rows });
 }
 
 // ─────────────────────────────────────────────────────────────────
-// PATCH — toggle is_public (sharing on/off)
+// PATCH — toggle is_public for ALL audios on the fragment
 // ─────────────────────────────────────────────────────────────────
+// Family experience is one QR → one /listen page → multiple players.
+// Toggling visibility is therefore a fragment-wide operation: turning
+// sharing OFF hides the entire QR experience, not just one part.
+// All rows update together so the family page never sees a partial mix.
 export async function PATCH(request, { params }) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
@@ -221,7 +303,6 @@ export async function PATCH(request, { params }) {
     );
   }
 
-  // Ownership enforced via subquery on story_fragments.
   const result = await db.query(
     `UPDATE fragment_audios
         SET is_public  = $1,
@@ -238,12 +319,19 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'not found or forbidden' }, { status: 404 });
   }
 
-  return NextResponse.json({ audio: result.rows[0] });
+  // Return all rows in order so the client can refresh state.
+  const sorted = result.rows.sort((a, b) => a.audio_order - b.audio_order);
+  return NextResponse.json({ audios: sorted });
 }
 
 // ─────────────────────────────────────────────────────────────────
-// DELETE — permanent delete (R2 + DB)
+// DELETE — delete a specific audio_order, or all audios of a fragment
 // ─────────────────────────────────────────────────────────────────
+// Accepts ?order=N query param. If omitted, deletes ALL audios for the
+// fragment (preserves the "delete all" power user behavior). Single-
+// row delete leaves the remaining order values intact (gaps are fine —
+// the UI sorts by audio_order ASC and labels them "1부, 2부..." based
+// on position, not on raw audio_order value).
 export async function DELETE(request, { params }) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
@@ -255,35 +343,61 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Fragment ID required' }, { status: 400 });
   }
 
-  // Fetch + ownership check.
-  const existing = await db.query(
-    `SELECT a.id, a.r2_key
-       FROM fragment_audios a
-       JOIN story_fragments f ON f.id = a.fragment_id
-      WHERE a.fragment_id = $1 AND f.user_id = $2`,
-    [fragmentId, user.id]
-  );
+  // Optional ?order=N for single-audio delete.
+  const url = new URL(request.url);
+  const orderParam = url.searchParams.get('order');
+  const targetOrder = orderParam ? Number(orderParam) : null;
 
-  if (existing.rows.length === 0) {
+  if (orderParam !== null && (!Number.isInteger(targetOrder) || targetOrder < 1)) {
+    return NextResponse.json({ error: 'invalid order' }, { status: 400 });
+  }
+
+  // Fetch matching rows + ownership check.
+  const baseQuery = `
+    SELECT a.id, a.r2_key, a.audio_order
+      FROM fragment_audios a
+      JOIN story_fragments f ON f.id = a.fragment_id
+     WHERE a.fragment_id = $1 AND f.user_id = $2
+  `;
+  const params2 = [fragmentId, user.id];
+  let rowsToDelete;
+  if (targetOrder !== null) {
+    const r = await db.query(
+      `${baseQuery} AND a.audio_order = $3`,
+      [...params2, targetOrder]
+    );
+    rowsToDelete = r.rows;
+  } else {
+    const r = await db.query(baseQuery, params2);
+    rowsToDelete = r.rows;
+  }
+
+  if (rowsToDelete.length === 0) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 
-  const { r2_key: r2Key } = existing.rows[0];
-
-  // Delete from R2 first. Failure is logged but doesn't block DB
-  // delete — orphan R2 objects are recoverable, but a stuck DB row
-  // would block re-upload.
-  try {
-    await deleteAudio(r2Key);
-  } catch (e) {
-    console.warn('[audio DELETE] R2 delete failed:', e?.message);
+  // Delete from R2 (best-effort) then DB.
+  for (const row of rowsToDelete) {
+    try {
+      await deleteAudio(row.r2_key);
+    } catch (e) {
+      console.warn(`[audio DELETE] R2 delete failed for ${row.r2_key}:`, e?.message);
+    }
   }
 
-  await db.query(
-    `DELETE FROM fragment_audios WHERE fragment_id = $1`,
-    [fragmentId]
-  );
+  if (targetOrder !== null) {
+    await db.query(
+      `DELETE FROM fragment_audios WHERE fragment_id = $1 AND audio_order = $2`,
+      [fragmentId, targetOrder]
+    );
+    console.log(`[audio DELETE] fragment=${fragmentId} order=${targetOrder} (1 of ${rowsToDelete.length} rows)`);
+  } else {
+    await db.query(
+      `DELETE FROM fragment_audios WHERE fragment_id = $1`,
+      [fragmentId]
+    );
+    console.log(`[audio DELETE] fragment=${fragmentId} (all ${rowsToDelete.length} rows)`);
+  }
 
-  console.log(`[audio DELETE] fragment=${fragmentId}`);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, deleted: rowsToDelete.length });
 }

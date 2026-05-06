@@ -76,11 +76,36 @@ export async function GET(request, { params }) {
   const db = createDb();
 
   try {
-    // LEFT JOIN user_books on f.book_id so free-form fragments still
-    // resolve (book.structure will simply be null).
+    // 🔥 2026-05-06 (Tim) — multi-audio. The QR's token belongs to one
+    //   audio row (the first), but the family page should see all audios
+    //   for that fragment. Resolve the fragment via the token first, then
+    //   load every audio of that fragment.
+    //
+    //   is_public=TRUE filter on the QR token AND the sibling rows: if a
+    //   user toggles sharing OFF, the entire fragment hides immediately
+    //   (PATCH /api/fragments/.../audio updates all rows together).
+    const tokenLookup = await db.query(
+      `SELECT a.fragment_id
+         FROM fragment_audios a
+        WHERE a.public_token = $1
+          AND a.is_public    = TRUE`,
+      [token]
+    );
+
+    if (tokenLookup.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'not found or not public' },
+        { status: 404 }
+      );
+    }
+
+    const targetFragmentId = tokenLookup.rows[0].fragment_id;
+
     const result = await db.query(
       `SELECT
          a.id           AS audio_id,
+         a.audio_order,
+         a.public_token,
          a.r2_url,
          a.duration_sec,
          a.play_count,
@@ -99,56 +124,71 @@ export async function GET(request, { params }) {
        JOIN story_fragments f  ON f.id = a.fragment_id
        JOIN "User" u            ON u.id = a.user_id
        LEFT JOIN user_books b  ON b.id = f.book_id
-      WHERE a.public_token = $1
-        AND a.is_public    = TRUE`,
-      [token]
+      WHERE a.fragment_id = $1
+        AND a.is_public   = TRUE
+      ORDER BY a.audio_order ASC`,
+      [targetFragmentId]
     );
 
     if (result.rows.length === 0) {
+      // Edge case: token row was public but somehow none of the
+      // fragment's audios are. Treat as not found.
       return NextResponse.json(
         { error: 'not found or not public' },
         { status: 404 }
       );
     }
 
-    const row = result.rows[0];
+    // Fragment-level fields are constant across all rows; pull from
+    // the first row.
+    const head = result.rows[0];
 
     // Resolve question_prompt from JSONB structure.
     let questionPrompt = null;
-    if (row.book_structure && row.book_question_id) {
+    if (head.book_structure && head.book_question_id) {
       const question = findQuestionInStructure(
-        row.book_structure,
-        row.book_question_id
+        head.book_structure,
+        head.book_question_id
       );
       if (question) {
         questionPrompt = resolvePromptText(
           question.prompt,
-          row.fragment_language || 'ko'
+          head.fragment_language || 'ko'
         );
       }
     }
 
+    // Build the audios array. Each entry gets its own URL pointing at
+    // the proxy endpoint with that row's own public_token — the family
+    // page can render N players, each loading its own bytes.
+    const audios = result.rows.map(r => ({
+      id:           r.audio_id,
+      audio_order:  r.audio_order,
+      url:          `/api/audio/${r.public_token}`,
+      duration_sec: r.duration_sec,
+      play_count:   r.play_count,
+      created_at:   r.audio_created_at,
+    }));
+
     return NextResponse.json({
-      audio: {
-        id: row.audio_id,
-        url: row.r2_url,
-        duration_sec: row.duration_sec,
-        play_count: row.play_count,
-        created_at: row.audio_created_at,
-      },
+      // Top-level audios array (multi-audio).
+      audios,
+      // Convenience: total duration for the family page header.
+      total_duration_sec: audios.reduce((sum, a) => sum + (a.duration_sec || 0), 0),
+      audio_count:        audios.length,
       fragment: {
-        id: row.fragment_id,
-        title: row.fragment_title,
-        subtitle: row.fragment_subtitle,
-        content: row.fragment_content,
-        language: row.fragment_language,
+        id:              head.fragment_id,
+        title:           head.fragment_title,
+        subtitle:        head.fragment_subtitle,
+        content:         head.fragment_content,
+        language:        head.fragment_language,
         question_prompt: questionPrompt,
       },
       sender: {
         // Only name — never email, never user_id beyond what's needed
         // for routing. The /listen page is anonymous; we don't want
         // QR scans to leak account identifiers.
-        name: row.user_name || null,
+        name: head.user_name || null,
       },
     });
   } catch (e) {

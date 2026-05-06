@@ -2639,11 +2639,19 @@ export default function EmmaChat({ initialMode }) {
               audioFd.append('whisperText', whisperTranscript);
             }
 
+            // 🔥 2026-05-06 Tim — keepalive REMOVED. Browser keepalive option
+            //   caps at ~64KB; a 1MB voice recording fails immediately
+            //   with "Failed to fetch" before even reaching the server.
+            //   We don't need keepalive here anyway: the user is on the
+            //   SessionEndBanner for ~30s while fragment generation runs,
+            //   so the request has plenty of time to complete on a normal
+            //   fetch. If the user navigates away mid-upload the audio is
+            //   lost (acceptable trade-off; Whisper transcript is already
+            //   safely stored via the keepalive path above).
             const audioRes = await fetch(`/api/fragments/${chatEndFragmentId}/audio`, {
               method: 'POST',
               headers: { Authorization: `Bearer ${t}` },
               body: audioFd,
-              keepalive: true,
             });
 
             if (audioRes?.ok) {

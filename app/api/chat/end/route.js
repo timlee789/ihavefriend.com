@@ -19,7 +19,6 @@
 import { requireAuth, verifyToken } from '@/lib/auth';
 import { createDb } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
-import { after } from 'next/server';
 import { fragmentStatusToDb } from '@/lib/enumMappers';
 import { cleanTranscript, buildConversationSample, hadBurst } from '@/lib/transcriptNoise';
 
@@ -235,6 +234,10 @@ export async function POST(request) {
   let fragment = null;            // populated by Gemini detect when it succeeds
   let shouldQueue = false;
   let generationReason = '';
+  // 🔥 2026-05-06 Tim — captured by the (now synchronous) fragment INSERT
+  //   block below. Hoisted to function scope so the response builder can
+  //   read it without a typeof guard.
+  let createdFragmentId = null;
 
   const isContinuation     = !!continuationParentId;
   const userTurnCount      = history.filter(m => m.role === 'user').length;
@@ -469,10 +472,13 @@ Rules:
       );
       console.log(`[chat/end] ✅ fragment_candidate=true set for session ${sessionId}`);
 
-          // Step 2: Generate fragment via Gemini Flash in the background.
-          // Use Next.js `after()` so Vercel keeps the function alive past the
-          // response — a bare Promise gets killed on Hobby plan when the
-          // lambda freezes. Errors are logged; response cannot be affected.
+          // Step 2: Generate fragment via Gemini Flash. 🔥 2026-05-06 Tim:
+          //   moved out of after() so we can return the new fragmentId in
+          //   the response and the EmmaChat audio upload (Step 07) can
+          //   attach voice to BOTH new fragments and continuations. Adds
+          //   ~2s to the response, but chat/end already takes 20s+ for
+          //   memory extraction so the marginal cost is invisible. Errors
+          //   are caught locally so they never block the response itself.
           fragmentJobId = `cloud-${sessionId}`;
 
           const userLang  = (user.lang || 'ko').toLowerCase();
@@ -481,7 +487,9 @@ Rules:
 
           console.log(`[chat/end] Fragment generation starting — session=${sessionId} user=${userId} lang=${userLang} hasApiKey=${!!apiKey} transcriptLen=${bgHistory.length}`);
 
-          after(async () => {
+          // 🔥 Was after(async () => {...}) — now synchronous so the
+          //   inserted fragment id can be returned in the response.
+          {
             const bgStart = Date.now();
             try {
               const { generateFragmentCloud } = require('@/lib/generateFragmentCloud');
@@ -626,8 +634,12 @@ Rules:
               // Append succeeded — the parent now carries the new content.
               // Skip the INSERT and the book question mapping (the parent is
               // already linked to its book question if it was a book answer).
-              if (appendedToParent) return;
-
+              // 🔥 fragmentId for continuation is already known via
+              //    continuationParentId at the response site, so no
+              //    explicit assignment needed here.
+              if (appendedToParent) {
+                console.log(`[chat/end:bg] continuation appended — bgTotal=${Date.now() - bgStart}ms`);
+              } else {
               console.log(`[chat/end:bg] INSERT story_fragments — session=${sessionId} title="${fragmentJson.title}" subtitleLen=${fragmentJson.subtitle?.length ?? 0} contentLen=${wordCount} tagsTheme=${fragmentJson.tags_theme?.length ?? 0} truncated=${truncatedFlag}`);
 
               const insertRes = await db.query(
@@ -671,6 +683,7 @@ Rules:
               );
 
               const newFragmentId = insertRes.rows[0]?.id;
+              createdFragmentId = newFragmentId;  // 🔥 capture for response
               console.log(`[chat/end:bg] ✅ Fragment inserted id=${newFragmentId} session=${sessionId} contentLen=${wordCount} title="${fragmentJson.title}" truncated=${truncatedFlag} bookId=${bookId || '-'} bgTotal=${Date.now() - bgStart}ms`);
 
               // 🆕 Task 60 (Stage 3) — Book question mapping.
@@ -706,6 +719,7 @@ Rules:
                   console.error('[chat/end:bg] book response mapping failed:', mapErr.message);
                 }
               }
+              }  // close: !appendedToParent INSERT block
             } catch (bgErr) {
               // 🔥 Task 56 (c): unique-constraint hit means a sibling
               //   request already INSERTed a fragment for this session
@@ -720,7 +734,7 @@ Rules:
                 console.error(bgErr?.stack);
               }
             }
-          });
+          }  // close: synchronous fragment generation block
     } catch (e) {
       console.error('[chat/end] shouldQueue path failed:', e.message);
     }
@@ -728,16 +742,17 @@ Rules:
     console.log(`[chat/end] No fragment generated for session ${sessionId} — ${generationReason}`);
   }
 
-  // 🔥 Step 06 (Voice QR) — return fragmentId for continuation flow.
-  // For continuation (이어쓰기), the user spoke into an existing parent
-  // fragment, so we already know the id. Step 07 (EmmaChat) uses this
-  // to upload the audio immediately. For new fragments, INSERT happens
-  // in after() background — fragmentId stays null and the audio is
-  // attached later via FragmentModal (Step 08) or polling.
+  // 🔥 Step 06 (Voice QR) — return fragmentId for BOTH cases.
+  // 2026-05-06 Tim feedback: new fragment INSERT is now synchronous
+  // (was after()-background) so EmmaChat (Step 07) can attach voice
+  // to BOTH new fragments and continuations. The id resolution order:
+  //   1. continuationParentId  (이어쓰기 — known from chat_sessions)
+  //   2. createdFragmentId     (새 fragment — set by INSERT block)
+  //   3. null                  (no-fragment session, e.g. small talk)
   return Response.json({
     ok: true,
     memoriesExtracted: result.memoriesExtracted || 0,
     fragmentJobQueued: !!fragmentJobId,
-    fragmentId: continuationParentId || null,
+    fragmentId: continuationParentId || createdFragmentId || null,
   });
 }

@@ -71,12 +71,16 @@ export default function FragmentModal({
   const [fragmentCollections, setFragmentCollections] = useState(fragment.collections || []);
   const [showPicker, setShowPicker] = useState(false);
 
-  // 🆕 Step 08 (Voice QR) — audio state
-  const [audio, setAudio] = useState(null);          // FragmentAudio row | null | 'loading'
+  // 🆕 Step 12 (Voice QR) — multi-audio state.
+  //   🔥 2026-05-06 (Tim) — fragment can have N audio recordings
+  //   (continuation appends one). The QR code uses the FIRST audio's
+  //   public_token; /listen/[token] returns all siblings to render N
+  //   players in one page.
+  const [audios, setAudios] = useState('loading');  // 'loading' | [] | [{...}, ...]
   const [audioBusy, setAudioBusy] = useState(false); // toggle / delete in flight
-  const [qrDataUrl, setQrDataUrl] = useState('');    // base64 PNG of QR
+  const [qrDataUrl, setQrDataUrl] = useState('');    // base64 PNG of QR (built from audios[0].public_token)
   const [linkCopied, setLinkCopied] = useState(false);
-  const [confirmDeleteAudio, setConfirmDeleteAudio] = useState(false);
+  const [confirmDeleteAudioOrder, setConfirmDeleteAudioOrder] = useState(null); // null | audio_order to delete
 
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
@@ -110,36 +114,46 @@ export default function FragmentModal({
     return () => { cancelled = true; };
   }, [fragment.id]);
 
-  // 🆕 Step 08 (Voice QR) — load audio metadata
+  // 🆕 Step 12 (Voice QR) — load audios array.
+  //   🔥 2026-05-06 (Tim) — GET response shape: { audios: [...] }
+  //   sorted by audio_order ASC.
   useEffect(() => {
     let cancelled = false;
-    setAudio('loading');
+    setAudios('loading');
     (async () => {
       try {
         const res = await authFetch(`/api/fragments/${fragment.id}/audio`);
         if (!res.ok) {
-          if (!cancelled) setAudio(null);
+          if (!cancelled) setAudios([]);
           return;
         }
         const data = await res.json();
-        if (!cancelled) setAudio(data?.audio || null);
+        if (!cancelled) setAudios(Array.isArray(data?.audios) ? data.audios : []);
       } catch (e) {
-        console.warn('[FragmentModal] audio load failed:', e.message);
-        if (!cancelled) setAudio(null);
+        console.warn('[FragmentModal] audios load failed:', e.message);
+        if (!cancelled) setAudios([]);
       }
     })();
     return () => { cancelled = true; };
   }, [fragment.id]);
 
-  // 🆕 Step 08 (Voice QR) — generate QR data URL when audio + is_public
+  // 🆕 Step 12 (Voice QR) — generate QR data URL when at least one audio
+  //   exists, is_public, and has a token. We use the FIRST audio's token
+  //   as the QR encoding — family scans it, lands on /listen/[token]
+  //   which returns all sibling audios in order.
   useEffect(() => {
-    if (!audio || audio === 'loading' || !audio.is_public || !audio.public_token) {
+    if (!Array.isArray(audios) || audios.length === 0) {
+      setQrDataUrl('');
+      return;
+    }
+    const first = audios[0];
+    if (!first || !first.is_public || !first.public_token) {
       setQrDataUrl('');
       return;
     }
     const url = typeof window !== 'undefined'
-      ? `${window.location.origin}/listen/${audio.public_token}`
-      : `/listen/${audio.public_token}`;
+      ? `${window.location.origin}/listen/${first.public_token}`
+      : `/listen/${first.public_token}`;
     let cancelled = false;
     QRCode.toDataURL(url, {
       width: 200,
@@ -152,7 +166,7 @@ export default function FragmentModal({
         if (!cancelled) setQrDataUrl('');
       });
     return () => { cancelled = true; };
-  }, [audio]);
+  }, [audios]);
 
   const allTags = [
     ...(fragment.tags_theme   || []).map(t => ({ text: t, cls: s.tagTheme })),
@@ -187,18 +201,21 @@ export default function FragmentModal({
     }
   }
 
-  // 🆕 Step 08 (Voice QR) — audio handlers
+  // 🆕 Step 12 (Voice QR) — audio handlers.
+  //   🔥 2026-05-06 (Tim) — multi-audio. PATCH toggles is_public for
+  //   all rows; DELETE accepts ?order=N for single-audio delete.
   async function handleToggleAudioShare() {
-    if (!audio || audio === 'loading') return;
+    if (!Array.isArray(audios) || audios.length === 0 || audioBusy) return;
+    const currentIsPublic = audios[0]?.is_public;
     setAudioBusy(true);
     try {
       const res = await authFetch(`/api/fragments/${fragment.id}/audio`, {
         method: 'PATCH',
-        body: JSON.stringify({ is_public: !audio.is_public }),
+        body: JSON.stringify({ is_public: !currentIsPublic }),
       });
       const data = await res.json();
-      if (data?.audio) {
-        setAudio(data.audio);
+      if (Array.isArray(data?.audios)) {
+        setAudios(data.audios);
       } else {
         alert(vm.errMsg);
       }
@@ -210,16 +227,21 @@ export default function FragmentModal({
     }
   }
 
-  async function handleDeleteAudio() {
-    if (!audio || audio === 'loading') return;
+  async function handleDeleteAudio(order /* number | 'all' */) {
+    if (!Array.isArray(audios) || audios.length === 0 || audioBusy) return;
     setAudioBusy(true);
     try {
-      const res = await authFetch(`/api/fragments/${fragment.id}/audio`, {
-        method: 'DELETE',
-      });
+      const path = order === 'all'
+        ? `/api/fragments/${fragment.id}/audio`
+        : `/api/fragments/${fragment.id}/audio?order=${order}`;
+      const res = await authFetch(path, { method: 'DELETE' });
       if (res.ok) {
-        setAudio(null);
-        setConfirmDeleteAudio(false);
+        // Reload audios after delete — simpler than splicing client-side
+        // and keeps state consistent if any race occurred.
+        const refreshRes = await authFetch(`/api/fragments/${fragment.id}/audio`);
+        const refreshData = await refreshRes.json().catch(() => ({}));
+        setAudios(Array.isArray(refreshData?.audios) ? refreshData.audios : []);
+        setConfirmDeleteAudioOrder(null);
       } else {
         alert(vm.errMsg);
       }
@@ -232,8 +254,9 @@ export default function FragmentModal({
   }
 
   function handleCopyAudioLink() {
-    if (!audio?.public_token || typeof window === 'undefined') return;
-    const url = `${window.location.origin}/listen/${audio.public_token}`;
+    const first = Array.isArray(audios) ? audios[0] : null;
+    if (!first?.public_token || typeof window === 'undefined') return;
+    const url = `${window.location.origin}/listen/${first.public_token}`;
     navigator.clipboard?.writeText(url).then(
       () => {
         setLinkCopied(true);
@@ -277,9 +300,9 @@ export default function FragmentModal({
         <div className={s.modalTitle}>
           {mode === 'edit' ? vm.editMode : fragment.title}
         </div>
-        {mode === 'view' && fragment.subtitle && (
-          <div className={s.modalSubtitle}>{fragment.subtitle}</div>
-        )}
+        {/* 🔥 2026-05-06 Tim — subtitle 숨김. 활용도 낮고 제목과
+            중복되는 느낌. 데이터는 유지 (DB + edit form), 읽기 뷰에서面
+            안 보일 뿐. */}
       </div>
     </div>
   );
@@ -342,96 +365,206 @@ export default function FragmentModal({
                 <ReactMarkdown>{fragment.content || ''}</ReactMarkdown>
               </div>
 
-              {/* Photos (max 2) */}
-              <div className={s.photosSection}>
-                <div className={s.photosLabel}>
-                  {lang === 'EN' ? '📷 Photos' : lang === 'ES' ? '📷 Fotos' : '📷 사진'}
-                </div>
-                <PhotoUploader
-                  fragmentId={fragment.id}
-                  lang={String(lang).toLowerCase()}
-                  onChange={(photos) => onPhotosChanged && onPhotosChanged(fragment.id, photos)}
-                />
-              </div>
-
-              {/* 🆕 Step 08 (Voice QR) — audio section */}
+              {/* 🔥 2026-05-06 Tim — 음성 섹션을 사진 섹션 위로 이동.
+                  음성이 SayAndKeep 의 핵심 경험이고, 사진은 보조 용이라
+                  이게 음성 남기면 사진 추가 수 있고 그 순서가 시니어에게 더
+                  자연스럽고온 자리.
+                  🔥 2026-05-06 Tim — multi-audio. Continuation 이어말하기 다음
+                  두 번째 녹음이 도착하면 [녹음 1부] [녹음 2부] ... 함께
+                  표시. QR/토글은 전체 단위로 작동. */}
               <div className={s.audioSection} style={{ marginTop: 16, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className={s.audioSectionLabel} style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
                   {vm.audioSectionLabel}
+                  {Array.isArray(audios) && audios.length > 1 && (
+                    <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, opacity: 0.6 }}>
+                      — 총 {audios.length}개
+                    </span>
+                  )}
                 </div>
 
-                {audio === 'loading' && (
+                {audios === 'loading' && (
                   <div style={{ fontSize: 13, opacity: 0.6, padding: 8 }}>
                     {vm.loading || '…'}
                   </div>
                 )}
 
-                {audio === null && (
+                {Array.isArray(audios) && audios.length === 0 && (
                   <div style={{ fontSize: 13, opacity: 0.6, padding: 8 }}>
                     {vm.audioNoAudio}
                   </div>
                 )}
 
-                {audio && audio !== 'loading' && (
+                {Array.isArray(audios) && audios.length > 0 && (
                   <>
-                    {/* Audio player */}
-                    <audio
-                      src={audio.r2_url}
-                      controls
-                      preload="metadata"
-                      style={{ width: '100%', marginBottom: 8 }}
-                    />
+                    {/* 🔥 2026-05-06 Tim — N players, one per audio_order.
+                        각 player 염에 "1부 / 2부 / 3부..." 라벨 표시.
+                        position-based 라벨 (audio_order 는 1, 5, 7 같이 gap
+                        이 있을 수 있으니 array index+1 이 더 안정적).
 
-                    {/* Metadata */}
-                    <div style={{ display: 'flex', gap: 12, fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
-                      <span>{vm.audioDuration(audio.duration_sec || 0)}</span>
-                      {audio.play_count > 0 && (
-                        <span>{vm.audioPlayCount(audio.play_count)}</span>
-                      )}
-                    </div>
+                        Audio src 는 R2 proxy URL (Chrome UrlSafetyCheck 대응,
+                        Step 13 제거). 각 row 가 자체 public_token 을
+                        가지므로 row 별 다른 URL. */}
+                    {audios.map((a, idx) => {
+                      const partLabel =
+                        audios.length === 1
+                          ? null
+                          : (lang === 'EN' ? `Part ${idx + 1}` :
+                             lang === 'ES' ? `Parte ${idx + 1}` :
+                             `${idx + 1}부`);
+                      return (
+                        <div key={a.id} style={{ marginBottom: 14 }}>
+                          {partLabel && (
+                            <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.85, marginBottom: 4 }}>
+                              🎤 {partLabel}
+                            </div>
+                          )}
+                          <audio
+                            src={a.public_token ? `/api/audio/${a.public_token}` : a.r2_url}
+                            controls
+                            preload="metadata"
+                            style={{ width: '100%', marginBottom: 4 }}
+                          />
+                          <div style={{ display: 'flex', gap: 12, fontSize: 12, opacity: 0.7, alignItems: 'center' }}>
+                            <span>{vm.audioDuration(a.duration_sec || 0)}</span>
+                            {a.play_count > 0 && (
+                              <span>{vm.audioPlayCount(a.play_count)}</span>
+                            )}
+                            {audios.length > 1 && (
+                              <button
+                                onClick={() => setConfirmDeleteAudioOrder(a.audio_order)}
+                                disabled={audioBusy}
+                                style={{
+                                  marginLeft: 'auto',
+                                  fontSize: 11,
+                                  padding: '3px 8px',
+                                  background: 'transparent',
+                                  border: '1px solid rgba(239,68,68,0.25)',
+                                  borderRadius: 5,
+                                  color: 'rgba(239,68,68,0.8)',
+                                  cursor: audioBusy ? 'wait' : 'pointer',
+                                  opacity: audioBusy ? 0.5 : 1,
+                                }}
+                              >
+                                🗑 이 녹음 삭제
+                              </button>
+                            )}
+                          </div>
+                          {/* Per-audio delete confirm row */}
+                          {confirmDeleteAudioOrder === a.audio_order && (
+                            <div style={{ marginTop: 8, padding: 10, background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
+                              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                                {partLabel} 녹음을 삭제할까요? 이 동작은 되돌릴 수 없어요.
+                              </div>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                  onClick={() => handleDeleteAudio(a.audio_order)}
+                                  disabled={audioBusy}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: 'rgba(239,68,68,0.85)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    fontSize: 12,
+                                    cursor: 'pointer',
+                                    opacity: audioBusy ? 0.6 : 1,
+                                  }}
+                                >
+                                  {audioBusy ? vm.audioDeleting : '삭제'}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteAudioOrder(null)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: 6,
+                                    fontSize: 12,
+                                    cursor: 'pointer',
+                                    color: 'currentColor',
+                                  }}
+                                >
+                                  {vm.cancelBtn}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
-                    {/* Share toggle */}
-                    <div style={{ marginBottom: 12 }}>
-                      <button
-                        onClick={handleToggleAudioShare}
-                        disabled={audioBusy}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: audio.is_public ? 'rgba(34,197,94,0.18)' : 'rgba(168,85,247,0.18)',
-                          color: 'currentColor',
-                          fontSize: 14,
-                          fontWeight: 500,
-                          cursor: audioBusy ? 'wait' : 'pointer',
-                          opacity: audioBusy ? 0.6 : 1,
-                        }}
-                      >
-                        {audio.is_public ? vm.audioShareToggleOn : vm.audioShareToggleOff}
-                      </button>
-                      <div style={{ fontSize: 11, opacity: 0.6, marginTop: 6, lineHeight: 1.4 }}>
-                        {audio.is_public ? vm.audioShareDesc : vm.audioShareDescOff}
-                      </div>
-                    </div>
+                    {/* 공유 토글 + QR 은 전체 단위. is_public 은 모든 audio rows
+                        에서 동일 (PATCH 가 함께 update). audios[0] 을 reference
+                        로 사용. */}
+                    {(() => {
+                      const isPublic = audios[0]?.is_public;
+                      return isPublic ? (
+                        <div style={{ marginBottom: 12, fontSize: 12, opacity: 0.7, lineHeight: 1.5 }}>
+                          {vm.audioShareDesc}
+                          <button
+                            onClick={handleToggleAudioShare}
+                            disabled={audioBusy}
+                            style={{
+                              display: 'inline-block',
+                              marginLeft: 8,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              border: 'none',
+                              background: 'rgba(255,255,255,0.08)',
+                              color: 'currentColor',
+                              fontSize: 11,
+                              cursor: audioBusy ? 'wait' : 'pointer',
+                              opacity: audioBusy ? 0.5 : 0.85,
+                            }}
+                          >
+                            {vm.audioShareToggleOn /* "공유 끌기" */}
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom: 12 }}>
+                          <button
+                            onClick={handleToggleAudioShare}
+                            disabled={audioBusy}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: 8,
+                              border: 'none',
+                              background: 'rgba(168,85,247,0.18)',
+                              color: 'currentColor',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              cursor: audioBusy ? 'wait' : 'pointer',
+                              opacity: audioBusy ? 0.6 : 1,
+                            }}
+                          >
+                            {vm.audioShareToggleOff /* "가족과 공유하기" */}
+                          </button>
+                          <div style={{ fontSize: 11, opacity: 0.6, marginTop: 6, lineHeight: 1.4 }}>
+                            {vm.audioShareDescOff}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                    {/* QR code (only when public + token + qr generated) */}
-                    {audio.is_public && qrDataUrl && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 12, background: '#fff', borderRadius: 8, marginBottom: 12 }}>
-                        <div style={{ fontSize: 12, color: '#666', marginBottom: 8, fontWeight: 500 }}>
+                    {/* QR code — 1 QR per fragment, scan → /listen/[token]
+                        → 모든 audio 순차 재생. */}
+                    {audios[0]?.is_public && qrDataUrl && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 10, background: '#fff', borderRadius: 8, marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, color: '#666', marginBottom: 6, fontWeight: 500 }}>
                           {vm.audioQrLabel}
                         </div>
-                        <img src={qrDataUrl} alt="QR code" style={{ width: 200, height: 200 }} />
+                        <img src={qrDataUrl} alt="QR code" style={{ width: 140, height: 140 }} />
                         <button
                           onClick={handleCopyAudioLink}
                           style={{
-                            marginTop: 8,
-                            padding: '6px 12px',
+                            marginTop: 6,
+                            padding: '5px 10px',
                             border: '1px solid #ddd',
                             borderRadius: 6,
                             background: '#f5f5f5',
                             color: '#333',
-                            fontSize: 12,
+                            fontSize: 11,
                             cursor: 'pointer',
                           }}
                         >
@@ -440,10 +573,27 @@ export default function FragmentModal({
                       </div>
                     )}
 
-                    {/* Delete audio (rare action, less prominent) */}
-                    {!confirmDeleteAudio ? (
+                    {/* Bulk delete (delete ALL audios). 개별 delete 는 모든
+                        player 염 에 따로 있음. */}
+                    {audios.length > 1 && confirmDeleteAudioOrder !== 'all' && (
                       <button
-                        onClick={() => setConfirmDeleteAudio(true)}
+                        onClick={() => setConfirmDeleteAudioOrder('all')}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 10px',
+                          background: 'transparent',
+                          border: '1px solid rgba(239,68,68,0.3)',
+                          borderRadius: 6,
+                          color: 'rgba(239,68,68,0.85)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🗑 모든 녹음 삭제
+                      </button>
+                    )}
+                    {audios.length === 1 && confirmDeleteAudioOrder !== 'all' && (
+                      <button
+                        onClick={() => setConfirmDeleteAudioOrder('all')}
                         style={{
                           fontSize: 12,
                           padding: '6px 10px',
@@ -456,14 +606,17 @@ export default function FragmentModal({
                       >
                         {vm.audioDelete}
                       </button>
-                    ) : (
+                    )}
+                    {confirmDeleteAudioOrder === 'all' && (
                       <div style={{ padding: 10, background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
                         <div style={{ fontSize: 13, marginBottom: 8 }}>
-                          {vm.audioDeleteConfirm}
+                          {audios.length > 1
+                            ? `모든 녹음 (${audios.length}개) 을 삭제할까요? 이 동작은 되돌릴 수 없어요.`
+                            : vm.audioDeleteConfirm}
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button
-                            onClick={handleDeleteAudio}
+                            onClick={() => handleDeleteAudio('all')}
                             disabled={audioBusy}
                             style={{
                               padding: '6px 12px',
@@ -479,7 +632,7 @@ export default function FragmentModal({
                             {audioBusy ? vm.audioDeleting : vm.audioDeleteConfirmYes}
                           </button>
                           <button
-                            onClick={() => setConfirmDeleteAudio(false)}
+                            onClick={() => setConfirmDeleteAudioOrder(null)}
                             style={{
                               padding: '6px 12px',
                               background: 'transparent',
@@ -497,6 +650,18 @@ export default function FragmentModal({
                     )}
                   </>
                 )}
+              </div>
+
+              {/* Photos (max 2) */}
+              <div className={s.photosSection}>
+                <div className={s.photosLabel}>
+                  {lang === 'EN' ? '📷 Photos' : lang === 'ES' ? '📷 Fotos' : '📷 사진'}
+                </div>
+                <PhotoUploader
+                  fragmentId={fragment.id}
+                  lang={String(lang).toLowerCase()}
+                  onChange={(photos) => onPhotosChanged && onPhotosChanged(fragment.id, photos)}
+                />
               </div>
 
               {fragment.truncated && (
@@ -542,41 +707,48 @@ export default function FragmentModal({
                 </div>
               )}
 
-              {/* Collections (root fragments only — continuations follow parent) */}
-              {!fragment.parent_fragment_id && (
-                <div className={s.fragmentCollectionsSection}>
-                  <div className={s.collectionsLabel}>{vm.inCollectionsLabel}</div>
-                  {fragmentCollections.length > 0 ? (
-                    <div className={s.collectionTags}>
-                      {fragmentCollections.map(c => (
-                        <span key={c.id} className={s.collectionTag}>📚 {c.name}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={s.noCollections}>{vm.noCollectionsForFragment}</div>
-                  )}
-                  <button
-                    className={s.addToCollectionBtn}
-                    onClick={() => setShowPicker(true)}
-                  >
-                    📚 {vm.addToCollectionBtn}
-                  </button>
+              {/* 🔥 2026-05-06 Tim — collections + actions 통합.
+                  이전: 별도 collections 섹션 (라벨 + 빈상태 안내문 +
+                    버튼) 다음에 modalActions 섹션 (공개 + 삭제).
+                  현재: 라벨/빈상태 안내문 제거, chip 은 있을 때만 표시,
+                    "모음집 추가 / 공개 변경 / 삭제" 3개 버튼을 한 줄에.
+                  Continuation fragment 에는 모음집 버튼 자체가 안 보임
+                  (continuations follow parent). */}
+              {!fragment.parent_fragment_id && fragmentCollections.length > 0 && (
+                <div className={s.collectionTags} style={{ marginTop: 12 }}>
+                  {fragmentCollections.map(c => (
+                    <span key={c.id} className={s.collectionTag}>📚 {c.name}</span>
+                  ))}
                 </div>
               )}
 
-              {/* 🆕 Task 95 — the inline Edit button is removed. The
-                  "✏️ 글 수정 / 이어쓰기" button at the top of the modal
-                  now serves as the single entry point for editing,
-                  routed to /write?fragmentId=… so the senior gets the
-                  full senior-friendly editor (large textarea, photos
-                  immediately available, edit-with-append in one place).
-                  The inline edit JSX further down is left intact for
-                  back-compat / testing but the trigger is gone. */}
-              <div className={s.modalActions}>
-                <button className={s.visibilityBtn} onClick={() => setMode('confirmVisibility')}>
+              <div
+                className={s.modalActions}
+                style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}
+              >
+                {!fragment.parent_fragment_id && (
+                  <button
+                    className={s.addToCollectionBtn}
+                    onClick={() => setShowPicker(true)}
+                    style={{ flex: 1, minWidth: 0 }}
+                  >
+                    📚 {vm.addToCollectionBtn}
+                  </button>
+                )}
+                <button
+                  className={s.visibilityBtn}
+                  onClick={() => setMode('confirmVisibility')}
+                  style={{ flex: 1, minWidth: 0 }}
+                >
                   {currentVis === 'private' ? vm.toggleToPublic : vm.toggleToPrivate}
                 </button>
-                <button className={s.deleteBtn} onClick={() => setMode('confirmDelete')}>{vm.deleteFragment}</button>
+                <button
+                  className={s.deleteBtn}
+                  onClick={() => setMode('confirmDelete')}
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  {vm.deleteFragment}
+                </button>
               </div>
             </>
           )}
