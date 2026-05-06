@@ -63,6 +63,12 @@ const HOME_MSGS = {
     homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
+    // 🔥 Tim 결정 (2026-05-06): 4번째 그리드 버튼을 "사진앨범" 으로
+    //   교체하고, "내 이야기" (3번째) 가 /my-stories 목록 페이지로
+    //   이동하도록 변경. 자서전·수필집·내 이야기·사진앨범 4개로 컨셉
+    //   단순화. tellStoryFromList 는 my-stories 상단 CTA 에서 사용.
+    homeBtnPhotobook   : '사진앨범',
+    tellStoryFromList  : '이야기 하기',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : '이야기하면 책이 됩니다',
@@ -116,6 +122,9 @@ const HOME_MSGS = {
     homeBtnTalk        : "Don't Save",
     homeBtnMyStories   : 'View My Stories',
     homeBtnSamples     : 'Sample Stories',
+    // Tim 2026-05-06 — see KO block above.
+    homeBtnPhotobook   : 'Photobooks',
+    tellStoryFromList  : 'Tell a Story',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : "Tell your story. We'll make a book.",
@@ -169,6 +178,9 @@ const HOME_MSGS = {
     homeBtnTalk        : 'Sin guardar',
     homeBtnMyStories   : 'Ver mis historias',
     homeBtnSamples     : 'Historias de ejemplo',
+    // Tim 2026-05-06 — ver bloque KO arriba.
+    homeBtnPhotobook   : 'Álbumes de fotos',
+    tellStoryFromList  : 'Contar una historia',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
     brandTagline       : 'Cuenta tu historia. Lo convertimos en un libro.',
@@ -322,11 +334,13 @@ export default function Home() {
         {isLoggedIn ? msgs.greeting(userName) : msgs.tagline}
       </div>
 
-      {/* 🔥 Task 99 (2026-05-04) — 4개 버튼 그리드 (2x2):
-          1행: 내 자서전 / 내 수필집
-          2행: 내 이야기 (음성 story 모드) / 내 이야기 보기
-          '기록하지 않기'와 '샘플 이야기'는 footer의 작은
-          링크로 이동 (Tim 결정). */}
+      {/* 🔥 Tim 결정 (2026-05-06) — 4-button grid 컨셉 단순화:
+            1행: 내 자서전 / 내 수필집     ← 만들어진 책 (memoir / essay)
+            2행: 내 이야기 / 사진앨범       ← 조각 (free-form / photobook)
+          "내 이야기" 는 이제 /chat 직행이 아닌 /my-stories 목록 페이지
+          로 이동 (목록 상단의 "이야기 하기" 큰 버튼이 /chat?mode=story
+          로 진입). 4번째 버튼은 사진앨범 (photobook v3) 으로 교체.
+          기록하지 않기 / 샘플 이야기 / 약관은 footer 작은 링크 그대로. */}
       <div className={s.gridContainer}>
         <div className={s.gridRow}>
           <button
@@ -349,22 +363,21 @@ export default function Home() {
         <div className={s.gridRow}>
           <button
             className={`${s.gridBtn} ${s.gridBtnRecord}`}
-            onClick={() => isLoggedIn ? router.push('/chat?mode=story') : requireLogin('/chat?mode=story')}
+            onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
           >
             <div className={s.gridIcon}>🎙️</div>
             <div className={s.gridLabel}>{msgs.homeBtnRecord}</div>
           </button>
 
-          {/* 🔥 Task 99 — "내 이야기 보기"가 "내 이야기" 염으로
-              이동. Record와 같은 배경색 (gridBtnRecord) 대신 고유
-              스타일로 구분을 적게 유지 — 4개가 다 다른 색이면
-              시각적 소음. 같은 느낌 조용으로. */}
+          {/* className 은 기존 gridBtnMyStories (indigo) 재사용 — 시각적
+              소음을 줄이려고 새 modifier 안 만듦. Tim 의 베타 피드백
+              보고 필요하면 별도 색상 token 분리. */}
           <button
             className={`${s.gridBtn} ${s.gridBtnMyStories}`}
-            onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
+            onClick={() => isLoggedIn ? router.push('/photobook') : requireLogin('/photobook')}
           >
-            <div className={s.gridIcon}>📖</div>
-            <div className={s.gridLabel}>{msgs.homeBtnMyStories}</div>
+            <div className={s.gridIcon}>📷</div>
+            <div className={s.gridLabel}>{msgs.homeBtnPhotobook}</div>
           </button>
         </div>
       </div>

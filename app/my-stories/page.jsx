@@ -757,6 +757,19 @@ export default function MyStoriesPage() {
         <button className={s.refreshBtn} onClick={loadAll} title={vm.refreshTitle}>↻</button>
       </div>
 
+      {/* 🔥 Tim 2026-05-06 — 홈에서 "내 이야기" 가 /chat 직행이 아닌
+          이 페이지로 오게 변경됨. 그래서 목록 위에 큰 CTA 를 두어 두
+          기능 (목록 + 이야기 시작) 을 한 페이지에서 처리. 빈 상태에서
+          가장 prominent 하게 보여 "이야기 하기" 가 첫 행동임을 명시. */}
+      <button
+        className={s.tellStoryCta}
+        onClick={() => router.push('/chat?mode=story')}
+        type="button"
+      >
+        <span className={s.tellStoryIcon}>🎙️</span>
+        <span className={s.tellStoryLabel}>{vm.tellStoryFromList}</span>
+      </button>
+
       {loading ? (
         <Spinner />
       ) : (

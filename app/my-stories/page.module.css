@@ -115,6 +115,35 @@
   text-transform: uppercase;
 }
 
+/* 🔥 Tim 2026-05-06 — 큰 "이야기 하기" CTA. 홈의 "내 이야기" 가 이
+   페이지로 오게 변경되었기에, 목록 상단에 prominent 한 진입점을 둠.
+   홈의 .gridBtnRecord (amber-700) 와 같은 톤으로 시각적 일관성. */
+.tellStoryCta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: calc(100% - 32px);
+  margin: 16px 16px 4px;
+  min-height: 68px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #ea580c, #b45309);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.30);
+  transition: transform 0.12s, box-shadow 0.15s, opacity 0.12s;
+}
+.tellStoryCta:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(234, 88, 12, 0.40); }
+.tellStoryCta:active { transform: scale(0.99); }
+.tellStoryIcon       { font-size: 24px; line-height: 1; }
+.tellStoryLabel      { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+
 /* ── Section title ── */
 .sectionTitle {
   font-size: 13px;

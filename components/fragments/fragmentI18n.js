@@ -74,6 +74,12 @@ export const VIS_MSGS = {
     noCollectionsYet : '먼저 모음집을 만들어 주세요',
     continuationChildBlocked: '이어말한 이야기는 부모를 추가하면 함께 따라옵니다.',
     pageTitle        : '나의 이야기들',
+    // 🔥 Tim 2026-05-06 — /my-stories 상단 큰 CTA. 홈 페이지의 4번째
+    //   버튼이 "사진앨범" 으로 바뀌면서, 기존 "내 이야기" (홈 3번째) 가
+    //   /chat 직행이 아닌 /my-stories 목록으로 이동하게 됨. 그래서 이
+    //   목록 상단에 "이야기 하기" 큰 버튼을 두어 두 기능을 한 페이지
+    //   에서 처리.
+    tellStoryFromList: '이야기 하기',
     refreshTitle     : '새로고침',
     statLabelStories : '이야기',
     statLabelChars   : '글자 수',
@@ -205,6 +211,7 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Create a collection first',
     continuationChildBlocked: 'Continuation entries follow their parent automatically.',
     pageTitle        : 'My Stories',
+    tellStoryFromList: 'Tell a Story',
     refreshTitle     : 'Refresh',
     statLabelStories : 'Stories',
     statLabelChars   : 'Characters',
@@ -336,6 +343,7 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Primero crea una colección',
     continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
     pageTitle        : 'Mis historias',
+    tellStoryFromList: 'Contar una historia',
     refreshTitle     : 'Actualizar',
     statLabelStories : 'Historias',
     statLabelChars   : 'Caracteres',
