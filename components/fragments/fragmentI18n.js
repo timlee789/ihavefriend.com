@@ -96,8 +96,8 @@ export const VIS_MSGS = {
     backToList       : '← 나의 이야기들',
     confirmDeleteFragment   : '정말 이 이야기를 삭제할까요? 되돌릴 수 없습니다.',
     // 🆕 Step 08 (Voice QR) — audio section
-    audioSectionLabel       : '🎙️ 녹음된 음성',
-    audioNoAudio            : '아직 녹음된 음성이 없어요',
+    audioSectionLabel       : '🎙️ 원본 음성',
+    audioNoAudio            : '원본 음성 없음',
     audioShareToggleOn      : '🌐 가족과 공유 중',
     audioShareToggleOff     : '🔒 비공개 (나만 듣기)',
     audioShareDesc          : 'QR 코드를 가족에게 보내면 음성을 들을 수 있어요',
@@ -227,8 +227,8 @@ export const VIS_MSGS = {
     backToList       : '← My stories',
     confirmDeleteFragment   : 'Really delete this story? This cannot be undone.',
     // 🆕 Step 08 (Voice QR) — audio section
-    audioSectionLabel       : '🎙️ Voice recording',
-    audioNoAudio            : 'No voice recording yet',
+    audioSectionLabel       : '🎙️ Original Voice',
+    audioNoAudio            : 'No original voice',
     audioShareToggleOn      : '🌐 Sharing with family',
     audioShareToggleOff     : '🔒 Private (only you can hear)',
     audioShareDesc          : 'Send the QR code to family so they can listen',
@@ -358,8 +358,8 @@ export const VIS_MSGS = {
     backToList       : '← Mis historias',
     confirmDeleteFragment   : '¿Eliminar esta historia? No se puede deshacer.',
     // 🆕 Step 08 (Voice QR) — audio section
-    audioSectionLabel       : '🎙️ Grabación de voz',
-    audioNoAudio            : 'Aún no hay grabación',
+    audioSectionLabel       : '🎙️ Voz original',
+    audioNoAudio            : 'Sin voz original',
     audioShareToggleOn      : '🌐 Compartido con la familia',
     audioShareToggleOff     : '🔒 Privado (solo tú escuchas)',
     audioShareDesc          : 'Envía el código QR a tu familia para que escuche',
