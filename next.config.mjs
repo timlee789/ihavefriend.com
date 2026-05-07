@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 🔥 R1 (2026-05-07) — keep `pdfkit` external on the server so its
+  // bundled Helvetica.afm fixture is loaded from real node_modules
+  // instead of Turbopack's `/ROOT/node_modules/...` virtual path
+  // (which fails with ENOENT). Same for `qrcode` for consistency.
+  // bookPdf.js relies on the same package; this fixes both renderers.
+  serverExternalPackages: ['pdfkit', 'qrcode'],
+
   async headers() {
     return [
       {
