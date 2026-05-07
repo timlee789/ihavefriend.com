@@ -188,6 +188,21 @@ export default function ListenPage({ params }) {
     );
   }
 
+  // 🔥 R3a (2026-05-07) — photobook branch. Server now returns a
+  //   `type` discriminator. Photobook pages get their own view; the
+  //   existing fragment view (below) stays untouched for regression
+  //   safety.
+  if (data?.type === 'photobook_page') {
+    return (
+      <PhotobookPageView
+        data={data}
+        lang={lang}
+        m={m}
+        onAudioPlay={() => handleAudioPlay(data.audio?.id)}
+      />
+    );
+  }
+
   // 🔥 2026-05-06 (Tim) — multi-audio. Backend now returns
   //   { audios: [...], audio_count, total_duration_sec, fragment, sender }
   //   where audios is sorted by audio_order ASC. Single-recording case
@@ -304,6 +319,154 @@ function Header({ lang }) {
         <span className={s.brandName}>{m.siteName}</span>
         <span className={s.brandTagline}>{m.siteTagline}</span>
       </Link>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 🔥 R3b (2026-05-07) — Photobook page view.
+//
+// Reached when /api/listen/[token] resolves the token to a
+// photobook_page_audios row (i.e. a 사진앨범집 page's QR). The visual
+// language matches §1.4 of the strategy: gift icon + sender + book
+// metadata + page badge, square photo (1:1, contain, rounded), page
+// title (optional), caption, then the same audio card the fragment
+// view uses. We reuse `s.headline`, `s.audioCard`, `s.playCount`, etc.
+// — new elements (photo, book line, page badge) use inline styles to
+// avoid forking the CSS module.
+// ─────────────────────────────────────────────────────────────────
+function PhotobookPageView({ data, lang, m, onAudioPlay }) {
+  const { page, audio, book, sender } = data || {};
+  const senderName = sender?.name || '';
+  const photo = page?.photo || null;
+
+  return (
+    <div className={s.page}>
+      <Header lang={lang} />
+
+      <div className={s.headline}>
+        <div className={s.giftIcon}>💝</div>
+        {senderName && (
+          <div className={s.senderLine}>
+            <span className={s.senderName}>{senderName}</span>
+            <span>{m.senderSuffix}</span>
+          </div>
+        )}
+        {/* Book title sits where fragment view shows the section label,
+            so the eye lands on "what is this collection" first. */}
+        <div className={s.sectionLabel}>{book?.title || ''}</div>
+        {book?.subtitle && (
+          <div style={{ fontSize: 14, opacity: 0.7, marginTop: 6 }}>
+            {book.subtitle}
+          </div>
+        )}
+        {Number.isFinite(page?.page_number) && (
+          <div
+            style={{
+              display: 'inline-block',
+              marginTop: 10,
+              padding: '4px 12px',
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#fb923c',
+              background: 'rgba(251, 146, 60, 0.16)',
+              borderRadius: 999,
+              letterSpacing: '0.4px',
+            }}
+          >
+            {page.page_number}쪽
+          </div>
+        )}
+      </div>
+
+      {/* Square photo — 1:1, contain, soft rounding. The 8×8 print
+          aspect ratio inspires the preview shape so the family sees
+          roughly what the printed book will look like. */}
+      {photo?.url && (
+        <div
+          style={{
+            width: '100%',
+            aspectRatio: '1 / 1',
+            background: '#000',
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 20,
+            boxShadow: '0 4px 16px rgba(139, 111, 71, 0.1)',
+          }}
+        >
+          <img
+            src={photo.url}
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Page title (only when set). h2 to keep semantic hierarchy
+          below the brand header / book title. */}
+      {page?.page_title && (
+        <h2
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: '#2c2419',
+            margin: '4px 0 12px',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {page.page_title}
+        </h2>
+      )}
+
+      {/* Caption — preserve user line breaks; the editor stores
+          double-newlines as paragraph separators. */}
+      {page?.caption && (
+        <div
+          style={{
+            fontSize: 16,
+            lineHeight: 1.6,
+            color: '#2c2419',
+            whiteSpace: 'pre-wrap',
+            marginBottom: 24,
+          }}
+        >
+          {page.caption}
+        </div>
+      )}
+
+      {/* Audio card — reuses the fragment-view styles so the visual
+          language is consistent. Single audio, no part label. */}
+      {audio?.url && (
+        <div className={s.audioCard}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#8b6f47', marginBottom: 8 }}>
+            🎤 {m.sectionLabel}
+            {audio.duration_sec > 0 && (
+              <span style={{ marginLeft: 10, fontWeight: 400, opacity: 0.75 }}>
+                {m.durationLabel(audio.duration_sec)}
+              </span>
+            )}
+          </div>
+          <audio
+            src={audio.url}
+            controls
+            preload="metadata"
+            onPlay={onAudioPlay}
+            className={s.audioPlayer}
+          />
+          {audio.play_count > 0 && (
+            <div className={s.playCount}>
+              {audio.play_count === 1
+                ? m.playCountSingle
+                : m.playCountMulti(audio.play_count)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

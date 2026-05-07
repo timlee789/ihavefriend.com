@@ -258,6 +258,11 @@ export default function PhotobookEditPage() {
           onAdd={handleAddPage}
           onDelete={handleDeletePage}
           onReorder={handleReorder}
+          // 🔥 R3d (2026-05-07) — wire the ⋮ menu's "PDF 미리보기" entry
+          //   to the new preview page. PageNavigator already accepts
+          //   this prop; previously it fell back to a "coming soon"
+          //   alert (m.pdfPreviewSoon).
+          onPdfPreview={() => router.push(`/photobook/${photobookId}/preview`)}
           busy={busy}
           lang={lang}
         />

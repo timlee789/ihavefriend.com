@@ -1,27 +1,30 @@
 /**
  * GET /api/listen/[token]
  *
- * Public endpoint — no auth. Returns audio + fragment + sender info
- * for a given public_token. Used by /listen/[token] page when family
- * members scan a QR code or follow a shared link.
+ * Public endpoint — no auth. Returns audio + sender info for a given
+ * public_token. Used by /listen/[token] page when family members scan
+ * a QR code or follow a shared link.
+ *
+ * Two source types share this endpoint:
+ *   - fragment_audios       (자서전 — story_fragments + multi-audio)
+ *   - photobook_page_audios (사진앨범집 — photobook_pages, 1 per page)
+ *
+ * The response carries a `type` field so the client can branch:
+ *   { type: 'fragment',       audios:[…], fragment:{…}, sender:{…} }
+ *   { type: 'photobook_page', page:{…}, audio:{…}, book:{…}, sender:{…} }
+ *
+ * Token disambiguation: try fragment_audios first (existing flow,
+ * larger volume), then photobook_page_audios. Both filter is_public=TRUE
+ * so a sharing-off toggle on either side returns 404 immediately.
  *
  * Security:
  *   - Filters by is_public = TRUE (private audio is invisible)
  *   - Token length sanity check (reject obvious garbage)
  *   - Sender info limited to display name (no email, no user_id)
- *   - Token itself is the bearer token; 16-char base64url is
- *     unguessable in practice (62^16 ≈ 4.7e28).
+ *   - Token itself is the bearer — 16-char base64url is unguessable
+ *     (62^16 ≈ 4.7e28).
  *
- * Question prompt resolution:
- *   - Questions are stored inside user_books.structure JSONB
- *     (chapters[].questions[]), not in a separate book_questions
- *     table. We LEFT JOIN user_books and walk the JSONB to find
- *     the matching question by id.
- *   - If fragment is free-form (no book_id), question_prompt is null.
- *   - Pattern matches app/api/book/[id]/question/[qId]/route.js.
- *
- * Voice QR System Phase 1 (Step 05). See:
- *   experiments/100-voice-qr-system-phase-1.md
+ * Voice QR System Phase 1 (Step 05) + R3a (2026-05-07).
  */
 import { NextResponse } from 'next/server';
 import { createDb } from '@/lib/db';
@@ -52,10 +55,6 @@ function findQuestionInStructure(structure, questionId) {
 
 /**
  * Pick the localized prompt string from a prompt value.
- * Handles three cases:
- *   - object { ko, en, es } — pick by lang with fallbacks
- *   - string — return as-is
- *   - null/undefined — return null
  */
 function resolvePromptText(promptValue, lang) {
   if (!promptValue) return null;
@@ -66,6 +65,187 @@ function resolvePromptText(promptValue, lang) {
   return null;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Build fragment (자서전) response — unchanged from prior behavior
+// except the leading `type: 'fragment'` field. fragment_id is passed
+// in by the caller (already resolved from the token row).
+// ─────────────────────────────────────────────────────────────────
+async function buildFragmentResponse(db, fragmentId) {
+  const result = await db.query(
+    `SELECT
+       a.id           AS audio_id,
+       a.audio_order,
+       a.public_token,
+       a.r2_url,
+       a.duration_sec,
+       a.play_count,
+       a.created_at   AS audio_created_at,
+       f.id           AS fragment_id,
+       f.title        AS fragment_title,
+       f.subtitle     AS fragment_subtitle,
+       f.content      AS fragment_content,
+       f.language     AS fragment_language,
+       f.book_id,
+       f.book_question_id,
+       u.id           AS user_id,
+       u.name         AS user_name,
+       b.structure    AS book_structure
+     FROM fragment_audios a
+     JOIN story_fragments f  ON f.id = a.fragment_id
+     JOIN "User" u            ON u.id = a.user_id
+     LEFT JOIN user_books b  ON b.id = f.book_id
+    WHERE a.fragment_id = $1
+      AND a.is_public   = TRUE
+    ORDER BY a.audio_order ASC`,
+    [fragmentId]
+  );
+
+  if (result.rows.length === 0) {
+    // Edge case: token row was public but somehow none of the
+    // fragment's audios are. Treat as not found.
+    return NextResponse.json(
+      { error: 'not found or not public' },
+      { status: 404 }
+    );
+  }
+
+  const head = result.rows[0];
+
+  // Resolve question_prompt from JSONB structure.
+  let questionPrompt = null;
+  if (head.book_structure && head.book_question_id) {
+    const question = findQuestionInStructure(
+      head.book_structure,
+      head.book_question_id
+    );
+    if (question) {
+      questionPrompt = resolvePromptText(
+        question.prompt,
+        head.fragment_language || 'ko'
+      );
+    }
+  }
+
+  const audios = result.rows.map(r => ({
+    id:           r.audio_id,
+    audio_order:  r.audio_order,
+    url:          `/api/audio/${r.public_token}`,
+    duration_sec: r.duration_sec,
+    play_count:   r.play_count,
+    created_at:   r.audio_created_at,
+  }));
+
+  return NextResponse.json({
+    type: 'fragment',
+    audios,
+    total_duration_sec: audios.reduce((sum, a) => sum + (a.duration_sec || 0), 0),
+    audio_count:        audios.length,
+    fragment: {
+      id:              head.fragment_id,
+      title:           head.fragment_title,
+      subtitle:        head.fragment_subtitle,
+      content:         head.fragment_content,
+      language:        head.fragment_language,
+      question_prompt: questionPrompt,
+    },
+    sender: {
+      // Only name — never email, never user_id beyond what's needed
+      // for routing. The /listen page is anonymous; we don't want
+      // QR scans to leak account identifiers.
+      name: head.user_name || null,
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Build photobook_page (사진앨범집) response — new in R3a.
+// ─────────────────────────────────────────────────────────────────
+// Photo URL goes through the /api/photobook-photo/[id] proxy (same
+// pattern the editor uses) so the family browser doesn't see the
+// pub-*.r2.dev URL Chrome SafeBrowsing flags.
+//
+// Audio URL goes through /api/audio/[token] — that route already
+// handles photobook_page_audios since the R0 UNION fix.
+async function buildPhotobookPageResponse(db, pageId) {
+  const result = await db.query(
+    `SELECT
+       p.id           AS page_id,
+       p.page_number,
+       p.page_title,
+       p.caption,
+       pp.id          AS photo_id,
+       pp.r2_url      AS photo_r2_url,
+       pp.width       AS photo_width,
+       pp.height      AS photo_height,
+       pa.id          AS audio_id,
+       pa.public_token,
+       pa.duration_sec,
+       pa.play_count,
+       pa.created_at  AS audio_created_at,
+       b.id           AS book_id,
+       b.title        AS book_title,
+       b.subtitle     AS book_subtitle,
+       u.name         AS user_name
+     FROM photobook_pages p
+     JOIN user_books b ON b.id = p.user_book_id
+     JOIN "User" u     ON u.id = b.user_id
+     LEFT JOIN photobook_page_photos pp ON pp.page_id = p.id
+     LEFT JOIN photobook_page_audios pa ON pa.page_id = p.id
+    WHERE p.id = $1
+      AND b.book_type = 'photobook'
+      AND pa.is_public = TRUE
+    LIMIT 1`,
+    [pageId]
+  );
+
+  if (result.rows.length === 0) {
+    // The token's page exists but the audio became private between
+    // the token lookup and this query, OR the row genuinely has no
+    // public audio. Either way, family page sees not-found.
+    return NextResponse.json(
+      { error: 'not found or not public' },
+      { status: 404 }
+    );
+  }
+
+  const r = result.rows[0];
+
+  return NextResponse.json({
+    type: 'photobook_page',
+    page: {
+      id:          r.page_id,
+      page_number: r.page_number,
+      page_title:  r.page_title,
+      caption:     r.caption,
+      photo: r.photo_id ? {
+        id:     r.photo_id,
+        // Proxy through our domain — same R0 pattern as the editor.
+        url:    `/api/photobook-photo/${r.photo_id}`,
+        width:  r.photo_width,
+        height: r.photo_height,
+      } : null,
+    },
+    audio: r.audio_id ? {
+      id:           r.audio_id,
+      url:          `/api/audio/${r.public_token}`,
+      duration_sec: r.duration_sec,
+      play_count:   r.play_count,
+      created_at:   r.audio_created_at,
+    } : null,
+    book: {
+      id:       r.book_id,
+      title:    r.book_title,
+      subtitle: r.book_subtitle,
+    },
+    sender: {
+      name: r.user_name || null,
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GET handler — token → which table → which builder
+// ─────────────────────────────────────────────────────────────────
 export async function GET(request, { params }) {
   const { token } = await params;
 
@@ -76,121 +256,36 @@ export async function GET(request, { params }) {
   const db = createDb();
 
   try {
-    // 🔥 2026-05-06 (Tim) — multi-audio. The QR's token belongs to one
-    //   audio row (the first), but the family page should see all audios
-    //   for that fragment. Resolve the fragment via the token first, then
-    //   load every audio of that fragment.
-    //
-    //   is_public=TRUE filter on the QR token AND the sibling rows: if a
-    //   user toggles sharing OFF, the entire fragment hides immediately
-    //   (PATCH /api/fragments/.../audio updates all rows together).
-    const tokenLookup = await db.query(
+    // Try fragment_audios first — the older / higher-volume table.
+    const fragQ = await db.query(
       `SELECT a.fragment_id
          FROM fragment_audios a
         WHERE a.public_token = $1
-          AND a.is_public    = TRUE`,
+          AND a.is_public    = TRUE
+        LIMIT 1`,
       [token]
     );
-
-    if (tokenLookup.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'not found or not public' },
-        { status: 404 }
-      );
+    if (fragQ.rows.length > 0) {
+      return await buildFragmentResponse(db, fragQ.rows[0].fragment_id);
     }
 
-    const targetFragmentId = tokenLookup.rows[0].fragment_id;
-
-    const result = await db.query(
-      `SELECT
-         a.id           AS audio_id,
-         a.audio_order,
-         a.public_token,
-         a.r2_url,
-         a.duration_sec,
-         a.play_count,
-         a.created_at   AS audio_created_at,
-         f.id           AS fragment_id,
-         f.title        AS fragment_title,
-         f.subtitle     AS fragment_subtitle,
-         f.content      AS fragment_content,
-         f.language     AS fragment_language,
-         f.book_id,
-         f.book_question_id,
-         u.id           AS user_id,
-         u.name         AS user_name,
-         b.structure    AS book_structure
-       FROM fragment_audios a
-       JOIN story_fragments f  ON f.id = a.fragment_id
-       JOIN "User" u            ON u.id = a.user_id
-       LEFT JOIN user_books b  ON b.id = f.book_id
-      WHERE a.fragment_id = $1
-        AND a.is_public   = TRUE
-      ORDER BY a.audio_order ASC`,
-      [targetFragmentId]
+    // Fallback — photobook_page_audios.
+    const pbQ = await db.query(
+      `SELECT a.page_id
+         FROM photobook_page_audios a
+        WHERE a.public_token = $1
+          AND a.is_public    = TRUE
+        LIMIT 1`,
+      [token]
     );
-
-    if (result.rows.length === 0) {
-      // Edge case: token row was public but somehow none of the
-      // fragment's audios are. Treat as not found.
-      return NextResponse.json(
-        { error: 'not found or not public' },
-        { status: 404 }
-      );
+    if (pbQ.rows.length > 0) {
+      return await buildPhotobookPageResponse(db, pbQ.rows[0].page_id);
     }
 
-    // Fragment-level fields are constant across all rows; pull from
-    // the first row.
-    const head = result.rows[0];
-
-    // Resolve question_prompt from JSONB structure.
-    let questionPrompt = null;
-    if (head.book_structure && head.book_question_id) {
-      const question = findQuestionInStructure(
-        head.book_structure,
-        head.book_question_id
-      );
-      if (question) {
-        questionPrompt = resolvePromptText(
-          question.prompt,
-          head.fragment_language || 'ko'
-        );
-      }
-    }
-
-    // Build the audios array. Each entry gets its own URL pointing at
-    // the proxy endpoint with that row's own public_token — the family
-    // page can render N players, each loading its own bytes.
-    const audios = result.rows.map(r => ({
-      id:           r.audio_id,
-      audio_order:  r.audio_order,
-      url:          `/api/audio/${r.public_token}`,
-      duration_sec: r.duration_sec,
-      play_count:   r.play_count,
-      created_at:   r.audio_created_at,
-    }));
-
-    return NextResponse.json({
-      // Top-level audios array (multi-audio).
-      audios,
-      // Convenience: total duration for the family page header.
-      total_duration_sec: audios.reduce((sum, a) => sum + (a.duration_sec || 0), 0),
-      audio_count:        audios.length,
-      fragment: {
-        id:              head.fragment_id,
-        title:           head.fragment_title,
-        subtitle:        head.fragment_subtitle,
-        content:         head.fragment_content,
-        language:        head.fragment_language,
-        question_prompt: questionPrompt,
-      },
-      sender: {
-        // Only name — never email, never user_id beyond what's needed
-        // for routing. The /listen page is anonymous; we don't want
-        // QR scans to leak account identifiers.
-        name: head.user_name || null,
-      },
-    });
+    return NextResponse.json(
+      { error: 'not found or not public' },
+      { status: 404 }
+    );
   } catch (e) {
     console.error('[GET /api/listen/:token]', e.message);
     return NextResponse.json(
