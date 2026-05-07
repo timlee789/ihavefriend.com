@@ -75,8 +75,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* room for the fixed action bar at the bottom */
-  padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px));
+  /* Room for the fixed action bar (primary + secondary row + safe-area). */
+  padding: 12px 12px calc(150px + env(safe-area-inset-bottom, 0px));
 }
 
 .iframeWrap {
@@ -140,6 +140,9 @@
 }
 
 /* ── Action bar (sticky bottom) ─────────────────────────────── */
+/* 🔥 R2 (2026-05-07) — 큰 "인쇄 신청" primary on top, secondary
+   row (편집 / 다운로드) below. body bottom-padding is bumped to
+   match (~140px) so PDF iframe never sits behind the bar. */
 .actionBar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
@@ -150,15 +153,41 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btnPrintRequest {
+  width: 100%;
+  min-height: 60px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.34);
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btnPrintRequest:hover:not(:disabled) { opacity: 0.94; }
+.btnPrintRequest:active { transform: scale(0.99); }
+.btnPrintRequest:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.actionsSecondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
 .btn {
   flex: 1;
-  min-height: 52px;
+  min-height: 48px;
   border: none;
-  border-radius: 14px;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -181,7 +210,7 @@
 /* ── Toast ──────────────────────────────────────────────────── */
 .toast {
   position: fixed;
-  bottom: 110px;
+  bottom: 160px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.92);

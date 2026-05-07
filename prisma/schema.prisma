@@ -936,3 +936,44 @@ model SessionFeedback {
   @@index([createdAt])
   @@map("session_feedback")
 }
+
+// 🔥 R2 (2026-05-07) — Print Request (인쇄 신청).
+// User → /preview → "📦 인쇄 신청하기" → row 생성 + Tim 이메일 알림.
+// User / user_books 와의 relation 은 베타엔 인덱스만 (admin UI 추가 시
+// relation 으로 승격). 자세한 strategy:
+//   STRATEGY-photobook-r2-print-request-2026-05-07.md
+model PrintRequest {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        Int    @map("user_id")
+  userBookId    String @map("user_book_id") @db.Uuid
+
+  recipientName       String  @map("recipient_name") @db.Text
+  recipientPhone      String? @map("recipient_phone") @db.Text
+  shippingAddress     String  @map("shipping_address") @db.Text
+  shippingCity        String? @map("shipping_city") @db.Text
+  shippingState       String? @map("shipping_state") @db.Text
+  shippingPostal      String? @map("shipping_postal") @db.Text
+  shippingCountry     String  @default("US") @map("shipping_country") @db.Text
+  messageToRecipient  String? @map("message_to_recipient") @db.Text
+
+  status              String  @default("submitted") @db.Text
+
+  vendor              String?  @db.Text
+  vendorOrderId       String?  @map("vendor_order_id") @db.Text
+  costUsd             Decimal? @map("cost_usd") @db.Decimal(10, 2)
+  timNotes            String?  @map("tim_notes") @db.Text
+
+  pdfSizeBytes        Int? @map("pdf_size_bytes")
+  pageCount           Int? @map("page_count")
+
+  emailSentToTim      Boolean   @default(false) @map("email_sent_to_tim")
+  emailSentAt         DateTime? @map("email_sent_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now())             @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt  @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userBookId])
+  @@map("print_requests")
+}

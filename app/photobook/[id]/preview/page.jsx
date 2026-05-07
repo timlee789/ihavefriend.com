@@ -25,6 +25,7 @@ import {
   authFetch,
   getToken,
 } from '@/components/photobook/photobookFetch';
+import PrintRequestModal from '@/components/photobook/PrintRequestModal';
 import s from './page.module.css';
 
 export default function PhotobookPreviewPage() {
@@ -33,11 +34,13 @@ export default function PhotobookPreviewPage() {
   const photobookId = params?.id;
 
   const [book, setBook]               = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);  // for modal prefill
   const [pdfUrl, setPdfUrl]           = useState('');
   const [generating, setGenerating]   = useState(true);
   const [error, setError]             = useState('');
   const [downloading, setDownloading] = useState(false);
   const [toast, setToast]             = useState('');
+  const [printModalOpen, setPrintModalOpen] = useState(false);
 
   // ── Auth gate (matches the rest of the photobook flow) ──
   useEffect(() => {
@@ -59,6 +62,17 @@ export default function PhotobookPreviewPage() {
       });
     return () => { cancelled = true; };
   }, [photobookId]);
+
+  // ── Current user (for PrintRequestModal prefill) ──
+  // Fire-and-forget: failure just leaves the modal blank, user types in.
+  useEffect(() => {
+    let cancelled = false;
+    authFetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(d => { if (!cancelled && d) setCurrentUser(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // ── PDF Blob URL (the iframe source) ──
   // We do this once on mount; if the user wants a regenerated PDF
@@ -192,22 +206,48 @@ export default function PhotobookPreviewPage() {
       </div>
 
       <div className={s.actionBar}>
+        {/* 🔥 R2 (2026-05-07) — primary action is now "인쇄 신청".
+            Download is moved into the secondary row so the senior eye
+            lands on the high-value action first. */}
         <button
           type="button"
-          className={`${s.btn} ${s.btnSecondary}`}
-          onClick={handleEditAgain}
+          className={s.btnPrintRequest}
+          onClick={() => setPrintModalOpen(true)}
+          disabled={generating || !!error}
         >
-          ✏️ 다시 편집
+          📦 인쇄 신청하기
         </button>
-        <button
-          type="button"
-          className={`${s.btn} ${s.btnPrimary}`}
-          onClick={handleDownload}
-          disabled={generating || !!error || downloading}
-        >
-          {downloading ? '준비 중…' : '📥 PDF 다운로드'}
-        </button>
+        <div className={s.actionsSecondary}>
+          <button
+            type="button"
+            className={`${s.btn} ${s.btnSecondary}`}
+            onClick={handleEditAgain}
+          >
+            ✏️ 다시 편집
+          </button>
+          <button
+            type="button"
+            className={`${s.btn} ${s.btnSecondary}`}
+            onClick={handleDownload}
+            disabled={generating || !!error || downloading}
+          >
+            {downloading ? '준비 중…' : '📥 PDF 다운로드'}
+          </button>
+        </div>
       </div>
+
+      {printModalOpen && (
+        <PrintRequestModal
+          photobookId={photobookId}
+          photobook={book}
+          currentUser={currentUser}
+          onClose={() => setPrintModalOpen(false)}
+          onSuccess={() => {
+            setPrintModalOpen(false);
+            router.push('/photobook');
+          }}
+        />
+      )}
 
       {toast && <div className={s.toast}>{toast}</div>}
     </div>
