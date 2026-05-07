@@ -31,14 +31,67 @@ const MAX_RAW_SIZE = 10 * 1024 * 1024;
 const TARGET_MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.80;
 
+// 🔥 R0 (2026-05-06) — original (print-quality) preset.
+// 4K (4096px longest edge) is the practical print ceiling for A5/A4
+// photobooks at 300 DPI. Larger phones (12MP+) get downsampled to 4K
+// to bound R2 storage; smaller-than-4K originals keep their native
+// resolution (no upscale).
+const ORIGINAL_MAX_DIMENSION = 4096;
+const ORIGINAL_JPEG_QUALITY = 0.95;
+
 function looksLikeHeic(file) {
   const t = (file.type || '').toLowerCase();
   const ext = (file.name || '').toLowerCase().split('.').pop();
   return t.includes('heic') || t.includes('heif') || ext === 'heic' || ext === 'heif';
 }
 
-/** Browser-side resize + recompress to JPEG. */
+/**
+ * Browser-side resize + recompress to JPEG.
+ *
+ * Used for the DISPLAY copy (1920px JPEG 80%) — small enough to render
+ * fast in the editor, big enough to look sharp on retina.
+ */
 async function compressImage(file) {
+  return _processImage(file, {
+    maxDim: TARGET_MAX_DIMENSION,
+    quality: JPEG_QUALITY,
+    suffix: '',
+  });
+}
+
+/**
+ * 🔥 R0 (2026-05-06) — Prepare a high-res JPEG copy for the print PDF.
+ *
+ * Differs from compressImage() in three ways:
+ *   1. Longest edge ≤ 4096px (vs 1920px) — print-quality at 300 DPI for
+ *      A4/A5 size, but still bounded so a 48MP phone shot doesn't
+ *      balloon R2 storage.
+ *   2. JPEG quality 95% (vs 80%) — print needs minimal compression.
+ *   3. HEIC → JPEG via canvas (browsers decode HEIC, then we encode
+ *      JPEG) so the printed file is a format every print service
+ *      accepts.
+ *
+ * EXIF rotation: drawImage() applies the metadata orientation to the
+ * canvas pixels. The output JPEG carries no orientation tag, so PDF
+ * libraries that don't read EXIF (most of them) still render upright.
+ *
+ * Smaller-than-4K originals keep their native resolution — never
+ * upscale.
+ */
+async function prepareOriginalImage(file) {
+  return _processImage(file, {
+    maxDim: ORIGINAL_MAX_DIMENSION,
+    quality: ORIGINAL_JPEG_QUALITY,
+    suffix: '_orig',
+  });
+}
+
+/**
+ * Shared canvas resize + JPEG re-encode pipeline used by both
+ * compressImage() and prepareOriginalImage(). Pulled out so the two
+ * paths can't drift on dimension/EXIF/blob handling.
+ */
+function _processImage(file, { maxDim, quality, suffix }) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
@@ -46,8 +99,9 @@ async function compressImage(file) {
     img.onload = () => {
       let { width, height } = img;
       const longest = Math.max(width, height);
-      if (longest > TARGET_MAX_DIMENSION) {
-        const scale = TARGET_MAX_DIMENSION / longest;
+      // Only downsample if larger than the cap — never upscale.
+      if (longest > maxDim) {
+        const scale = maxDim / longest;
         width = Math.round(width * scale);
         height = Math.round(height * scale);
       }
@@ -57,20 +111,20 @@ async function compressImage(file) {
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       canvas.toBlob(
         (blob) => {
-          if (!blob) return reject(new Error('canvas blob failed'));
-          const compressed = new File(
+          if (!blob) return reject(new Error(`canvas blob (${suffix || 'compressed'}) failed`));
+          const out = new File(
             [blob],
-            (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg',
+            (file.name || 'photo').replace(/\.[^.]+$/, '') + suffix + '.jpg',
             { type: 'image/jpeg' }
           );
-          resolve({ file: compressed, width, height });
+          resolve({ file: out, width, height });
         },
         'image/jpeg',
-        JPEG_QUALITY
+        quality
       );
     };
-    img.onerror = () => reject(new Error('image load failed'));
-    reader.onerror = () => reject(new Error('file read failed'));
+    img.onerror = () => reject(new Error(`image load failed (${suffix || 'compressed'})`));
+    reader.onerror = () => reject(new Error(`file read failed (${suffix || 'compressed'})`));
     reader.readAsDataURL(file);
   });
 }
@@ -106,9 +160,26 @@ export default function PhotoSlot({
 
     setUploading(true);
     try {
-      const { file: compressed, width, height } = await compressImage(file);
+      // 🔥 R0 — 압축본 (display) + 원본 (print) 병렬 생성.
+      //   원본 변환이 실패해도 압축본만으로 진행 (best-effort) — 서버
+      //   라우트도 fileOriginal 누락을 정상 케이스로 처리한다.
+      const [compressed, original] = await Promise.all([
+        compressImage(file),
+        prepareOriginalImage(file).catch((e) => {
+          console.warn('[PhotoSlot] original prep failed, falling back to compressed-only:', e?.message);
+          return null;
+        }),
+      ]);
+
       const uploaded = await uploadPagePhoto(
-        photobookId, pageId, compressed, { width, height }
+        photobookId, pageId, compressed.file,
+        {
+          width: compressed.width,
+          height: compressed.height,
+          original:       original?.file   || null,
+          originalWidth:  original?.width  || null,
+          originalHeight: original?.height || null,
+        }
       );
       onChange?.(uploaded);
     } catch (e) {

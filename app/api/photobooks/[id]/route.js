@@ -79,9 +79,19 @@ export async function GET(request, { params }) {
     let photos = [];
     let audios = [];
     if (pageIds.length > 0) {
+      // 🔥 R0 (2026-05-06) — 원본 사진 컬럼들도 응답에 포함. PDF 생성기
+      //   (R1) 가 r2_key_original 을 직접 R2 에서 받기 위함. 클라이언트
+      //   display 는 여전히 /api/photobook-photo/[id] 프록시 사용 (압축본).
+      //   has_original 은 클라가 "고화질 보존됨" 표시용으로 쓸 수 있는
+      //   편의 boolean (r2_key_original NOT NULL 와 동일).
       const photosQ = await db.query(
-        `SELECT id, page_id, r2_key, r2_url, width, height,
-                size_bytes, mime_type, created_at
+        `SELECT id, page_id,
+                r2_key, r2_url, width, height, size_bytes, mime_type,
+                r2_key_original, r2_url_original,
+                original_width, original_height,
+                original_size_bytes, original_mime_type,
+                (r2_key_original IS NOT NULL) AS has_original,
+                created_at
            FROM photobook_page_photos
           WHERE page_id = ANY($1::uuid[])`,
         [pageIds]
@@ -211,8 +221,9 @@ export async function DELETE(request, { params }) {
     }
 
     // Collect R2 keys before cascade delete.
+    // 🔥 R0 — 원본 키도 같이 수집 (legacy 는 r2_key_original = NULL).
     const photoKeysQ = await db.query(
-      `SELECT pp.r2_key
+      `SELECT pp.r2_key, pp.r2_key_original
          FROM photobook_page_photos pp
          JOIN photobook_pages p ON p.id = pp.page_id
         WHERE p.user_book_id = $1`,
@@ -232,9 +243,12 @@ export async function DELETE(request, { params }) {
       [photobookId, user.id]
     );
 
-    // Best-effort R2 cleanup.
+    // Best-effort R2 cleanup. 사진은 압축본 + 원본 둘 다.
+    const photoKeys = photoKeysQ.rows.flatMap(r =>
+      [r.r2_key, r.r2_key_original].filter(Boolean)
+    );
     const allKeys = [
-      ...photoKeysQ.rows.map(r => ({ kind: 'photo', key: r.r2_key })),
+      ...photoKeys.map(key => ({ kind: 'photo', key })),
       ...audioKeysQ.rows.map(r => ({ kind: 'audio', key: r.r2_key })),
     ];
     for (const item of allKeys) {
@@ -246,8 +260,15 @@ export async function DELETE(request, { params }) {
       }
     }
 
-    console.log(`[DELETE /api/photobooks/:id] id=${photobookId} user=${user.id} (R2 cleanup: ${allKeys.length} objects)`);
-    return NextResponse.json({ ok: true, deleted: { photos: photoKeysQ.rows.length, audios: audioKeysQ.rows.length } });
+    console.log(`[DELETE /api/photobooks/:id] id=${photobookId} user=${user.id} (R2 cleanup: ${allKeys.length} objects, photos=${photoKeys.length} including originals, audios=${audioKeysQ.rows.length})`);
+    return NextResponse.json({
+      ok: true,
+      deleted: {
+        photos: photoKeys.length,           // 압축본 + 원본 합계
+        photo_rows: photoKeysQ.rows.length, // DB row 수
+        audios: audioKeysQ.rows.length,
+      },
+    });
   } catch (e) {
     console.error('[DELETE /api/photobooks/:id]', e?.message);
     return NextResponse.json({ error: 'failed to delete' }, { status: 500 });

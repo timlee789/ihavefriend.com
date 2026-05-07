@@ -109,12 +109,32 @@ export async function reorderPages(photobookId, orderedIds) {
   return res.json();
 }
 
-/** POST /api/photobooks/[id]/pages/[pageId]/photo (multipart 'file'). */
+/**
+ * POST /api/photobooks/[id]/pages/[pageId]/photo (multipart).
+ *
+ * 🔥 R0 (2026-05-06) — 압축본 + 원본 둘 다 보냄. dims.original 이 있으면
+ * fileOriginal 필드로 함께 multipart 에 추가. 서버는 best-effort 처리.
+ *
+ * @param {Object} dims    Optional dimensions + original blob.
+ * @param {number} dims.width
+ * @param {number} dims.height
+ * @param {Blob}   dims.original         원본 JPEG (4096px, EXIF 회전 적용됨)
+ * @param {number} dims.originalWidth
+ * @param {number} dims.originalHeight
+ */
 export async function uploadPagePhoto(photobookId, pageId, file, dims = {}) {
   const fd = new FormData();
   fd.append('file', file, file.name || 'photo.jpg');
   if (dims.width)  fd.append('width',  String(dims.width));
   if (dims.height) fd.append('height', String(dims.height));
+
+  // 🔥 R0 — 원본도 함께 (있으면). 없으면 서버에서 압축본만 처리.
+  if (dims.original) {
+    fd.append('fileOriginal', dims.original, dims.original.name || 'photo_orig.jpg');
+    if (dims.originalWidth)  fd.append('originalWidth',  String(dims.originalWidth));
+    if (dims.originalHeight) fd.append('originalHeight', String(dims.originalHeight));
+  }
+
   const res = await authFetchMultipart(
     `/api/photobooks/${photobookId}/pages/${pageId}/photo`,
     fd

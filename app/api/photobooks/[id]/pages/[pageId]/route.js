@@ -137,8 +137,9 @@ export async function DELETE(request, { params }) {
     }
 
     // Collect R2 keys before cascade delete.
+    // 🔥 R0 — 사진은 압축본 + 원본 둘 다 (legacy 는 r2_key_original NULL).
     const photoQ = await db.query(
-      `SELECT r2_key FROM photobook_page_photos WHERE page_id = $1`,
+      `SELECT r2_key, r2_key_original FROM photobook_page_photos WHERE page_id = $1`,
       [pageId]
     );
     const audioQ = await db.query(
@@ -150,9 +151,12 @@ export async function DELETE(request, { params }) {
     await db.query(`DELETE FROM photobook_pages WHERE id = $1`, [pageId]);
 
     // Best-effort R2 cleanup.
-    for (const r of photoQ.rows) {
-      try { await deletePhoto(r.r2_key); }
-      catch (e) { console.warn(`[DELETE page] R2 photo cleanup failed (${r.r2_key}):`, e?.message); }
+    const photoKeys = photoQ.rows.flatMap(r =>
+      [r.r2_key, r.r2_key_original].filter(Boolean)
+    );
+    for (const key of photoKeys) {
+      try { await deletePhoto(key); }
+      catch (e) { console.warn(`[DELETE page] R2 photo cleanup failed (${key}):`, e?.message); }
     }
     for (const r of audioQ.rows) {
       try { await deleteAudio(r.r2_key); }
@@ -165,7 +169,7 @@ export async function DELETE(request, { params }) {
       [photobookId]
     );
 
-    console.log(`[DELETE /api/photobooks/${photobookId}/pages/${pageId}] page=${page.page_number} (R2: ${photoQ.rows.length} photos, ${audioQ.rows.length} audios)`);
+    console.log(`[DELETE /api/photobooks/${photobookId}/pages/${pageId}] page=${page.page_number} (R2: ${photoKeys.length} photo keys [compressed+original], ${audioQ.rows.length} audios)`);
 
     return NextResponse.json({ ok: true });
   } catch (e) {
