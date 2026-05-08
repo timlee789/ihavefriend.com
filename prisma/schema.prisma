@@ -184,7 +184,8 @@ model User {
   sessionFeedbacks SessionFeedback[]
   userSetting      UserSetting?
   apiUsageLogs     ApiUsageLog[]
-  fragmentAudios   FragmentAudio[]   // 🆕 2026-05-05: Voice QR System
+  fragmentAudios   FragmentAudio[] // 🆕 2026-05-05: Voice QR System
+  userBlueprints   UserBlueprint[] // 🆕 2026-05-08: Architect Bot
 }
 
 model UserLimit {
@@ -314,16 +315,21 @@ model ChatSession {
   // Helps separate "session ended cleanly" from "session was patched together
   // through transient drops" when reading STT quality telemetry later.
   reconnectCount       Int              @default(0) @map("reconnect_count")
+  // 🆕 2026-05-08 (Architect Bot) — Studio 세션이 어느 user_question 의
+  // 답변인지. NULL = 일반 chat (Architect blueprint 외 흐름).
+  userQuestionId       String?          @map("user_question_id") @db.Uuid
   createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userQuestion     UserQuestion?     @relation(fields: [userQuestionId], references: [id], onDelete: SetNull)
   emotionTurns     EmotionTurn[]
   emotionSessions  EmotionSession[]
   sessionFeedbacks SessionFeedback[]
 
   @@index([userId])
   @@index([userId, startedAt(sort: Desc)])
+  @@index([userQuestionId])
   @@map("chat_sessions")
 }
 
@@ -583,6 +589,10 @@ model StoryFragment {
   parentFragmentId String? @map("parent_fragment_id") @db.Uuid
   threadOrder      Int?    @map("thread_order") @db.SmallInt
 
+  // 🆕 2026-05-08 (Architect Bot) — Fragment 가 어느 user_question 의
+  // 답변인지. NULL = 자유 작성 fragment (blueprint 밖).
+  userQuestionId String? @map("user_question_id") @db.Uuid
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -594,7 +604,8 @@ model StoryFragment {
   relationshipsTo     StoryRelationship[]  @relation("rel_to")
   parent              StoryFragment?       @relation("fragment_thread", fields: [parentFragmentId], references: [id], onDelete: SetNull)
   continuations       StoryFragment[]      @relation("fragment_thread")
-  audio               FragmentAudio?       // 🆕 2026-05-05: Voice QR System (1:1, nullable)
+  audio               FragmentAudio? // 🆕 2026-05-05: Voice QR System (1:1, nullable)
+  userQuestion        UserQuestion?        @relation(fields: [userQuestionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt(sort: Desc)], map: "idx_fragments_date")
@@ -607,6 +618,7 @@ model StoryFragment {
   @@index([userId, truncated], map: "idx_fragments_truncated")
   @@index([userId, pipelineVersion], map: "idx_fragments_pipeline") // B 실험용 🆕
   @@index([parentFragmentId, threadOrder], map: "idx_fragment_thread") // 🆕 2026-04-25
+  @@index([userQuestionId])
   @@map("story_fragments")
 }
 
@@ -618,24 +630,24 @@ model StoryFragment {
 // ═══════════════════════════════════════════════════════════════
 
 model FragmentAudio {
-  id           String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  fragmentId   String  @unique @map("fragment_id") @db.Uuid
-  userId       Int     @map("user_id")
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fragmentId String @unique @map("fragment_id") @db.Uuid
+  userId     Int    @map("user_id")
 
   // R2 storage
-  r2Key        String  @map("r2_key") @db.Text
-  r2Bucket     String  @default("sayandkeep-audio") @map("r2_bucket") @db.Text
-  r2Url        String  @map("r2_url") @db.Text
-  durationSec  Int     @map("duration_sec")
-  sizeBytes    BigInt  @map("size_bytes")
-  mimeType     String  @default("audio/webm") @map("mime_type") @db.Text
+  r2Key       String @map("r2_key") @db.Text
+  r2Bucket    String @default("sayandkeep-audio") @map("r2_bucket") @db.Text
+  r2Url       String @map("r2_url") @db.Text
+  durationSec Int    @map("duration_sec")
+  sizeBytes   BigInt @map("size_bytes")
+  mimeType    String @default("audio/webm") @map("mime_type") @db.Text
 
   // Whisper transcript (음성 검색용 미래 활용)
-  whisperText  String? @map("whisper_text") @db.Text
+  whisperText String? @map("whisper_text") @db.Text
 
   // QR 공유 (Tim 결정 5-A: 기본 ON)
-  publicToken  String  @unique @map("public_token") @db.Text
-  isPublic     Boolean @default(true) @map("is_public")
+  publicToken String  @unique @map("public_token") @db.Text
+  isPublic    Boolean @default(true) @map("is_public")
 
   // Analytics
   playCount     Int       @default(0) @map("play_count")
@@ -937,40 +949,150 @@ model SessionFeedback {
   @@map("session_feedback")
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Architect Bot System (2026-05-08)
+// 사용자 청사진 만들기 — Tim 큐레이션 라이브러리 + 사용자 청사진
+// 참조: STRATEGY-architect-bot-final-2026-05-07.md
+//
+// 라이브러리 (chapter_library, question_library) = Tim 사전 큐레이션,
+//   영감 트리거 (정답 X). tags GIN 매칭 + category 보강 패턴.
+// 사용자 청사진 (user_blueprints) = 사용자별 1+, status 단계로 진행.
+//   user_chapters / user_questions = 라이브러리 참조 (source_*_id) 또는
+//   사용자가 직접 작성. 자유 변경 가능.
+// ═══════════════════════════════════════════════════════════════
+
+model ChapterLibrary {
+  id          String   @id @db.Text
+  title       String   @db.Text
+  description String?  @db.Text
+  language    String   @default("ko") @db.Text
+  category    String   @db.Text
+  tags        String[] @default([]) @db.Text
+  isGeneral   Boolean  @default(false) @map("is_general")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  userChapters UserChapter[]
+
+  @@index([tags], type: Gin, map: "idx_chapter_library_tags")
+  @@index([language, sortOrder], map: "idx_chapter_library_general")
+  @@index([language, category, sortOrder], map: "idx_chapter_library_language")
+  @@map("chapter_library")
+}
+
+model QuestionLibrary {
+  id           String   @id @db.Text
+  questionText String   @map("question_text") @db.Text
+  description  String?  @db.Text
+  language     String   @default("ko") @db.Text
+  category     String   @db.Text
+  tags         String[] @default([]) @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  userQuestions UserQuestion[]
+
+  @@index([tags], type: Gin, map: "idx_question_library_tags")
+  @@index([language, category], map: "idx_question_library_category")
+  @@map("question_library")
+}
+
+model UserBlueprint {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 Int      @map("user_id")
+  title                  String?  @db.Text
+  language               String   @default("ko") @db.Text
+  status                 String   @default("designing") @db.Text
+  maxChapters            Int      @default(7) @map("max_chapters")
+  maxQuestionsPerChapter Int      @default(5) @map("max_questions_per_chapter")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapters UserChapter[]
+
+  @@index([userId, status])
+  @@map("user_blueprints")
+}
+
+model UserChapter {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blueprintId     String   @map("blueprint_id") @db.Uuid
+  sourceChapterId String?  @map("source_chapter_id") @db.Text
+  chapterNumber   Int?     @map("chapter_number")
+  title           String   @db.Text
+  description     String?  @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  blueprint     UserBlueprint   @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  sourceChapter ChapterLibrary? @relation(fields: [sourceChapterId], references: [id], onDelete: SetNull)
+  questions     UserQuestion[]
+
+  @@index([blueprintId, sortOrder])
+  @@map("user_chapters")
+}
+
+model UserQuestion {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chapterId        String   @map("chapter_id") @db.Uuid
+  sourceQuestionId String?  @map("source_question_id") @db.Text
+  questionText     String   @map("question_text") @db.Text
+  description      String?  @db.Text
+  isActive         Boolean  @default(true) @map("is_active")
+  status           String   @default("pending") @db.Text
+  fragmentIds      String[] @default([]) @map("fragment_ids") @db.Uuid
+  sortOrder        Int      @default(0) @map("sort_order")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  chapter        UserChapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  sourceQuestion QuestionLibrary? @relation(fields: [sourceQuestionId], references: [id], onDelete: SetNull)
+  chatSessions   ChatSession[]
+  storyFragments StoryFragment[]
+
+  @@index([chapterId, sortOrder])
+  @@index([chapterId, status])
+  @@map("user_questions")
+}
+
 // 🔥 R2 (2026-05-07) — Print Request (인쇄 신청).
 // User → /preview → "📦 인쇄 신청하기" → row 생성 + Tim 이메일 알림.
 // User / user_books 와의 relation 은 베타엔 인덱스만 (admin UI 추가 시
 // relation 으로 승격). 자세한 strategy:
 //   STRATEGY-photobook-r2-print-request-2026-05-07.md
 model PrintRequest {
-  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        Int    @map("user_id")
-  userBookId    String @map("user_book_id") @db.Uuid
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     Int    @map("user_id")
+  userBookId String @map("user_book_id") @db.Uuid
 
-  recipientName       String  @map("recipient_name") @db.Text
-  recipientPhone      String? @map("recipient_phone") @db.Text
-  shippingAddress     String  @map("shipping_address") @db.Text
-  shippingCity        String? @map("shipping_city") @db.Text
-  shippingState       String? @map("shipping_state") @db.Text
-  shippingPostal      String? @map("shipping_postal") @db.Text
-  shippingCountry     String  @default("US") @map("shipping_country") @db.Text
-  messageToRecipient  String? @map("message_to_recipient") @db.Text
+  recipientName      String  @map("recipient_name") @db.Text
+  recipientPhone     String? @map("recipient_phone") @db.Text
+  shippingAddress    String  @map("shipping_address") @db.Text
+  shippingCity       String? @map("shipping_city") @db.Text
+  shippingState      String? @map("shipping_state") @db.Text
+  shippingPostal     String? @map("shipping_postal") @db.Text
+  shippingCountry    String  @default("US") @map("shipping_country") @db.Text
+  messageToRecipient String? @map("message_to_recipient") @db.Text
 
-  status              String  @default("submitted") @db.Text
+  status String @default("submitted") @db.Text
 
-  vendor              String?  @db.Text
-  vendorOrderId       String?  @map("vendor_order_id") @db.Text
-  costUsd             Decimal? @map("cost_usd") @db.Decimal(10, 2)
-  timNotes            String?  @map("tim_notes") @db.Text
+  vendor        String?  @db.Text
+  vendorOrderId String?  @map("vendor_order_id") @db.Text
+  costUsd       Decimal? @map("cost_usd") @db.Decimal(10, 2)
+  timNotes      String?  @map("tim_notes") @db.Text
 
-  pdfSizeBytes        Int? @map("pdf_size_bytes")
-  pageCount           Int? @map("page_count")
+  pdfSizeBytes Int? @map("pdf_size_bytes")
+  pageCount    Int? @map("page_count")
 
-  emailSentToTim      Boolean   @default(false) @map("email_sent_to_tim")
-  emailSentAt         DateTime? @map("email_sent_at") @db.Timestamptz(6)
+  emailSentToTim Boolean   @default(false) @map("email_sent_to_tim")
+  emailSentAt    DateTime? @map("email_sent_at") @db.Timestamptz(6)
 
-  createdAt DateTime @default(now())             @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt  @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
