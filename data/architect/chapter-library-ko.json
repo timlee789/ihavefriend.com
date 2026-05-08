@@ -1,0 +1,426 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "language": "ko",
+    "created": "2026-05-07",
+    "description": "SayAndKeep Architect Bot 의 챕터 라이브러리. 영감 트리거용. Tim 의 admin UI + 사용자 UI 에서 추가/수정/삭제 가능.",
+    "total_count": 45,
+    "general_count": 7,
+    "diversity_count": 38
+  },
+  "chapters": [
+    {
+      "id": "ch-001",
+      "title": "어린 시절",
+      "description": "어렸을 때의 기억과 추억",
+      "category": "childhood",
+      "tags": ["어린", "어린시절", "가족", "추억", "시작"],
+      "is_general": true,
+      "sort_order": 1
+    },
+    {
+      "id": "ch-002",
+      "title": "청년기",
+      "description": "자라서 어른이 되어 가던 시기",
+      "category": "youth",
+      "tags": ["청년", "청춘", "도전", "꿈", "객지"],
+      "is_general": true,
+      "sort_order": 2
+    },
+    {
+      "id": "ch-003",
+      "title": "결혼과 가정",
+      "description": "배우자를 만나고 가정을 꾸린 이야기",
+      "category": "marriage",
+      "tags": ["결혼", "가정", "배우자", "사랑", "시작"],
+      "is_general": true,
+      "sort_order": 3
+    },
+    {
+      "id": "ch-004",
+      "title": "일과 사업",
+      "description": "일하며 살아온 시간",
+      "category": "work",
+      "tags": ["일", "직장", "사업", "노력", "보람"],
+      "is_general": true,
+      "sort_order": 4
+    },
+    {
+      "id": "ch-005",
+      "title": "자녀 키우기",
+      "description": "아이들을 키우고 함께한 시간",
+      "category": "children",
+      "tags": ["자녀", "아이", "가족", "양육", "사랑"],
+      "is_general": true,
+      "sort_order": 5
+    },
+    {
+      "id": "ch-006",
+      "title": "인생의 큰 결정들",
+      "description": "인생을 바꾼 선택의 순간들",
+      "category": "legacy",
+      "tags": ["결정", "선택", "전환점", "용기", "운명"],
+      "is_general": true,
+      "sort_order": 6
+    },
+    {
+      "id": "ch-007",
+      "title": "남기고 싶은 것",
+      "description": "가족과 후세에 전하고 싶은 이야기",
+      "category": "legacy",
+      "tags": ["유산", "가족", "자녀", "손주", "가풍"],
+      "is_general": true,
+      "sort_order": 7
+    },
+
+    {
+      "id": "ch-008",
+      "title": "시골에서의 어린 시절",
+      "description": "농촌, 들녘에서 자란 시절",
+      "category": "childhood",
+      "tags": ["시골", "농촌", "어린", "들녘", "부모"],
+      "is_general": false,
+      "sort_order": 8
+    },
+    {
+      "id": "ch-009",
+      "title": "도시에서의 어린 시절",
+      "description": "도시에서 자라며 본 풍경",
+      "category": "childhood",
+      "tags": ["도시", "어린", "학교", "골목", "동네"],
+      "is_general": false,
+      "sort_order": 9
+    },
+    {
+      "id": "ch-010",
+      "title": "부모님과 함께한 시간",
+      "description": "어머니, 아버지와의 추억",
+      "category": "childhood",
+      "tags": ["부모", "어머니", "아버지", "가족", "어린"],
+      "is_general": false,
+      "sort_order": 10
+    },
+    {
+      "id": "ch-011",
+      "title": "형제자매 이야기",
+      "description": "형, 누나, 동생들과의 시간",
+      "category": "childhood",
+      "tags": ["형제자매", "가족", "어린", "추억", "다툼"],
+      "is_general": false,
+      "sort_order": 11
+    },
+    {
+      "id": "ch-012",
+      "title": "학창 시절",
+      "description": "학교 다니던 시절의 이야기",
+      "category": "childhood",
+      "tags": ["학교", "학창시절", "친구", "선생님", "청소년"],
+      "is_general": false,
+      "sort_order": 12
+    },
+    {
+      "id": "ch-013",
+      "title": "어렵게 자란 어린 시절",
+      "description": "가난, 부모 잃음, 전쟁 후의 어린 시절",
+      "category": "childhood",
+      "tags": ["가난", "어려움", "어린", "한국전쟁", "결핍"],
+      "is_general": false,
+      "sort_order": 13
+    },
+    {
+      "id": "ch-014",
+      "title": "한국전쟁 후 어린 시절",
+      "description": "전쟁의 상처 속에서 자란 시절",
+      "category": "childhood",
+      "tags": ["한국전쟁", "어린", "결핍", "재건", "시대"],
+      "is_general": false,
+      "sort_order": 14
+    },
+
+    {
+      "id": "ch-015",
+      "title": "첫사랑과 청춘",
+      "description": "사랑을 처음 알게 된 시기",
+      "category": "youth",
+      "tags": ["사랑", "첫사랑", "청춘", "청년", "마음"],
+      "is_general": false,
+      "sort_order": 15
+    },
+    {
+      "id": "ch-016",
+      "title": "군대 / 첫 직장",
+      "description": "사회에 나가던 첫 발걸음",
+      "category": "youth",
+      "tags": ["군대", "첫직장", "사회", "청년", "시작"],
+      "is_general": false,
+      "sort_order": 16
+    },
+    {
+      "id": "ch-017",
+      "title": "서울로 / 객지 생활",
+      "description": "고향을 떠나 객지에서 보낸 시간",
+      "category": "youth",
+      "tags": ["객지", "서울", "떠남", "청년", "자취"],
+      "is_general": false,
+      "sort_order": 17
+    },
+    {
+      "id": "ch-018",
+      "title": "대학 시절",
+      "description": "대학에서 보낸 시간",
+      "category": "youth",
+      "tags": ["대학", "학창시절", "청년", "친구", "배움"],
+      "is_general": false,
+      "sort_order": 18
+    },
+    {
+      "id": "ch-019",
+      "title": "꿈을 찾던 시절",
+      "description": "무엇이 되고 싶어 헤매던 시간",
+      "category": "youth",
+      "tags": ["꿈", "청년", "방황", "도전", "미래"],
+      "is_general": false,
+      "sort_order": 19
+    },
+
+    {
+      "id": "ch-020",
+      "title": "신혼 시절",
+      "description": "결혼 후 처음 함께한 시간",
+      "category": "marriage",
+      "tags": ["신혼", "결혼", "시작", "부부", "가정"],
+      "is_general": false,
+      "sort_order": 20
+    },
+    {
+      "id": "ch-021",
+      "title": "자녀 출산과 첫 해",
+      "description": "아이가 태어나고 함께한 첫 해",
+      "category": "children",
+      "tags": ["자녀", "출산", "아이", "부모", "시작"],
+      "is_general": false,
+      "sort_order": 21
+    },
+    {
+      "id": "ch-022",
+      "title": "자녀 사춘기와 성장",
+      "description": "아이들이 자라며 겪은 시간",
+      "category": "children",
+      "tags": ["자녀", "사춘기", "성장", "갈등", "가족"],
+      "is_general": false,
+      "sort_order": 22
+    },
+    {
+      "id": "ch-023",
+      "title": "시집 / 처가 이야기",
+      "description": "시댁과 처가에서 있던 일",
+      "category": "marriage",
+      "tags": ["시집", "처가", "가족", "결혼", "며느리"],
+      "is_general": false,
+      "sort_order": 23
+    },
+    {
+      "id": "ch-024",
+      "title": "배우자 이야기",
+      "description": "함께 살아온 사람에 대한 기억",
+      "category": "marriage",
+      "tags": ["배우자", "결혼", "사랑", "동반자", "가정"],
+      "is_general": false,
+      "sort_order": 24
+    },
+
+    {
+      "id": "ch-025",
+      "title": "직장 / 사업의 도전",
+      "description": "일하며 만난 어려움과 성취",
+      "category": "work",
+      "tags": ["직장", "사업", "도전", "일", "성취"],
+      "is_general": false,
+      "sort_order": 25
+    },
+    {
+      "id": "ch-026",
+      "title": "인생의 큰 어려움",
+      "description": "가장 힘들었던 시기",
+      "category": "work",
+      "tags": ["어려움", "시련", "위기", "인생", "상처"],
+      "is_general": false,
+      "sort_order": 26
+    },
+    {
+      "id": "ch-027",
+      "title": "회복과 새 시작",
+      "description": "어려움을 이겨내고 다시 일어선 시간",
+      "category": "work",
+      "tags": ["회복", "새시작", "극복", "희망", "다시"],
+      "is_general": false,
+      "sort_order": 27
+    },
+    {
+      "id": "ch-028",
+      "title": "멘토와 동료",
+      "description": "일하며 만난 소중한 사람들",
+      "category": "work",
+      "tags": ["멘토", "동료", "일", "인연", "배움"],
+      "is_general": false,
+      "sort_order": 28
+    },
+    {
+      "id": "ch-029",
+      "title": "은퇴와 전환",
+      "description": "일을 떠나거나 새 일을 시작한 시기",
+      "category": "work",
+      "tags": ["은퇴", "전환", "일", "변화", "노년"],
+      "is_general": false,
+      "sort_order": 29
+    },
+
+    {
+      "id": "ch-030",
+      "title": "이민의 길",
+      "description": "새 땅으로 떠난 결정과 여정",
+      "category": "immigration",
+      "tags": ["이민", "떠남", "새땅", "미국", "결정"],
+      "is_general": false,
+      "sort_order": 30
+    },
+    {
+      "id": "ch-031",
+      "title": "두 고향 사이",
+      "description": "한국과 새 나라 사이의 마음",
+      "category": "immigration",
+      "tags": ["고향", "이민", "한국", "미국", "정체성"],
+      "is_general": false,
+      "sort_order": 31
+    },
+    {
+      "id": "ch-032",
+      "title": "미국 첫 해",
+      "description": "낯선 땅에서 보낸 첫 시간",
+      "category": "immigration",
+      "tags": ["미국", "이민", "첫해", "적응", "어려움"],
+      "is_general": false,
+      "sort_order": 32
+    },
+
+    {
+      "id": "ch-033",
+      "title": "신앙의 시작과 성장",
+      "description": "신앙을 만나고 자라온 시간",
+      "category": "faith",
+      "tags": ["신앙", "교회", "영성", "믿음", "성장"],
+      "is_general": false,
+      "sort_order": 33
+    },
+    {
+      "id": "ch-034",
+      "title": "봉사와 나눔",
+      "description": "다른 이들에게 베푼 시간",
+      "category": "faith",
+      "tags": ["봉사", "나눔", "사랑", "헌신", "공동체"],
+      "is_general": false,
+      "sort_order": 34
+    },
+    {
+      "id": "ch-035",
+      "title": "인생의 깨달음",
+      "description": "살아오며 깨달은 한 가지",
+      "category": "faith",
+      "tags": ["깨달음", "지혜", "인생", "성찰", "진리"],
+      "is_general": false,
+      "sort_order": 35
+    },
+    {
+      "id": "ch-036",
+      "title": "큰 병을 이겨낸 시간",
+      "description": "건강의 위기와 회복",
+      "category": "faith",
+      "tags": ["병", "건강", "회복", "위기", "감사"],
+      "is_general": false,
+      "sort_order": 36
+    },
+
+    {
+      "id": "ch-037",
+      "title": "우정과 친구들",
+      "description": "평생 함께한 친구 이야기",
+      "category": "relationships",
+      "tags": ["친구", "우정", "인연", "함께", "동행"],
+      "is_general": false,
+      "sort_order": 37
+    },
+    {
+      "id": "ch-038",
+      "title": "손주 이야기",
+      "description": "손주들과 함께한 시간",
+      "category": "relationships",
+      "tags": ["손주", "가족", "사랑", "노년", "기쁨"],
+      "is_general": false,
+      "sort_order": 38
+    },
+    {
+      "id": "ch-039",
+      "title": "여행과 모험",
+      "description": "떠났던 여행과 모험의 기억",
+      "category": "relationships",
+      "tags": ["여행", "모험", "풍경", "추억", "떠남"],
+      "is_general": false,
+      "sort_order": 39
+    },
+    {
+      "id": "ch-040",
+      "title": "취미와 즐거움",
+      "description": "좋아하던 것들의 이야기",
+      "category": "relationships",
+      "tags": ["취미", "즐거움", "일상", "사랑", "자유"],
+      "is_general": false,
+      "sort_order": 40
+    },
+    {
+      "id": "ch-041",
+      "title": "부모님 돌보던 시간",
+      "description": "늙어가는 부모를 돌본 시간",
+      "category": "relationships",
+      "tags": ["부모", "돌봄", "효도", "가족", "노년"],
+      "is_general": false,
+      "sort_order": 41
+    },
+
+    {
+      "id": "ch-042",
+      "title": "황혼의 깨달음",
+      "description": "인생을 돌아보며 알게 된 것",
+      "category": "legacy",
+      "tags": ["황혼", "노년", "깨달음", "성찰", "인생"],
+      "is_general": false,
+      "sort_order": 42
+    },
+    {
+      "id": "ch-043",
+      "title": "가족에게 전하는 말",
+      "description": "자녀와 손주에게 하고 싶은 이야기",
+      "category": "legacy",
+      "tags": ["가족", "유산", "자녀", "손주", "전함"],
+      "is_general": false,
+      "sort_order": 43
+    },
+    {
+      "id": "ch-044",
+      "title": "다시 산다면",
+      "description": "다시 시작한다면 하고 싶은 것",
+      "category": "legacy",
+      "tags": ["다시", "회상", "후회", "바람", "인생"],
+      "is_general": false,
+      "sort_order": 44
+    },
+    {
+      "id": "ch-045",
+      "title": "사별 후 새 시작",
+      "description": "배우자를 떠나보낸 후의 시간",
+      "category": "legacy",
+      "tags": ["사별", "새시작", "슬픔", "회복", "노년"],
+      "is_general": false,
+      "sort_order": 45
+    }
+  ]
+}
