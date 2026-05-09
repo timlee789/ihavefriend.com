@@ -1,0 +1,601 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "language": "ko",
+    "created": "2026-05-09",
+    "description": "SayAndKeep Architect Bot V2 의 시나리오 라이브러리. Tim 큐레이션. 사용자가 자기 인생과 비슷한 시나리오를 선택해서 자서전 시작. 각 시나리오는 book_template_definitions.default_structure 와 동일한 형식 — POST /api/book/start 에서 user_books.structure 로 복사됨.",
+    "format_reference": "scripts/seed-template-memoir-ko.js (ch{N}-q{N} ID + ko/en/es i18n)",
+    "design_principle": "Inspiration Spark — 사용자가 막막한 상태에서 비슷한 인생 시나리오를 보고 영감 받음. 채택 후 자기 식으로 자유 수정 (TextBox).",
+    "total_samples": 5
+  },
+  "samples": [
+    {
+      "id": "sample-001",
+      "display_label": "목차 샘플 1",
+      "language": "ko",
+      "sort_order": 1,
+      "is_active": true,
+      "_persona_note": "한국 시골 → 미국 이민 1세대. SayAndKeep 의 대표 페르소나 (시니어 한인, 이민 경험).",
+      "structure": {
+        "chapters": [
+          {
+            "id": "ch1",
+            "order": 1,
+            "title": { "ko": "고향에서의 어린 시절" },
+            "description": { "ko": "한국 시골에서 자란 어린 날의 풍경과 가족." },
+            "intro_prompt": { "ko": "어린 시절 시골에서의 기억을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch1-q1", "order": 1, "prompt": { "ko": "어머니에 대한 한 장면을 들려주세요." }, "hint": { "ko": "어머니의 모습, 말씀, 손길" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q2", "order": 2, "prompt": { "ko": "아버지에 대한 한 장면을 들려주세요." }, "hint": { "ko": "아버지의 모습, 말씀, 함께한 한 순간" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q3", "order": 3, "prompt": { "ko": "어렸을 때 살던 집과 동네 풍경을 들려주세요." }, "hint": { "ko": "집의 모습, 동네, 들녘" }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q4", "order": 4, "prompt": { "ko": "어렸을 때의 한 음식과 어머니의 손맛을 들려주세요." }, "hint": { "ko": "자주 먹던 음식, 그 맛, 그 시절" }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q5", "order": 5, "prompt": { "ko": "형제자매와의 어린 시절 한 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch2",
+            "order": 2,
+            "title": { "ko": "청년기와 도시 생활" },
+            "description": { "ko": "고향을 떠나 도시에서 보낸 청년의 시간." },
+            "intro_prompt": { "ko": "고향을 떠나 객지로 갔던 그 시절을 떠올려보세요." },
+            "questions": [
+              { "id": "ch2-q1", "order": 1, "prompt": { "ko": "처음 객지로 떠나던 날의 기억을 들려주세요." }, "hint": { "ko": "그날의 마음, 길, 풍경" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q2", "order": 2, "prompt": { "ko": "그 시절 자취방의 풍경과 일상을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q3", "order": 3, "prompt": { "ko": "첫 직장의 풍경과 함께한 동료를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q4", "order": 4, "prompt": { "ko": "그 시절 품었던 한 꿈, 한 바람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q5", "order": 5, "prompt": { "ko": "첫사랑의 기억이 있다면 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch3",
+            "order": 3,
+            "title": { "ko": "결혼과 신혼" },
+            "description": { "ko": "배우자를 만나고 가정을 시작한 이야기." },
+            "intro_prompt": { "ko": "배우자와의 만남부터 신혼 시절까지 들려주세요." },
+            "questions": [
+              { "id": "ch3-q1", "order": 1, "prompt": { "ko": "배우자와 처음 만난 이야기를 들려주세요." }, "hint": { "ko": "처음 인상, 그날의 상황" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q2", "order": 2, "prompt": { "ko": "결혼식 날의 한 장면을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q3", "order": 3, "prompt": { "ko": "신혼 시절의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q4", "order": 4, "prompt": { "ko": "시집 또는 처가에서 있었던 한 일을 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch3-q5", "order": 5, "prompt": { "ko": "배우자에게 감사한 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch4",
+            "order": 4,
+            "title": { "ko": "이민의 길" },
+            "description": { "ko": "한국을 떠나 미국으로 향한 그 결정과 여정." },
+            "intro_prompt": { "ko": "이민을 결심하던 그 순간부터 들려주세요." },
+            "questions": [
+              { "id": "ch4-q1", "order": 1, "prompt": { "ko": "이민을 결정하던 순간을 들려주세요." }, "hint": { "ko": "그 결정의 이유, 마음" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q2", "order": 2, "prompt": { "ko": "한국을 떠나던 날의 기억을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q3", "order": 3, "prompt": { "ko": "미국 첫 해의 한 풍경을 들려주세요." }, "hint": { "ko": "낯선 땅, 첫 집, 첫 사람" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q4", "order": 4, "prompt": { "ko": "미국 첫 해 가장 어려웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch5",
+            "order": 5,
+            "title": { "ko": "미국에서 자리 잡기" },
+            "description": { "ko": "낯선 땅에서 기반을 다지고 가정을 이룬 시간." },
+            "intro_prompt": { "ko": "미국에서 자리잡아 가던 그 시간들을 떠올려보세요." },
+            "questions": [
+              { "id": "ch5-q1", "order": 1, "prompt": { "ko": "미국에서 시작한 첫 일 또는 첫 사업을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q2", "order": 2, "prompt": { "ko": "미국에서 만난 한 소중한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q3", "order": 3, "prompt": { "ko": "미국에서의 한 큰 어려움과 어떻게 극복했는지 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q4", "order": 4, "prompt": { "ko": "첫 집을 마련했던 날을 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch5-q5", "order": 5, "prompt": { "ko": "교회 또는 한인 커뮤니티에서의 한 경험을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch6",
+            "order": 6,
+            "title": { "ko": "자녀 키우기" },
+            "description": { "ko": "두 문화 사이에서 자녀를 키운 시간." },
+            "intro_prompt": { "ko": "자녀들을 키우며 보낸 시간을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch6-q1", "order": 1, "prompt": { "ko": "첫째 아이가 태어난 날을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q2", "order": 2, "prompt": { "ko": "자녀가 어렸을 때의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q3", "order": 3, "prompt": { "ko": "두 문화 사이에서 자녀를 키우며 겪은 한 일화를 들려주세요." }, "hint": { "ko": "한국식 vs 미국식, 언어, 문화" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q4", "order": 4, "prompt": { "ko": "자녀가 자랑스러웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q5", "order": 5, "prompt": { "ko": "자녀에게 꼭 가르치고 싶었던 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch7",
+            "order": 7,
+            "title": { "ko": "두 고향 사이" },
+            "description": { "ko": "한국과 미국, 두 고향이 된 마음." },
+            "intro_prompt": { "ko": "두 나라가 모두 고향이 된 마음을 들려주세요." },
+            "questions": [
+              { "id": "ch7-q1", "order": 1, "prompt": { "ko": "한국이 가장 그리울 때를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q2", "order": 2, "prompt": { "ko": "오랜만에 한국을 다시 방문했을 때를 들려주세요." }, "estimated_minutes": 5, "is_optional": true },
+              { "id": "ch7-q3", "order": 3, "prompt": { "ko": "두 문화 사이에서 깨달은 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q4", "order": 4, "prompt": { "ko": "이민이 인생에 준 의미를 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch8",
+            "order": 8,
+            "title": { "ko": "남기고 싶은 것" },
+            "description": { "ko": "자녀와 후세에게 전하고 싶은 마음." },
+            "intro_prompt": { "ko": "마지막 챕터입니다. 남기고 싶은 마음을 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch8-q1", "order": 1, "prompt": { "ko": "자녀에게 꼭 하고 싶은 말을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q2", "order": 2, "prompt": { "ko": "손주에게 전하고 싶은 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch8-q3", "order": 3, "prompt": { "ko": "우리 가족만의 가풍이 있다면 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch8-q4", "order": 4, "prompt": { "ko": "인생에서 배운 가장 큰 교훈을 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sample-002",
+      "display_label": "목차 샘플 2",
+      "language": "ko",
+      "sort_order": 2,
+      "is_active": true,
+      "_persona_note": "도시 출신 + 신앙 중심 가정. 평범한 한국 시니어 (이민 X), 가족 + 교회 중심 인생.",
+      "structure": {
+        "chapters": [
+          {
+            "id": "ch1",
+            "order": 1,
+            "title": { "ko": "도시에서의 어린 시절" },
+            "description": { "ko": "도시에서 자란 어린 날의 풍경과 가족." },
+            "intro_prompt": { "ko": "어린 시절의 골목과 가족을 떠올려보세요." },
+            "questions": [
+              { "id": "ch1-q1", "order": 1, "prompt": { "ko": "어머니에 대한 한 장면을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q2", "order": 2, "prompt": { "ko": "아버지에 대한 한 장면을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q3", "order": 3, "prompt": { "ko": "어렸을 때 살던 동네의 풍경을 들려주세요." }, "hint": { "ko": "골목, 이웃, 학교 가는 길" }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q4", "order": 4, "prompt": { "ko": "어렸을 때 친구와의 한 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q5", "order": 5, "prompt": { "ko": "어렸을 때의 한 명절을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch2",
+            "order": 2,
+            "title": { "ko": "학창 시절" },
+            "description": { "ko": "학교, 친구, 선생님과의 시간." },
+            "intro_prompt": { "ko": "학창 시절의 풍경을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch2-q1", "order": 1, "prompt": { "ko": "학창 시절 가장 친했던 한 친구를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q2", "order": 2, "prompt": { "ko": "기억에 남는 한 선생님을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q3", "order": 3, "prompt": { "ko": "학창 시절 가장 즐거웠던 한 일을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q4", "order": 4, "prompt": { "ko": "학창 시절 어려웠던 한 시기를 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch2-q5", "order": 5, "prompt": { "ko": "학교에서 가장 자랑스러웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch3",
+            "order": 3,
+            "title": { "ko": "청년기" },
+            "description": { "ko": "어른이 되어가던 시기와 첫 직장." },
+            "intro_prompt": { "ko": "청년 시절의 시간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch3-q1", "order": 1, "prompt": { "ko": "첫 직장의 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q2", "order": 2, "prompt": { "ko": "그 시절 품었던 한 꿈을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q3", "order": 3, "prompt": { "ko": "청년 시절 좋아했던 한 가지를 들려주세요." }, "hint": { "ko": "음악, 책, 영화, 취미" }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q4", "order": 4, "prompt": { "ko": "첫사랑 또는 청춘의 한 마음을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch4",
+            "order": 4,
+            "title": { "ko": "결혼과 가정" },
+            "description": { "ko": "배우자를 만나고 가정을 이룬 이야기." },
+            "intro_prompt": { "ko": "결혼과 가정의 시작을 들려주세요." },
+            "questions": [
+              { "id": "ch4-q1", "order": 1, "prompt": { "ko": "배우자와 처음 만난 이야기를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q2", "order": 2, "prompt": { "ko": "결혼식 날의 한 장면을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q3", "order": 3, "prompt": { "ko": "신혼 시절의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q4", "order": 4, "prompt": { "ko": "결혼 생활의 한 어려움과 어떻게 극복했는지 들려주세요." }, "estimated_minutes": 5, "is_optional": true },
+              { "id": "ch4-q5", "order": 5, "prompt": { "ko": "배우자에게 감사한 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch5",
+            "order": 5,
+            "title": { "ko": "자녀 키우기" },
+            "description": { "ko": "아이들을 키우며 보낸 시간." },
+            "intro_prompt": { "ko": "자녀들과 함께한 시간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch5-q1", "order": 1, "prompt": { "ko": "첫째 아이가 태어난 날을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q2", "order": 2, "prompt": { "ko": "자녀와의 한 행복한 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q3", "order": 3, "prompt": { "ko": "자녀 사춘기의 한 어려움을 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch5-q4", "order": 4, "prompt": { "ko": "자녀가 자랑스러웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q5", "order": 5, "prompt": { "ko": "자녀에게 가르치고 싶었던 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch6",
+            "order": 6,
+            "title": { "ko": "신앙의 시작과 성장" },
+            "description": { "ko": "신앙을 만나고 자라온 시간." },
+            "intro_prompt": { "ko": "신앙이 인생의 중심이 되어간 그 시간을 들려주세요." },
+            "questions": [
+              { "id": "ch6-q1", "order": 1, "prompt": { "ko": "신앙을 처음 만난 그 시기를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q2", "order": 2, "prompt": { "ko": "교회에서 만난 한 소중한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q3", "order": 3, "prompt": { "ko": "어려운 시기에 신앙이 힘이 된 한 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q4", "order": 4, "prompt": { "ko": "기도하며 깊이 깨달은 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch7",
+            "order": 7,
+            "title": { "ko": "봉사와 나눔" },
+            "description": { "ko": "다른 이들에게 베푼 시간." },
+            "intro_prompt": { "ko": "봉사하며 만난 사람들과 나누었던 시간을 들려주세요." },
+            "questions": [
+              { "id": "ch7-q1", "order": 1, "prompt": { "ko": "처음 봉사를 시작하게 된 계기를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q2", "order": 2, "prompt": { "ko": "봉사하며 만난 한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q3", "order": 3, "prompt": { "ko": "베풀며 받은 한 가지 깨달음을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q4", "order": 4, "prompt": { "ko": "가장 보람 있었던 한 봉사의 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch8",
+            "order": 8,
+            "title": { "ko": "남기고 싶은 것" },
+            "description": { "ko": "자녀와 후세에 전하고 싶은 마음." },
+            "intro_prompt": { "ko": "마지막 챕터입니다. 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch8-q1", "order": 1, "prompt": { "ko": "자녀에게 꼭 하고 싶은 말을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q2", "order": 2, "prompt": { "ko": "후세에게 전하고 싶은 신앙의 한 가지를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q3", "order": 3, "prompt": { "ko": "인생에서 가장 감사한 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch8-q4", "order": 4, "prompt": { "ko": "사람들이 당신을 어떻게 기억하면 좋을지 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sample-003",
+      "display_label": "목차 샘플 3",
+      "language": "ko",
+      "sort_order": 3,
+      "is_active": true,
+      "_persona_note": "사업가의 도전과 회복. 자영업/사업가 시니어, 일에 헌신한 인생, 위기와 극복.",
+      "structure": {
+        "chapters": [
+          {
+            "id": "ch1",
+            "order": 1,
+            "title": { "ko": "어린 시절" },
+            "description": { "ko": "어렸을 때의 가족과 환경." },
+            "intro_prompt": { "ko": "어린 시절을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch1-q1", "order": 1, "prompt": { "ko": "어렸을 때 부모님의 한 모습을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q2", "order": 2, "prompt": { "ko": "어렸을 때의 가정 환경을 들려주세요." }, "hint": { "ko": "넉넉했는지, 어려웠는지, 분위기" }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q3", "order": 3, "prompt": { "ko": "어렸을 때 본 부모님의 일하시는 모습을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q4", "order": 4, "prompt": { "ko": "어렸을 때 배운 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch2",
+            "order": 2,
+            "title": { "ko": "청년기와 첫 직장" },
+            "description": { "ko": "사회로 첫 발걸음을 떼던 시간." },
+            "intro_prompt": { "ko": "청년 시절을 떠올려보세요." },
+            "questions": [
+              { "id": "ch2-q1", "order": 1, "prompt": { "ko": "첫 직장의 풍경과 그 시작을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q2", "order": 2, "prompt": { "ko": "그 시절 만난 한 멘토 또는 동료를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q3", "order": 3, "prompt": { "ko": "그 시절 품었던 한 꿈, 한 야망을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q4", "order": 4, "prompt": { "ko": "사회에 나가서 처음 부딪힌 한 어려움을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch3",
+            "order": 3,
+            "title": { "ko": "결혼과 가정" },
+            "description": { "ko": "배우자를 만나고 가정을 이룬 시간." },
+            "intro_prompt": { "ko": "결혼과 가정의 시작을 들려주세요." },
+            "questions": [
+              { "id": "ch3-q1", "order": 1, "prompt": { "ko": "배우자와 처음 만난 이야기를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q2", "order": 2, "prompt": { "ko": "결혼 후 가정의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q3", "order": 3, "prompt": { "ko": "사업과 가정 사이의 균형에 대해 들려주세요." }, "hint": { "ko": "바쁨, 미안함, 감사함" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q4", "order": 4, "prompt": { "ko": "배우자가 사업을 어떻게 도와주었는지 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch4",
+            "order": 4,
+            "title": { "ko": "사업의 시작" },
+            "description": { "ko": "내 일을 시작하기로 한 결단의 순간." },
+            "intro_prompt": { "ko": "내 사업을 시작하던 그 결정과 시작의 시간을 들려주세요." },
+            "questions": [
+              { "id": "ch4-q1", "order": 1, "prompt": { "ko": "사업을 시작하기로 결단한 그 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q2", "order": 2, "prompt": { "ko": "사업의 첫 해, 그 어려움과 보람을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q3", "order": 3, "prompt": { "ko": "처음으로 자랑스러웠던 한 성취를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q4", "order": 4, "prompt": { "ko": "그 시절 함께한 한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch5",
+            "order": 5,
+            "title": { "ko": "인생의 큰 어려움" },
+            "description": { "ko": "가장 힘들었던 시기와 그 한가운데." },
+            "intro_prompt": { "ko": "인생에서 가장 힘들었던 시기를 솔직하게 들려주세요." },
+            "questions": [
+              { "id": "ch5-q1", "order": 1, "prompt": { "ko": "가장 큰 위기는 무엇이었나요? 그 시작을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q2", "order": 2, "prompt": { "ko": "그 어려움의 한가운데에서 가장 힘들었던 한 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q3", "order": 3, "prompt": { "ko": "그 시기 가족이 어떻게 함께 견뎠는지 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch5-q4", "order": 4, "prompt": { "ko": "그 시기 자신에게 했던 다짐을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch6",
+            "order": 6,
+            "title": { "ko": "회복과 새 시작" },
+            "description": { "ko": "어려움을 이겨내고 다시 일어선 시간." },
+            "intro_prompt": { "ko": "다시 일어선 그 시간을 들려주세요." },
+            "questions": [
+              { "id": "ch6-q1", "order": 1, "prompt": { "ko": "회복의 첫 걸음이 되었던 한 사건을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q2", "order": 2, "prompt": { "ko": "그 시기 도와준 한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q3", "order": 3, "prompt": { "ko": "다시 일어선 후 가장 감사했던 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q4", "order": 4, "prompt": { "ko": "그 어려움이 가르쳐 준 한 가지를 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch7",
+            "order": 7,
+            "title": { "ko": "은퇴와 전환" },
+            "description": { "ko": "일을 정리하고 새 단계로 들어선 시간." },
+            "intro_prompt": { "ko": "은퇴 또는 전환의 순간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch7-q1", "order": 1, "prompt": { "ko": "은퇴를 결정한 그 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch7-q2", "order": 2, "prompt": { "ko": "일을 떠나며 가장 그리운 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q3", "order": 3, "prompt": { "ko": "은퇴 후의 일상을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q4", "order": 4, "prompt": { "ko": "일이 내 인생에 준 의미를 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch8",
+            "order": 8,
+            "title": { "ko": "남기고 싶은 것" },
+            "description": { "ko": "후세에 전하고 싶은 인생의 교훈." },
+            "intro_prompt": { "ko": "마지막 챕터입니다. 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch8-q1", "order": 1, "prompt": { "ko": "자녀와 후배에게 꼭 하고 싶은 말을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q2", "order": 2, "prompt": { "ko": "다시 시작한다면 다르게 할 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch8-q3", "order": 3, "prompt": { "ko": "사업과 인생에서 배운 가장 큰 교훈을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q4", "order": 4, "prompt": { "ko": "사람들이 당신을 어떻게 기억하면 좋을지 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch9",
+            "order": 9,
+            "title": { "ko": "황혼의 깨달음" },
+            "description": { "ko": "인생을 돌아보며 알게 된 것들." },
+            "intro_prompt": { "ko": "노년에 들어 알게 된 것들을 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch9-q1", "order": 1, "prompt": { "ko": "인생을 돌아보며 알게 된 한 가지 진리를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch9-q2", "order": 2, "prompt": { "ko": "젊을 때는 몰랐던, 지금에야 보이는 한 가지를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch9-q3", "order": 3, "prompt": { "ko": "지금 이 순간 가장 평안한 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sample-004",
+      "display_label": "목차 샘플 4",
+      "language": "ko",
+      "sort_order": 4,
+      "is_active": true,
+      "_persona_note": "교사/공무원/회사원 평생 + 가정 중심. 평범하지만 깊이 있는 인생, 가족 + 직장 + 일상의 행복.",
+      "structure": {
+        "chapters": [
+          {
+            "id": "ch1",
+            "order": 1,
+            "title": { "ko": "어린 시절" },
+            "description": { "ko": "어렸을 때의 가족과 추억." },
+            "intro_prompt": { "ko": "어린 시절을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch1-q1", "order": 1, "prompt": { "ko": "어머니에 대한 한 장면을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q2", "order": 2, "prompt": { "ko": "아버지에 대한 한 장면을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q3", "order": 3, "prompt": { "ko": "어렸을 때의 한 명절을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch1-q4", "order": 4, "prompt": { "ko": "형제자매와의 한 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch2",
+            "order": 2,
+            "title": { "ko": "학창 시절" },
+            "description": { "ko": "학교, 친구, 선생님과의 시간." },
+            "intro_prompt": { "ko": "학창 시절의 풍경을 떠올려보세요." },
+            "questions": [
+              { "id": "ch2-q1", "order": 1, "prompt": { "ko": "학창 시절 가장 친했던 한 친구를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q2", "order": 2, "prompt": { "ko": "기억에 남는 한 선생님을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q3", "order": 3, "prompt": { "ko": "학창 시절의 한 사건을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q4", "order": 4, "prompt": { "ko": "학교에서 가장 자랑스러웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch3",
+            "order": 3,
+            "title": { "ko": "첫 직장과 일하던 시절" },
+            "description": { "ko": "직장 생활의 시작과 일에서 보낸 시간." },
+            "intro_prompt": { "ko": "직장에서 보낸 시간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch3-q1", "order": 1, "prompt": { "ko": "첫 직장 첫 날의 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q2", "order": 2, "prompt": { "ko": "직장에서 만난 한 동료를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q3", "order": 3, "prompt": { "ko": "일에서 가장 보람 있었던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q4", "order": 4, "prompt": { "ko": "일에서 만난 한 어려움과 어떻게 견뎠는지 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch3-q5", "order": 5, "prompt": { "ko": "은퇴 또는 일을 떠나던 그 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch4",
+            "order": 4,
+            "title": { "ko": "결혼과 가정" },
+            "description": { "ko": "배우자를 만나고 가정을 이룬 이야기." },
+            "intro_prompt": { "ko": "결혼과 가정의 시작을 들려주세요." },
+            "questions": [
+              { "id": "ch4-q1", "order": 1, "prompt": { "ko": "배우자와 처음 만난 이야기를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q2", "order": 2, "prompt": { "ko": "결혼식 날의 한 장면을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q3", "order": 3, "prompt": { "ko": "신혼 시절의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q4", "order": 4, "prompt": { "ko": "함께 살아오며 깨달은 한 가지를 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch5",
+            "order": 5,
+            "title": { "ko": "자녀 키우기" },
+            "description": { "ko": "아이들과 함께한 시간." },
+            "intro_prompt": { "ko": "자녀들과 함께한 시간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch5-q1", "order": 1, "prompt": { "ko": "첫째 아이가 태어난 날을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q2", "order": 2, "prompt": { "ko": "자녀가 어렸을 때의 한 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q3", "order": 3, "prompt": { "ko": "자녀가 자랑스러웠던 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q4", "order": 4, "prompt": { "ko": "자녀에게 가르치고 싶었던 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q5", "order": 5, "prompt": { "ko": "손주에 대한 한 마음을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch6",
+            "order": 6,
+            "title": { "ko": "일상의 즐거움" },
+            "description": { "ko": "취미와 평범한 하루의 행복." },
+            "intro_prompt": { "ko": "일상에서 좋아했던 것들을 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch6-q1", "order": 1, "prompt": { "ko": "오랫동안 좋아한 한 취미를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q2", "order": 2, "prompt": { "ko": "함께 한 한 여행을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q3", "order": 3, "prompt": { "ko": "평생의 한 친구를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch6-q4", "order": 4, "prompt": { "ko": "평범하지만 가장 행복했던 하루의 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch7",
+            "order": 7,
+            "title": { "ko": "남기고 싶은 것" },
+            "description": { "ko": "가족과 후세에게 전하고 싶은 마음." },
+            "intro_prompt": { "ko": "마지막 챕터입니다. 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch7-q1", "order": 1, "prompt": { "ko": "자녀에게 꼭 하고 싶은 말을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch7-q2", "order": 2, "prompt": { "ko": "손주에게 전하고 싶은 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch7-q3", "order": 3, "prompt": { "ko": "인생에서 배운 가장 큰 교훈을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch7-q4", "order": 4, "prompt": { "ko": "가장 감사한 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sample-005",
+      "display_label": "목차 샘플 5",
+      "language": "ko",
+      "sort_order": 5,
+      "is_active": true,
+      "_persona_note": "이민 1.5세대 또는 2세대 부모. 어린 나이 이민 또는 미국 출생, 두 문화 사이의 정체성.",
+      "structure": {
+        "chapters": [
+          {
+            "id": "ch1",
+            "order": 1,
+            "title": { "ko": "한국에서의 첫 기억" },
+            "description": { "ko": "한국에서 보낸 어린 시절의 단편들." },
+            "intro_prompt": { "ko": "한국에서의 어린 기억을 천천히 떠올려보세요." },
+            "questions": [
+              { "id": "ch1-q1", "order": 1, "prompt": { "ko": "한국에서 살던 집과 동네의 한 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q2", "order": 2, "prompt": { "ko": "한국에서의 어머니 한 모습을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch1-q3", "order": 3, "prompt": { "ko": "한국에서의 명절이나 특별한 날의 풍경을 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch1-q4", "order": 4, "prompt": { "ko": "조부모님에 대한 한 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch2",
+            "order": 2,
+            "title": { "ko": "이민과 첫 미국" },
+            "description": { "ko": "미국으로 건너오던 그 시간." },
+            "intro_prompt": { "ko": "미국으로 건너오던 그 변화의 시간을 떠올려보세요." },
+            "questions": [
+              { "id": "ch2-q1", "order": 1, "prompt": { "ko": "미국으로 떠나던 날을 들려주세요." }, "hint": { "ko": "그날 분위기, 가족의 마음" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q2", "order": 2, "prompt": { "ko": "미국에 도착한 첫 날의 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch2-q3", "order": 3, "prompt": { "ko": "미국에서의 첫 집을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch2-q4", "order": 4, "prompt": { "ko": "낯선 땅에서 처음 친구가 된 한 사람을 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch3",
+            "order": 3,
+            "title": { "ko": "미국에서의 학창 시절" },
+            "description": { "ko": "두 언어, 두 문화 사이에서 자란 시간." },
+            "intro_prompt": { "ko": "미국에서의 학교 시절을 들려주세요." },
+            "questions": [
+              { "id": "ch3-q1", "order": 1, "prompt": { "ko": "미국 학교 첫 날의 기억을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q2", "order": 2, "prompt": { "ko": "영어가 서툴렀을 때의 한 일화를 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch3-q3", "order": 3, "prompt": { "ko": "두 문화 사이에서 정체성을 고민하던 한 순간을 들려주세요." }, "hint": { "ko": "한국인인지 미국인인지" }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch3-q4", "order": 4, "prompt": { "ko": "그 시절 한 친구와의 추억을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch4",
+            "order": 4,
+            "title": { "ko": "청년기와 일" },
+            "description": { "ko": "사회로 나가던 시간과 첫 직장." },
+            "intro_prompt": { "ko": "청년 시절을 떠올려보세요." },
+            "questions": [
+              { "id": "ch4-q1", "order": 1, "prompt": { "ko": "첫 직장의 풍경을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch4-q2", "order": 2, "prompt": { "ko": "그 시절 자랑스러웠던 한 성취를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch4-q3", "order": 3, "prompt": { "ko": "그 시절 품었던 한 꿈을 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch5",
+            "order": 5,
+            "title": { "ko": "결혼과 가정" },
+            "description": { "ko": "배우자를 만나고 가정을 이룬 이야기." },
+            "intro_prompt": { "ko": "결혼과 가정의 시작을 들려주세요." },
+            "questions": [
+              { "id": "ch5-q1", "order": 1, "prompt": { "ko": "배우자와 처음 만난 이야기를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch5-q2", "order": 2, "prompt": { "ko": "결혼식 날의 한 장면을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch5-q3", "order": 3, "prompt": { "ko": "두 문화의 결혼 — 한국식 / 미국식 사이의 한 일화를 들려주세요." }, "estimated_minutes": 4, "is_optional": true }
+            ]
+          },
+          {
+            "id": "ch6",
+            "order": 6,
+            "title": { "ko": "자녀와 정체성" },
+            "description": { "ko": "두 문화 사이에서 자녀를 키운 시간." },
+            "intro_prompt": { "ko": "자녀들에게 한국과 미국 두 문화를 어떻게 전했는지 들려주세요." },
+            "questions": [
+              { "id": "ch6-q1", "order": 1, "prompt": { "ko": "첫째 아이가 태어난 날을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q2", "order": 2, "prompt": { "ko": "자녀에게 한국말을 가르치며 있었던 한 일화를 들려주세요." }, "estimated_minutes": 4, "is_optional": true },
+              { "id": "ch6-q3", "order": 3, "prompt": { "ko": "자녀가 두 문화 사이에서 겪었던 한 일을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch6-q4", "order": 4, "prompt": { "ko": "자녀에게 꼭 전하고 싶었던 한국 문화의 한 가지를 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch7",
+            "order": 7,
+            "title": { "ko": "두 고향 사이" },
+            "description": { "ko": "한국과 미국 사이의 마음." },
+            "intro_prompt": { "ko": "두 나라가 모두 고향이 된 마음을 들려주세요." },
+            "questions": [
+              { "id": "ch7-q1", "order": 1, "prompt": { "ko": "오랜만에 한국을 다시 방문한 한 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": true },
+              { "id": "ch7-q2", "order": 2, "prompt": { "ko": "한국이 가장 그리울 때를 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q3", "order": 3, "prompt": { "ko": "미국이 진짜 집이라고 느낀 한 순간을 들려주세요." }, "estimated_minutes": 4, "is_optional": false },
+              { "id": "ch7-q4", "order": 4, "prompt": { "ko": "두 문화가 모두 자신의 일부라고 깨달은 한 순간을 들려주세요." }, "estimated_minutes": 5, "is_optional": false }
+            ]
+          },
+          {
+            "id": "ch8",
+            "order": 8,
+            "title": { "ko": "남기고 싶은 것" },
+            "description": { "ko": "자녀와 후세에게 전하고 싶은 마음." },
+            "intro_prompt": { "ko": "마지막 챕터입니다. 천천히 들려주세요." },
+            "questions": [
+              { "id": "ch8-q1", "order": 1, "prompt": { "ko": "자녀에게 꼭 하고 싶은 말을 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q2", "order": 2, "prompt": { "ko": "한국 뿌리에 대해 후세에게 전하고 싶은 한 가지를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q3", "order": 3, "prompt": { "ko": "이민의 길이 인생에 준 의미를 들려주세요." }, "estimated_minutes": 5, "is_optional": false },
+              { "id": "ch8-q4", "order": 4, "prompt": { "ko": "사람들이 당신을 어떻게 기억하면 좋을지 들려주세요." }, "estimated_minutes": 4, "is_optional": false }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
