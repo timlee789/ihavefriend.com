@@ -1,5 +1,10 @@
 /**
- * POST /api/admin/architect/samples
+ * GET  /api/admin/architect/samples — admin sample list (incl. is_active=false)
+ * POST /api/admin/architect/samples — Tim 시나리오 추가/수정
+ *
+ * 사용자용 GET /api/architect/samples 는 is_active=TRUE 만 반환.
+ * Admin 은 비활성화된 시나리오까지 모두 봐야 (재활성/삭제 결정),
+ * 그래서 별도 GET handler.
  *
  * Tim 시나리오 추가/수정 (admin only). idempotent — INSERT ON CONFLICT
  * (id) DO UPDATE. seed script (scripts/seed-blueprint-samples.js) 와
@@ -30,6 +35,50 @@
  */
 import { requireAdmin } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+
+// ─────────────────────────────────────────────────────────────────
+// GET — admin list (includes inactive)
+// ─────────────────────────────────────────────────────────────────
+// query: ?language=ko (optional, default returns all languages)
+// structure 컬럼은 list 화면에서 안 씀 — chapter_count 만.
+export async function GET(request) {
+  const { user, error } = await requireAdmin(request);
+  if (error) return error;
+
+  const url = new URL(request.url);
+  const language = url.searchParams.get('language'); // null = all languages
+
+  const db = createDb();
+  try {
+    const params = [];
+    let where = '';
+    if (language) {
+      params.push(language);
+      where = `WHERE language = $1`;
+    }
+    const result = await db.query(
+      `SELECT id, display_label, language, sort_order, is_active,
+              jsonb_array_length(structure->'chapters') AS chapter_count,
+              created_at, updated_at
+         FROM blueprint_samples
+         ${where}
+        ORDER BY sort_order ASC, id ASC`,
+      params
+    );
+
+    console.log(
+      `[GET /api/admin/architect/samples] admin=${user.id} → ${result.rows.length} samples`
+    );
+
+    return Response.json({ samples: result.rows });
+  } catch (e) {
+    console.error('[GET /api/admin/architect/samples]', e?.message);
+    return Response.json(
+      { error: 'failed to load samples', detail: e?.message },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request) {
   const { user, error } = await requireAdmin(request);

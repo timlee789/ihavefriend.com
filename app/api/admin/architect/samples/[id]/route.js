@@ -1,8 +1,13 @@
 /**
+ * GET    /api/admin/architect/samples/[id]  — full sample (incl. inactive)
  * PATCH  /api/admin/architect/samples/[id]  — partial update
  * DELETE /api/admin/architect/samples/[id]  — remove sample
  *
- * Admin only. PATCH 는 부분 업데이트 (display_label / is_active /
+ * Admin only. GET 은 사용자용 GET /api/architect/samples/[id] 와 달리
+ * is_active=FALSE 도 반환 — admin 이 비활성 시나리오를 재활성/편집 하려면
+ * 데이터를 봐야 하므로.
+ *
+ * PATCH 는 부분 업데이트 (display_label / is_active /
  * sort_order / structure 중 보낸 필드만), DELETE 는 row 제거.
  *
  * DELETE 시 user_books.source_sample_id 의 FK constraint 가 ON DELETE
@@ -13,6 +18,40 @@
  */
 import { requireAdmin } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+
+// ─────────────────────────────────────────────────────────────────
+// GET — full sample (admin sees inactive too)
+// ─────────────────────────────────────────────────────────────────
+export async function GET(request, { params }) {
+  const { user, error } = await requireAdmin(request);
+  if (error) return error;
+
+  const { id } = await params;
+  if (!id) {
+    return Response.json({ error: 'id required' }, { status: 400 });
+  }
+
+  const db = createDb();
+  try {
+    const result = await db.query(
+      `SELECT id, display_label, language, sort_order, is_active, structure,
+              created_at, updated_at
+         FROM blueprint_samples
+        WHERE id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return Response.json({ error: 'sample not found' }, { status: 404 });
+    }
+    return Response.json({ sample: result.rows[0] });
+  } catch (e) {
+    console.error(`[GET /api/admin/architect/samples/${id}]`, e?.message);
+    return Response.json(
+      { error: 'failed to load', detail: e?.message },
+      { status: 500 }
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────
 // PATCH — partial update

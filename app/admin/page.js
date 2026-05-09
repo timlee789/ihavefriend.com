@@ -88,12 +88,18 @@ export default function AdminPage() {
       </div>
 
       {/* Quick links */}
-      <div style={{ padding: '0 20px 4px' }}>
+      <div style={{ padding: '0 20px 4px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <button
           style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
           onClick={() => router.push('/admin/feedback')}
         >
           ⭐ View Feedback
+        </button>
+        <button
+          style={{ background: 'linear-gradient(135deg,#fb923c,#ea580c)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          onClick={() => router.push('/admin/architect/samples')}
+        >
+          📚 시나리오 관리
         </button>
       </div>
 
