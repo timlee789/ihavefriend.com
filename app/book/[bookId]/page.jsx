@@ -99,6 +99,16 @@ export default function BookOverviewPage() {
             (Tim's beta polish: skip the /book/select detour — that
             templates surface is now reached via the home grid). */}
         <button className={s.backBtn} onClick={() => router.push('/')}>{m.backToHome}</button>
+        {/* 🔥 Architect Bot V2 (2026-05-09) — ❓ icon opens the 6-step
+            overview at /architect?from=book (help mode: no resume guard,
+            CTA reads "← 돌아가기"). Tim 정책: 진행 중 책 사용자도 6단계
+            안내를 다시 볼 수 있어야 한다. */}
+        <button
+          className={s.helpBtn}
+          onClick={() => router.push('/architect?from=book')}
+          title="6단계 안내 다시 보기"
+          aria-label="6단계 안내 다시 보기"
+        >❓</button>
         {/* 🔥 Task 69 — localize the title via the template's i18n
             name when present, falling back to whatever was stored
             at start time. */}

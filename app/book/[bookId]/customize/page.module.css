@@ -7,7 +7,12 @@
   color: #fdfdfd;
 }
 
-.header { padding: 12px 0; }
+.header {
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .backBtn {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -17,6 +22,28 @@
   font-size: 14px;
   cursor: pointer;
   font-family: inherit;
+}
+
+/* 🔥 Architect Bot V2 (2026-05-09) — ❓ help icon (matches book overview page) */
+.helpBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.helpBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.30);
 }
 
 .title {

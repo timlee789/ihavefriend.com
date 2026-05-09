@@ -43,6 +43,45 @@
     border-color: rgba(21, 128, 61, 0.65);
   }
 }
+/* 🔥 Architect Bot V2 (2026-05-09) — ❓ help icon between back button
+   and title. Compact circular button so the header stays single-row at
+   narrow widths. Same dark/light treatment as backBtn so the chrome
+   reads as a single unit. */
+.helpBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 17px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.helpBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+@media (max-width: 380px) {
+  .helpBtn { width: 36px; height: 36px; font-size: 15px; }
+}
+@media (prefers-color-scheme: light) {
+  .helpBtn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.16);
+    color: #555;
+  }
+  .helpBtn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.28);
+  }
+}
+
 .title { font-size: 22px; font-weight: 700; color: #fb923c; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Stage 4 — entry to /book/[id]/customize */

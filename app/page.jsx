@@ -78,6 +78,10 @@ const HOME_MSGS = {
     // 🔥 Task 99 — Footer secondary links (기록하지 않기 + 샘플).
     footerDontSave     : '기록하지 않기',
     footerSamples      : '샘플 이야기',
+    // 🔥 Architect Bot V2 (2026-05-09) — essay 메인 그리드에서 일시 제거,
+    //   footer 작은 링크로 이동 (Tim 결정 Q3=c). 추후 출시 안내 alert.
+    footerEssays       : '수필집',
+    essayComingSoon    : '수필집은 추후 출시 예정입니다.',
   },
   EN: {
     greeting        : (name) => name ? `Hello, ${name}` : 'Hello',
@@ -134,6 +138,8 @@ const HOME_MSGS = {
     // 🔥 Task 99 — Footer secondary links.
     footerDontSave     : "Don't Save Mode",
     footerSamples      : 'Sample Stories',
+    footerEssays       : 'Essays',
+    essayComingSoon    : 'Essays coming soon.',
   },
   ES: {
     greeting        : (name) => name ? `Hola, ${name}` : 'Hola',
@@ -190,6 +196,8 @@ const HOME_MSGS = {
     // 🔥 Task 99 — Footer secondary links.
     footerDontSave     : 'Modo sin guardar',
     footerSamples      : 'Historias de ejemplo',
+    footerEssays       : 'Ensayos',
+    essayComingSoon    : 'Ensayos próximamente.',
   },
 };
 
@@ -293,20 +301,30 @@ export default function Home() {
   //   in flight, instead of always landing on /book/templates. The
   //   /api/book/list response already JOINs book_template_definitions
   //   and exposes `template_category` ('memoir' | 'essays' | …).
+  //
+  // 🔥 Architect Bot V2 (2026-05-09) — first-time memoir flow now goes to
+  //   /architect (6-step overview + 5 sample picker) instead of the
+  //   deprecated /book/templates. Resume path (memoirBook exists) keeps
+  //   landing on /book/[id]. Tim's policy: "유저는 하나의 자서전" —
+  //   /architect itself does a current-book guard and bounces resume
+  //   cases automatically; the memoir button just owns the entry choice.
   const memoirBook = activeBooks.find(b => b.template_category === 'memoir');
-  const essayBook  = activeBooks.find(b => b.template_category === 'essays');
+  // const essayBook  = activeBooks.find(b => b.template_category === 'essays');
+  // 🔥 V2 (2026-05-09) — essay button removed pending Tim's layout
+  //   decision; commenting out (not deleting) so we can flip it back
+  //   without git archaeology if needed.
 
   function onMemoirClick() {
-    if (!isLoggedIn) return requireLogin('/book/templates');
+    if (!isLoggedIn) return requireLogin('/architect');
     if (memoirBook) router.push(`/book/${memoirBook.id}`);
-    else router.push('/book/templates');
+    else router.push('/architect');
   }
 
-  function onEssayClick() {
-    if (!isLoggedIn) return requireLogin('/book/templates');
-    if (essayBook) router.push(`/book/${essayBook.id}`);
-    else router.push('/book/templates');
-  }
+  // function onEssayClick() {
+  //   if (!isLoggedIn) return requireLogin('/architect');
+  //   if (essayBook) router.push(`/book/${essayBook.id}`);
+  //   else router.push('/architect');
+  // }
 
   if (!authChecked) {
     return <div className={s.loadingScreen} />;
@@ -351,6 +369,11 @@ export default function Home() {
             <div className={s.gridLabel}>{msgs.homeBtnMemoir}</div>
           </button>
 
+          {/* 🔥 V2 (2026-05-09) — essay 버튼 일시 제거. Tim 의 layout
+              결정 대기 중. JSX 주석 처리해서 나중에 빠르게 되살릴 수
+              있게 둠. 빈 자리는 grid CSS 가 자동으로 메모리얼 자서전
+              버튼을 가운데 정렬 안 시키고 그대로 두므로 일시적으로
+              한 칸이 비게 보임 — Tim 이 보고 "이 자리에 X" 결정.
           <button
             className={`${s.gridBtn} ${s.gridBtnEssay}`}
             onClick={onEssayClick}
@@ -358,6 +381,7 @@ export default function Home() {
             <div className={s.gridIcon}>📓</div>
             <div className={s.gridLabel}>{msgs.homeBtnEssay}</div>
           </button>
+          */}
         </div>
 
         <div className={s.gridRow}>
@@ -399,6 +423,12 @@ export default function Home() {
           {/* 🔥 Task 99 — 샘플 이야기 (sharing-stories) */}
           <button className={s.footerTermsBtn} onClick={() => router.push('/sharing-stories')}>
             {msgs.footerSamples}
+          </button>
+          {/* 🔥 Architect Bot V2 (2026-05-09) — 수필집은 메인 그리드에서
+              제거됐고 footer 의 작은 링크로 옮김. 클릭 시 alert 로 추후
+              출시 예정임을 안내 (Tim 결정 Q3=c). */}
+          <button className={s.footerTermsBtn} onClick={() => alert(msgs.essayComingSoon)}>
+            {msgs.footerEssays}
           </button>
           {/* 🔥 Task 87 — Terms link. Public, no auth required. */}
           <button className={s.footerTermsBtn} onClick={() => router.push('/terms')}>
