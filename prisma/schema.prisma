@@ -185,7 +185,8 @@ model User {
   userSetting      UserSetting?
   apiUsageLogs     ApiUsageLog[]
   fragmentAudios   FragmentAudio[] // 🆕 2026-05-05: Voice QR System
-  userBlueprints   UserBlueprint[] // 🆕 2026-05-08: Architect Bot
+  // 🔥 V2 (2026-05-09) — userBlueprints relation removed; user_blueprints
+  // 시스템 폐기, user_books 에 편입. 참조: DECISION-deprecate-user-blueprints-2026-05-08.md
 }
 
 model UserLimit {
@@ -315,21 +316,16 @@ model ChatSession {
   // Helps separate "session ended cleanly" from "session was patched together
   // through transient drops" when reading STT quality telemetry later.
   reconnectCount       Int              @default(0) @map("reconnect_count")
-  // 🆕 2026-05-08 (Architect Bot) — Studio 세션이 어느 user_question 의
-  // 답변인지. NULL = 일반 chat (Architect blueprint 외 흐름).
-  userQuestionId       String?          @map("user_question_id") @db.Uuid
   createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6) // D 🆕
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userQuestion     UserQuestion?     @relation(fields: [userQuestionId], references: [id], onDelete: SetNull)
   emotionTurns     EmotionTurn[]
   emotionSessions  EmotionSession[]
   sessionFeedbacks SessionFeedback[]
 
   @@index([userId])
   @@index([userId, startedAt(sort: Desc)])
-  @@index([userQuestionId])
   @@map("chat_sessions")
 }
 
@@ -589,10 +585,6 @@ model StoryFragment {
   parentFragmentId String? @map("parent_fragment_id") @db.Uuid
   threadOrder      Int?    @map("thread_order") @db.SmallInt
 
-  // 🆕 2026-05-08 (Architect Bot) — Fragment 가 어느 user_question 의
-  // 답변인지. NULL = 자유 작성 fragment (blueprint 밖).
-  userQuestionId String? @map("user_question_id") @db.Uuid
-
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -605,7 +597,6 @@ model StoryFragment {
   parent              StoryFragment?       @relation("fragment_thread", fields: [parentFragmentId], references: [id], onDelete: SetNull)
   continuations       StoryFragment[]      @relation("fragment_thread")
   audio               FragmentAudio? // 🆕 2026-05-05: Voice QR System (1:1, nullable)
-  userQuestion        UserQuestion?        @relation(fields: [userQuestionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt(sort: Desc)], map: "idx_fragments_date")
@@ -618,7 +609,6 @@ model StoryFragment {
   @@index([userId, truncated], map: "idx_fragments_truncated")
   @@index([userId, pipelineVersion], map: "idx_fragments_pipeline") // B 실험용 🆕
   @@index([parentFragmentId, threadOrder], map: "idx_fragment_thread") // 🆕 2026-04-25
-  @@index([userQuestionId])
   @@map("story_fragments")
 }
 
@@ -950,15 +940,17 @@ model SessionFeedback {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Architect Bot System (2026-05-08)
-// 사용자 청사진 만들기 — Tim 큐레이션 라이브러리 + 사용자 청사진
-// 참조: STRATEGY-architect-bot-final-2026-05-07.md
+// Architect Bot — Inspiration Libraries (Phase 1a-1b, 보존)
+// chapter_library + question_library = Tim 사전 큐레이션, 영감 트리거.
+// /api/architect/* 4 endpoints (general-chapters, match-chapters,
+//   match-questions, extract-keywords) 가 이 데이터를 사용.
 //
-// 라이브러리 (chapter_library, question_library) = Tim 사전 큐레이션,
-//   영감 트리거 (정답 X). tags GIN 매칭 + category 보강 패턴.
-// 사용자 청사진 (user_blueprints) = 사용자별 1+, status 단계로 진행.
-//   user_chapters / user_questions = 라이브러리 참조 (source_*_id) 또는
-//   사용자가 직접 작성. 자유 변경 가능.
+// 🔥 V2 (2026-05-09) — user_blueprints 시스템 (UserBlueprint /
+//   UserChapter / UserQuestion) 폐기. user_books 에 편입.
+//   참조: DECISION-deprecate-user-blueprints-2026-05-08.md
+//   라이브러리 자체는 V2 의 시나리오 만들기 + 구조 수정 페이지에서
+//   계속 활용 가능 (영감 제공). inverse relations (userChapters /
+//   userQuestions) 는 모델 폐기와 함께 제거됨.
 // ═══════════════════════════════════════════════════════════════
 
 model ChapterLibrary {
@@ -972,8 +964,6 @@ model ChapterLibrary {
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  userChapters UserChapter[]
 
   @@index([tags], type: Gin, map: "idx_chapter_library_tags")
   @@index([language, sortOrder], map: "idx_chapter_library_general")
@@ -991,72 +981,36 @@ model QuestionLibrary {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  userQuestions UserQuestion[]
-
   @@index([tags], type: Gin, map: "idx_question_library_tags")
   @@index([language, category], map: "idx_question_library_category")
   @@map("question_library")
 }
 
-model UserBlueprint {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                 Int      @map("user_id")
-  title                  String?  @db.Text
-  language               String   @default("ko") @db.Text
-  status                 String   @default("designing") @db.Text
-  maxChapters            Int      @default(7) @map("max_chapters")
-  maxQuestionsPerChapter Int      @default(5) @map("max_questions_per_chapter")
-  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+// ═══════════════════════════════════════════════════════════════
+// Architect Bot V2 (2026-05-09)
+// 시나리오 5개 (Tim 큐레이션) — book_template_definitions 와 동일한 형식.
+// POST /api/book/start 가 이 structure 를 user_books.structure 로 복사.
+// 참조: STRATEGY-architect-bot-final-V2-2026-05-08.md
+//
+// Note: user_books 는 아직 Prisma 모델로 정의되지 않음 (raw SQL 로
+//   접근 — photobook + memoir flow). DB level FK 는 migration 의
+//   user_books_source_sample_fk 가 보장. Prisma 의 inverse relation
+//   (userBooks BlueprintSample[]) 은 user_books 모델이 추가될 때 함께
+//   추가될 예정.
+// ═══════════════════════════════════════════════════════════════
 
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chapters UserChapter[]
+model BlueprintSample {
+  id           String   @id @db.Text
+  displayLabel String   @map("display_label") @db.Text
+  language     String   @default("ko") @db.Text
+  structure    Json     @db.JsonB
+  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([userId, status])
-  @@map("user_blueprints")
-}
-
-model UserChapter {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  blueprintId     String   @map("blueprint_id") @db.Uuid
-  sourceChapterId String?  @map("source_chapter_id") @db.Text
-  chapterNumber   Int?     @map("chapter_number")
-  title           String   @db.Text
-  description     String?  @db.Text
-  isActive        Boolean  @default(true) @map("is_active")
-  sortOrder       Int      @default(0) @map("sort_order")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  blueprint     UserBlueprint   @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
-  sourceChapter ChapterLibrary? @relation(fields: [sourceChapterId], references: [id], onDelete: SetNull)
-  questions     UserQuestion[]
-
-  @@index([blueprintId, sortOrder])
-  @@map("user_chapters")
-}
-
-model UserQuestion {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  chapterId        String   @map("chapter_id") @db.Uuid
-  sourceQuestionId String?  @map("source_question_id") @db.Text
-  questionText     String   @map("question_text") @db.Text
-  description      String?  @db.Text
-  isActive         Boolean  @default(true) @map("is_active")
-  status           String   @default("pending") @db.Text
-  fragmentIds      String[] @default([]) @map("fragment_ids") @db.Uuid
-  sortOrder        Int      @default(0) @map("sort_order")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  chapter        UserChapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  sourceQuestion QuestionLibrary? @relation(fields: [sourceQuestionId], references: [id], onDelete: SetNull)
-  chatSessions   ChatSession[]
-  storyFragments StoryFragment[]
-
-  @@index([chapterId, sortOrder])
-  @@index([chapterId, status])
-  @@map("user_questions")
+  @@index([language, sortOrder], map: "idx_blueprint_samples_active")
+  @@map("blueprint_samples")
 }
 
 // 🔥 R2 (2026-05-07) — Print Request (인쇄 신청).
