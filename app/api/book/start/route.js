@@ -1,16 +1,23 @@
 /**
  * POST /api/book/start
  *
- * Body: { templateId: string, customTitle?: string }
+ * Body:
+ *   {
+ *     templateId?:  string,   // legacy — book_template_definitions
+ *     sampleId?:    string,   // 🆕 V2 — blueprint_samples (Architect Bot)
+ *     customTitle?: string,
+ *   }
+ *   templateId 또는 sampleId 둘 중 하나는 필수. 둘 다 있으면 sampleId 우선
+ *   (V2 가 새 길). templates 는 V2 cleanup 으로 모두 is_active=false.
  *
- * Creates (or resumes) a user_books row for the given template.
- * If the user already has an in_progress book on this template, we
- * return that book id (the partial unique index on user_books
- * (user_id, template_id) WHERE status='in_progress' guarantees we
- * never end up with two).
+ * Creates (or resumes) a user_books row.
+ * If the user already has an in_progress book on this template OR sample,
+ * we return that book id (partial unique index on user_books
+ * (user_id, template_category) WHERE status='in_progress' guarantees we
+ * never end up with two memoir books).
  *
  * On creation:
- *   • snapshot the template's default_structure into user_books.structure
+ *   • snapshot the source structure into user_books.structure
  *     (each chapter/question gets is_active:true, is_custom:false)
  *   • bulk-insert empty user_book_responses rows, one per question
  */
@@ -25,9 +32,20 @@ export async function POST(request) {
   try { body = await request.json(); }
   catch { return Response.json({ error: 'invalid json' }, { status: 400 }); }
 
-  const { templateId, customTitle } = body || {};
-  if (!templateId) {
-    return Response.json({ error: 'templateId required' }, { status: 400 });
+  const { templateId, sampleId, customTitle } = body || {};
+  if (!templateId && !sampleId) {
+    return Response.json({ error: 'templateId or sampleId required' }, { status: 400 });
+  }
+
+  // 🔥 V2 (2026-05-09) — sampleId branch.
+  //   blueprint_samples (Architect Bot) — Tim 큐레이션 5 시나리오.
+  //   sampleId 가 있으면 우선 (templateId 가 같이 와도 sample 선택).
+  //   templates 는 V2 cleanup 으로 모두 inactive 상태이므로 실질적으로
+  //   새로운 book 생성은 sample 경로만 동작. 기존 template 기반 in_progress
+  //   book 은 resume 가능 (아래 분기). 자세한 strategy:
+  //     STRATEGY-architect-bot-final-V2-2026-05-08.md
+  if (sampleId) {
+    return await startFromSample({ user, sampleId, customTitle });
   }
 
   const db = createDb();
@@ -204,6 +222,165 @@ export async function POST(request) {
       } catch { /* fall through to generic 500 */ }
     }
     console.error('[POST /api/book/start]', e.message);
+    return Response.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 🆕 V2 (2026-05-09) — sample-based start (Architect Bot)
+// ─────────────────────────────────────────────────────────────────
+//
+// blueprint_samples (Tim 큐레이션 시나리오 5개) 에서 user_books 를
+// 만들거나 resume. template path 와 동일한 user_books / user_book_responses
+// 패턴을 그대로 따르고, 다음만 다름:
+//   - template_id: NULL
+//   - template_category: 'memoir' (Architect Bot 전체가 자서전)
+//   - source_sample_id: sampleId (FK 추적)
+//
+// 중복 방지:
+//   1) source_sample_id 기준 in-progress 우선 resume (V2 native dedup)
+//   2) (user_id, template_category) partial unique index 가 23505 던지면
+//      그 카테고리의 in-progress book 으로 fallback resume
+//      (예: 같은 user 가 template-based memoir 를 이미 가진 상태)
+async function startFromSample({ user, sampleId, customTitle }) {
+  const db = createDb();
+  try {
+    // 1. 시나리오 lookup (active 만)
+    const sampleRow = await db.query(
+      `SELECT id, display_label, language, structure
+         FROM blueprint_samples
+        WHERE id = $1 AND is_active = TRUE`,
+      [sampleId]
+    );
+    if (sampleRow.rows.length === 0) {
+      return Response.json({ error: 'sample not found' }, { status: 404 });
+    }
+    const sample = sampleRow.rows[0];
+
+    // 2. 같은 sample 의 in-progress book 이 있으면 resume
+    const existingSample = await db.query(
+      `SELECT id
+         FROM user_books
+        WHERE user_id = $1
+          AND source_sample_id = $2
+          AND status = 'in_progress'
+        LIMIT 1`,
+      [user.id, sampleId]
+    );
+    if (existingSample.rows.length > 0) {
+      return Response.json({
+        bookId:  existingSample.rows[0].id,
+        resumed: true,
+        source:  'sample',
+      });
+    }
+
+    // 3. structure snapshot — template path 와 동일한 markers 추가.
+    //    is_active:true (사용자가 비활성 가능) / is_custom:false (라이브러리
+    //    원본). 사용자가 편집기에서 추가/수정한 항목은 is_custom:true 로 마킹.
+    const baseStructure = sample.structure || { chapters: [] };
+    const structure = {
+      ...baseStructure,
+      chapters: (baseStructure.chapters || []).map(ch => ({
+        ...ch,
+        is_active: true,
+        is_custom: false,
+        questions: (ch.questions || []).map(q => ({
+          ...q,
+          is_active: true,
+          is_custom: false,
+        })),
+      })),
+    };
+
+    const totalQuestions = structure.chapters
+      .reduce((sum, ch) => sum + (ch.questions?.length || 0), 0);
+    const firstChapter   = structure.chapters[0];
+    const firstQuestion  = firstChapter?.questions?.[0];
+
+    const finalTitle =
+      (customTitle && customTitle.trim()) ||
+      sample.display_label ||
+      '내 자서전';
+
+    // 4. INSERT user_books — template_id NULL, source_sample_id 채움.
+    let bookRow;
+    try {
+      bookRow = await db.query(
+        `INSERT INTO user_books
+           (user_id, template_id, template_category, source_sample_id,
+            title, structure, total_questions,
+            current_chapter_id, current_question_id, last_question_id)
+         VALUES ($1, NULL, 'memoir', $2, $3, $4::jsonb, $5, $6, $7, $7)
+         RETURNING id`,
+        [
+          user.id,
+          sampleId,
+          finalTitle,
+          JSON.stringify(structure),
+          totalQuestions,
+          firstChapter?.id || null,
+          firstQuestion?.id || null,
+        ]
+      );
+    } catch (e) {
+      // (user_id, template_category) partial unique index — 같은 카테고리의
+      // in-progress book 이 이미 있을 때 (템플릿이든 다른 시나리오든).
+      // 그 book 을 resume 로 반환.
+      if (
+        e.code === '23505' &&
+        /idx_user_books_one_(?:in_progress|per_category)/.test(String(e.message))
+      ) {
+        const r = await db.query(
+          `SELECT id FROM user_books
+            WHERE user_id = $1 AND template_category = 'memoir' AND status = 'in_progress'
+            LIMIT 1`,
+          [user.id]
+        );
+        if (r.rows.length > 0) {
+          return Response.json(
+            {
+              bookId:  r.rows[0].id,
+              resumed: true,
+              source:  'sample',
+              message: 'memoir already in progress (different sample/template)',
+            },
+            { status: 409 }
+          );
+        }
+      }
+      throw e;
+    }
+    const bookId = bookRow.rows[0].id;
+
+    // 5. Bulk-insert empty response rows (template path 와 동일).
+    const responseRows = [];
+    for (const ch of structure.chapters) {
+      for (const q of (ch.questions || [])) {
+        responseRows.push([bookId, user.id, q.id]);
+      }
+    }
+    if (responseRows.length > 0) {
+      const placeholders = responseRows
+        .map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`)
+        .join(', ');
+      const flat = responseRows.flat();
+      await db.query(
+        `INSERT INTO user_book_responses (book_id, user_id, question_id)
+         VALUES ${placeholders}`,
+        flat
+      );
+    }
+
+    return Response.json({
+      bookId,
+      resumed: false,
+      totalQuestions,
+      title:   finalTitle,
+      source:  'sample',
+    });
+  } catch (e) {
+    console.error('[POST /api/book/start sampleId]', e.message);
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
