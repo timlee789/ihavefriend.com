@@ -129,6 +129,28 @@
   line-height: 1.45;
 }
 
+/* 🔥 Sprint 2a (2026-05-10) — 6 단계 사이 진행 방향 화살표.
+   .steps gap (12px) 안에 들어가는 마이크로-element. .bidirectional
+   = 녹색 (가능 시그널), .forward = 주황 흐릿 (방향 가이드).
+   letter-spacing -2px 로 ↑↓ 두 글자가 한 글자처럼 모임. */
+.stepArrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin: -2px 0;
+  user-select: none;
+}
+.stepArrow.bidirectional {
+  color: #16a34a;  /* 녹색 — 자유롭게 양방향 */
+}
+.stepArrow.forward {
+  color: rgba(234, 88, 12, 0.6);  /* 주황 흐릿 — 일방향 가이드 */
+}
+
 /* ── CTA ── */
 .cta {
   display: block;

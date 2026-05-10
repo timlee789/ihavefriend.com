@@ -24,26 +24,24 @@
   font-family: inherit;
 }
 
-/* 🔥 Architect Bot V2 (2026-05-09) — ❓ help icon (matches book overview page) */
+/* 🔥 Sprint 2a (2026-05-10) — "안내" 텍스트 버튼 (matches book
+   overview page). 같은 visual rect (인디고) 로 두 페이지의 도움말
+   진입점이 시각적으로 통일됨. */
 .helpBtn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.85);
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  font-size: 16px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  color: rgba(196, 181, 253, 0.92);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
   cursor: pointer;
   font-family: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .helpBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.30);
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.45);
 }
 
 .title {

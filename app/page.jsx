@@ -54,22 +54,16 @@ const HOME_MSGS = {
     privateLabel       : 'Private Mode',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    // 🔥 Sprint 1 (2026-05-09) — "모든 서비스 = 책 만들기" 통합 메시지.
-    //   각 버튼 라벨에 "만들기" 추가하여 비즈니스 정체성 통일.
-    homeBtnMemoir      : '📘 내 자서전 만들기',
+    // 🔥 Sprint 2a (2026-05-10) — Tim screenshot review:
+    //   라벨 시작 emoji 제거 (큰 .gridIcon 과 중복) + "내" 제거 (군더더기).
+    //   "자서전 만들기" 가 더 명확. 시니어 친화 = 명확함 > 화려함.
+    homeBtnMemoir      : '자서전 만들기',
     homeBtnEssay       : '내 수필집',
-    // 🔥 Task 99 — Tim 결정 (2026-05-04): 메인 home 4개 버튼.
-    //   '기록하기' → '내 이야기' 라벨 변경. '기록하지 않기'와
-    //   '샘플 이야기 보기'는 footer 작은 링크로 이동.
-    homeBtnRecord      : '📖 내 이야기책 만들기',
+    homeBtnRecord      : '이야기책 만들기',
     homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
-    // 🔥 Tim 결정 (2026-05-06): 4번째 그리드 버튼을 "사진앨범" 으로
-    //   교체하고, "내 이야기" (3번째) 가 /my-stories 목록 페이지로
-    //   이동하도록 변경. 자서전·수필집·내 이야기·사진앨범 4개로 컨셉
-    //   단순화. tellStoryFromList 는 my-stories 상단 CTA 에서 사용.
-    homeBtnPhotobook   : '📷 내 사진책 만들기',
+    homeBtnPhotobook   : '사진책 만들기',
     tellStoryFromList  : '이야기 하기',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -77,11 +71,15 @@ const HOME_MSGS = {
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : '서비스 약관',
-    // 🔥 Task 99 — Footer secondary links (기록하지 않기 + 샘플).
+    // 🔥 Sprint 2a (2026-05-10) — footer 정리:
+    //   "기록하지 않기" → "Emma와 대화" (의미 명확화).
+    //   "샘플 이야기" + "수필집" 제거 (메인 흐름과 무관).
+    //   로그인/로그아웃은 우상단으로 이동 (footer 에서 제거).
+    //   기존 키 (footerDontSave / footerSamples / footerEssays /
+    //   essayComingSoon) 는 백압-호환 위해 남겨둠 — 사용처 없음.
+    footerCompanion    : 'Emma와 대화',
     footerDontSave     : '기록하지 않기',
     footerSamples      : '샘플 이야기',
-    // 🔥 Architect Bot V2 (2026-05-09) — essay 메인 그리드에서 일시 제거,
-    //   footer 작은 링크로 이동 (Tim 결정 Q3=c). 추후 출시 안내 alert.
     footerEssays       : '수필집',
     essayComingSoon    : '수필집은 추후 출시 예정입니다.',
   },
@@ -121,16 +119,14 @@ const HOME_MSGS = {
     privateLabel       : 'Private Mode',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    // 🔥 Sprint 1 (2026-05-09) — All services unified under "Make My ___".
-    homeBtnMemoir      : '📘 Make My Memoir',
+    // 🔥 Sprint 2a (2026-05-10) — drop leading emoji + "My" for clarity.
+    homeBtnMemoir      : 'Make Memoir',
     homeBtnEssay       : 'My Essays',
-    // 🔥 Task 99 — Record renamed to clearer label.
-    homeBtnRecord      : '📖 Make My Story Book',
+    homeBtnRecord      : 'Make Story Book',
     homeBtnTalk        : "Don't Save",
     homeBtnMyStories   : 'View My Stories',
     homeBtnSamples     : 'Sample Stories',
-    // Tim 2026-05-06 — see KO block above.
-    homeBtnPhotobook   : '📷 Make My Photo Book',
+    homeBtnPhotobook   : 'Make Photo Book',
     tellStoryFromList  : 'Tell a Story',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -138,7 +134,8 @@ const HOME_MSGS = {
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Terms of Service',
-    // 🔥 Task 99 — Footer secondary links.
+    // 🔥 Sprint 2a (2026-05-10) — footer cleanup; legacy keys kept.
+    footerCompanion    : 'Talk with Emma',
     footerDontSave     : "Don't Save Mode",
     footerSamples      : 'Sample Stories',
     footerEssays       : 'Essays',
@@ -180,16 +177,14 @@ const HOME_MSGS = {
     privateLabel       : 'Modo Privado',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    // 🔥 Sprint 1 (2026-05-09) — Identidad unificada "Crear Mi ___".
-    homeBtnMemoir      : '📘 Crear Mis Memorias',
+    // 🔥 Sprint 2a (2026-05-10) — sin emoji + sin "Mi" para claridad.
+    homeBtnMemoir      : 'Crear Memorias',
     homeBtnEssay       : 'Mis ensayos',
-    // 🔥 Task 99 — Grabar renombrado a etiqueta más clara.
-    homeBtnRecord      : '📖 Crear Mi Libro de Historias',
+    homeBtnRecord      : 'Crear Libro de Historias',
     homeBtnTalk        : 'Sin guardar',
     homeBtnMyStories   : 'Ver mis historias',
     homeBtnSamples     : 'Historias de ejemplo',
-    // Tim 2026-05-06 — ver bloque KO arriba.
-    homeBtnPhotobook   : '📷 Crear Mi Libro de Fotos',
+    homeBtnPhotobook   : 'Crear Libro de Fotos',
     tellStoryFromList  : 'Contar una historia',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -197,7 +192,8 @@ const HOME_MSGS = {
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Términos del servicio',
-    // 🔥 Task 99 — Footer secondary links.
+    // 🔥 Sprint 2a (2026-05-10) — limpieza del footer; claves legadas se mantienen.
+    footerCompanion    : 'Hablar con Emma',
     footerDontSave     : 'Modo sin guardar',
     footerSamples      : 'Historias de ejemplo',
     footerEssays       : 'Ensayos',
@@ -336,115 +332,86 @@ export default function Home() {
 
   return (
     <div className={s.homeContainer}>
-      {/* 🔥 Task 70 — Brand header. The lang pill + logout moved to a
-          small footer at the bottom of the screen because seniors set
-          them once and rarely touch them again. The logo gets the
-          full top of the viewport instead. */}
-      {/* 🔥 Task 86 — logo + tagline. Tagline narrates the value in one
-          line so the senior knows what this site does the moment they
-          land. */}
-      <div className={s.brandHeader}>
-        <h1 className={s.logoLarge}>SayAndKeep.com</h1>
-        <p className={s.brandTagline}>{msgs.brandTagline}</p>
+      {/* 🔥 Sprint 2a (2026-05-10) — Top header: small logo on the
+          left, login/logout on the right. The big tagline that
+          previously dominated the brand header moves to its own
+          .taglineHero block below so it can read as the page's
+          leading message instead of being a subtitle to the logo. */}
+      <header className={s.homeTopHeader}>
+        <h1 className={s.logoSmall}>SayAndKeep.com</h1>
+        {isLoggedIn ? (
+          <button className={s.topAuthBtn} onClick={handleLogout}>
+            {msgs.logout}
+          </button>
+        ) : (
+          <button className={s.topAuthBtn} onClick={() => router.push('/login')}>
+            {msgs.loginBtn}
+          </button>
+        )}
+      </header>
+
+      {/* 🔥 Sprint 2a (2026-05-10) — Tagline hero. "이야기하면 책이
+          됩니다" 가 페이지의 진짜 제목이라는 Tim 의 비즈니스 정체성. */}
+      <div className={s.taglineHero}>
+        <p className={s.taglineLarge}>{msgs.brandTagline}</p>
       </div>
 
-      {/* Greeting */}
-      {/* 🔥 Task 74 — logged-in users see "안녕하세요, <name>";
-          visitors see the tagline so the / page reads as a landing
-          page rather than an empty greeting. */}
+      {/* Greeting (small line under the tagline hero). */}
       <div className={s.greetingLine}>
         {isLoggedIn ? msgs.greeting(userName) : msgs.tagline}
       </div>
 
-      {/* 🔥 Tim 결정 (2026-05-06) — 4-button grid 컨셉 단순화:
-            1행: 내 자서전 / 내 수필집     ← 만들어진 책 (memoir / essay)
-            2행: 내 이야기 / 사진앨범       ← 조각 (free-form / photobook)
-          "내 이야기" 는 이제 /chat 직행이 아닌 /my-stories 목록 페이지
-          로 이동 (목록 상단의 "이야기 하기" 큰 버튼이 /chat?mode=story
-          로 진입). 4번째 버튼은 사진앨범 (photobook v3) 으로 교체.
-          기록하지 않기 / 샘플 이야기 / 약관은 footer 작은 링크 그대로. */}
+      {/* 🔥 Sprint 2a (2026-05-10) — 세로 3 버튼 (1 column × 3 rows).
+          이전 2×2 grid 가 정사각 버튼 + 한 자리 비어있음으로 어색했고,
+          Tim 의 mental model 은 "자서전 / 이야기책 / 사진책 — 세 가지
+          책". 세로 배치로 명확하게.
+          .gridRow 제거하고 버튼을 .gridContainer 에 직접 배치 (이미
+          flex column gap). aspect-ratio 1/1 도 CSS 에서 풀어서 가로로
+          쫙 펼쳐지는 카드가 됨. */}
       <div className={s.gridContainer}>
-        <div className={s.gridRow}>
-          <button
-            className={`${s.gridBtn} ${s.gridBtnMemoir}`}
-            onClick={onMemoirClick}
-          >
-            <div className={s.gridIcon}>📘</div>
-            <div className={s.gridLabel}>{msgs.homeBtnMemoir}</div>
-          </button>
+        <button
+          className={`${s.gridBtn} ${s.gridBtnMemoir}`}
+          onClick={onMemoirClick}
+        >
+          <div className={s.gridIcon}>📘</div>
+          <div className={s.gridLabel}>{msgs.homeBtnMemoir}</div>
+        </button>
 
-          {/* 🔥 V2 (2026-05-09) — essay 버튼 일시 제거. Tim 의 layout
-              결정 대기 중. JSX 주석 처리해서 나중에 빠르게 되살릴 수
-              있게 둠. 빈 자리는 grid CSS 가 자동으로 메모리얼 자서전
-              버튼을 가운데 정렬 안 시키고 그대로 두므로 일시적으로
-              한 칸이 비게 보임 — Tim 이 보고 "이 자리에 X" 결정.
-          <button
-            className={`${s.gridBtn} ${s.gridBtnEssay}`}
-            onClick={onEssayClick}
-          >
-            <div className={s.gridIcon}>📓</div>
-            <div className={s.gridLabel}>{msgs.homeBtnEssay}</div>
-          </button>
-          */}
-        </div>
+        <button
+          className={`${s.gridBtn} ${s.gridBtnRecord}`}
+          onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
+        >
+          {/* 🔥 Sprint 2a (2026-05-10) — 🎙️ → 📖. 마이크는 "녹음" 함의가
+              강한데 이 버튼은 "이야기책 만들기" 라서 책 아이콘이 더 적합. */}
+          <div className={s.gridIcon}>📖</div>
+          <div className={s.gridLabel}>{msgs.homeBtnRecord}</div>
+        </button>
 
-        <div className={s.gridRow}>
-          <button
-            className={`${s.gridBtn} ${s.gridBtnRecord}`}
-            onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
-          >
-            <div className={s.gridIcon}>🎙️</div>
-            <div className={s.gridLabel}>{msgs.homeBtnRecord}</div>
-          </button>
-
-          {/* className 은 기존 gridBtnMyStories (indigo) 재사용 — 시각적
-              소음을 줄이려고 새 modifier 안 만듦. Tim 의 베타 피드백
-              보고 필요하면 별도 색상 token 분리. */}
-          <button
-            className={`${s.gridBtn} ${s.gridBtnMyStories}`}
-            onClick={() => isLoggedIn ? router.push('/photobook') : requireLogin('/photobook')}
-          >
-            <div className={s.gridIcon}>📷</div>
-            <div className={s.gridLabel}>{msgs.homeBtnPhotobook}</div>
-          </button>
-        </div>
+        <button
+          className={`${s.gridBtn} ${s.gridBtnMyStories}`}
+          onClick={() => isLoggedIn ? router.push('/photobook') : requireLogin('/photobook')}
+        >
+          <div className={s.gridIcon}>📷</div>
+          <div className={s.gridLabel}>{msgs.homeBtnPhotobook}</div>
+        </button>
       </div>
 
-      {/* 🔥 Task 99 — Footer. "기록하지 않기"와 "샘플 이야기"
-          는 메인 그리드에서 내려서 서비스 약관과 같은 크기의
-          작은 링크로 이동. 메인 4개 버튼이 핵심이고 이다에
-          해당하지 않는 부가적 펜션. */}
+      {/* 🔥 Sprint 2a (2026-05-10) — Footer 정리:
+            제거: 샘플 이야기, 수필집, 로그인/로그아웃 (상단으로 이동)
+            변경: "기록하지 않기" → "Emma와 대화" (의미 명확화)
+            남김: KO | Emma와 대화 | 서비스 약관 (3 항목) */}
       <footer className={s.homeFooter}>
         <div className={s.footerRow}>
           <button className={s.footerLangPill} onClick={toggleLang}>{lang}</button>
-          {/* 🔥 Task 99 — 기록하지 않기 (companion mode) */}
           <button
             className={s.footerTermsBtn}
             onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
           >
-            {msgs.footerDontSave}
+            {msgs.footerCompanion}
           </button>
-          {/* 🔥 Task 99 — 샘플 이야기 (sharing-stories) */}
-          <button className={s.footerTermsBtn} onClick={() => router.push('/sharing-stories')}>
-            {msgs.footerSamples}
-          </button>
-          {/* 🔥 Architect Bot V2 (2026-05-09) — 수필집은 메인 그리드에서
-              제거됐고 footer 의 작은 링크로 옮김. 클릭 시 alert 로 추후
-              출시 예정임을 안내 (Tim 결정 Q3=c). */}
-          <button className={s.footerTermsBtn} onClick={() => alert(msgs.essayComingSoon)}>
-            {msgs.footerEssays}
-          </button>
-          {/* 🔥 Task 87 — Terms link. Public, no auth required. */}
           <button className={s.footerTermsBtn} onClick={() => router.push('/terms')}>
             {msgs.termsLabel}
           </button>
-          {isLoggedIn ? (
-            <button className={s.footerLogoutBtn} onClick={handleLogout}>{msgs.logout}</button>
-          ) : (
-            <button className={s.footerLogoutBtn} onClick={() => router.push('/login')}>
-              {msgs.loginBtn}
-            </button>
-          )}
         </div>
       </footer>
     </div>

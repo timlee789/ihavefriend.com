@@ -12,17 +12,27 @@
  * Strategy: STRATEGY-architect-bot-final-V2-2026-05-08.md
  */
 
-import { Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import s from './page.module.css';
 
+// 🔥 Sprint 2a (2026-05-10) — arrowAfter 필드 추가. Tim 정정 (스크린샷
+//   검토): 1↔2 / 2↔3 / 3↔4 양방향 (사용자 자유롭게 오감), 4→5 / 5→6
+//   단방향 (수정 끝나면 표지, 표지 끝나면 인쇄 — 진행 흐름 고정).
+//   화살표 색: 양방향 = 녹색 (가능 시그널), 단방향 = 주황 흐릿 (방향 가이드).
 const STEPS = [
-  { icon: '📋', title: '목차 만들기',       desc: '책의 큰 구조를 만듭니다' },
-  { icon: '📝', title: '소제목 만들기',     desc: '각 목차의 질문들' },
-  { icon: '🎙️', title: '이야기 만들기',     desc: '질문에 답하며 책 채우기' },
-  { icon: '✏️', title: '이야기 수정/편집',  desc: '직접 다듬기' },
-  { icon: '🎨', title: '표지 만들기',       desc: '책의 얼굴 정하기' },
-  { icon: '📦', title: '책 인쇄',           desc: '완성된 책을 손에' },
+  { icon: '📋', title: '목차 만들기',       desc: '책의 큰 구조를 만듭니다',
+    arrowAfter: 'bidirectional' },
+  { icon: '📝', title: '소제목 만들기',     desc: '각 목차의 질문들',
+    arrowAfter: 'bidirectional' },
+  { icon: '🎙️', title: '이야기 만들기',     desc: '질문에 답하며 책 채우기',
+    arrowAfter: 'bidirectional' },
+  { icon: '✏️', title: '이야기 수정/편집',  desc: '직접 다듬기',
+    arrowAfter: 'forward' },
+  { icon: '🎨', title: '표지 만들기',       desc: '책의 얼굴 정하기',
+    arrowAfter: 'forward' },
+  { icon: '📦', title: '책 인쇄',           desc: '완성된 책을 손에',
+    arrowAfter: null },
 ];
 
 export default function ArchitectOverviewPage() {
@@ -138,14 +148,29 @@ function ArchitectOverviewInner() {
 
       <div className={s.steps}>
         {STEPS.map((step, i) => (
-          <div key={i} className={s.step}>
-            <div className={s.stepNumber}>{i + 1}</div>
-            <div className={s.stepIcon}>{step.icon}</div>
-            <div className={s.stepBody}>
-              <div className={s.stepTitle}>{step.title}</div>
-              <div className={s.stepDesc}>{step.desc}</div>
+          <Fragment key={i}>
+            <div className={s.step}>
+              <div className={s.stepNumber}>{i + 1}</div>
+              <div className={s.stepIcon}>{step.icon}</div>
+              <div className={s.stepBody}>
+                <div className={s.stepTitle}>{step.title}</div>
+                <div className={s.stepDesc}>{step.desc}</div>
+              </div>
             </div>
-          </div>
+
+            {/* 🔥 Sprint 2a (2026-05-10) — 단계 사이의 진행 방향 화살표.
+                양방향 (녹색 ↑↓): 1↔2, 2↔3, 3↔4 — 시니어가 자유로움.
+                단방향 (주황 ↓): 4→5, 5→6 — 수정/표지/인쇄는 진행 순.
+                마지막 step (6) 은 화살표 없음. */}
+            {step.arrowAfter && (
+              <div
+                className={`${s.stepArrow} ${step.arrowAfter === 'bidirectional' ? s.bidirectional : s.forward}`}
+                aria-hidden="true"
+              >
+                {step.arrowAfter === 'bidirectional' ? '↑↓' : '↓'}
+              </div>
+            )}
+          </Fragment>
         ))}
       </div>
 

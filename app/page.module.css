@@ -249,19 +249,82 @@
    reads as "muted dark with a green hint" instead of fully-saturated.
    `position: relative` anchors the .privateBadge in the top-right
    corner. */
-/* 🔥 Task 70 — Brand header (logo, large, top-center). */
+/* 🔥 Sprint 2a (2026-05-10) — Top header. Small logo on the left,
+   login/logout pill on the right. Replaces the old centered brand
+   header — Tim wants the brand demoted so the tagline can lead the
+   visual stack. .brandHeader / .logoLarge / .brandTagline classes
+   below are kept for any other surface that imports them. */
+.homeTopHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 4px;
+  gap: 12px;
+}
+
+.logoSmall {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ea580c;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+@media (max-width: 380px) {
+  .logoSmall { font-size: 16px; }
+}
+
+.topAuthBtn {
+  background: transparent;
+  border: 1px solid rgba(234, 88, 12, 0.30);
+  color: #ea580c;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.topAuthBtn:hover {
+  background: rgba(234, 88, 12, 0.08);
+  border-color: rgba(234, 88, 12, 0.50);
+}
+
+/* 🔥 Sprint 2a (2026-05-10) — Tagline hero. The page's leading
+   message ("이야기하면 책이 됩니다") sits at the top of the surface
+   in big bold type so the senior reads the value prop at a glance. */
+.taglineHero {
+  text-align: center;
+  padding: 24px 16px 12px;
+}
+
+.taglineLarge {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1410;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 0;
+  word-break: keep-all;
+}
+@media (max-width: 380px) {
+  .taglineLarge { font-size: 24px; }
+}
+@media (min-width: 768px) {
+  .taglineLarge { font-size: 34px; }
+}
+
+/* DEPRECATED Sprint 2a (2026-05-10) — replaced by .homeTopHeader +
+   .taglineHero. Kept here only because /login or other surfaces
+   might still reference these — removing them is a separate cleanup. */
 .brandHeader {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 8px 0 2px;
 }
-/* 🔥 Task 84 — Bigger, bolder brand mark. Light bg → dark ink for
-   contrast against the cream background; dark mode flips to white via
-   @media block at the bottom of the file.
-   🔥 Task 86 — sized down ~25 % so the brand reads as a header rather
-   than dominating the viewport, making room for the new tagline
-   directly below. */
 .logoLarge {
   font-size: 32px;
   font-weight: 800;
@@ -276,11 +339,6 @@
 @media (min-width: 768px) {
   .logoLarge { font-size: 44px; }
 }
-
-/* 🔥 Task 86 — Tagline sits right under the logo, narrates the value
-   in one sentence so the senior knows what this site does the moment
-   they land. Color tracks the logo (dark on light, light on dark) at
-   slightly reduced opacity so the logo still leads the visual stack. */
 .brandTagline {
   margin: 4px 0 0;
   font-size: 16px;
@@ -400,24 +458,20 @@
   font-weight: 400;
 }
 
-/* 🔥 Task 72 — short-viewport tightening so all 6 CTAs (3 books +
-   story + companion + 2 library) fit on iPhone-SE-class screens
-   without scrolling. Triggers below ~700px tall. */
+/* 🔥 Task 72 + Sprint 2a — short-viewport tightening for iPhone-SE
+   class screens. Now scoped to the new vertical 3-button layout
+   (.gridBtn with horizontal flex). Old .storyCta/.companionCta refs
+   kept for back-compat but the active surface is .gridBtn. */
 @media (max-height: 700px) {
   .homeContainer { gap: 8px; padding: 8px 14px; }
-  .brandHeader   { padding: 4px 0 2px; }
-  .logoLarge     { font-size: 22px; }
+  .homeTopHeader { padding: 4px 0 2px; }
+  .taglineHero   { padding: 14px 16px 8px; }
+  .taglineLarge  { font-size: 22px; }
   .greetingLine  { font-size: 14px; margin: 2px 0 6px; }
-  .storyCta,
-  .companionCta,
-  .bookCta,
-  .myStoriesCta,
-  .viewStoriesCta { padding: 18px 16px; }
-  .ctaIcon { font-size: 24px; margin-right: 12px; }
-  .ctaMain { font-size: 16px; }
-  .ctaSub  { font-size: 12px; }
-  .homeFooter { padding: 12px 0 6px; gap: 6px; }
-  .footerTemplatesBtn { font-size: 12px; padding: 6px 14px; }
+  .gridBtn       { min-height: 92px; padding: 14px 18px; gap: 14px; }
+  .gridIcon      { font-size: 40px; }
+  .gridLabel     { font-size: 17px; }
+  .homeFooter    { padding: 12px 0 6px; gap: 6px; }
 }
 
 /* Library group — solid indigo (my-stories + sharing-stories). */
@@ -708,9 +762,20 @@
 
   .logo { color: #fb923c; }
   /* 🔥 Task 84 — flip the brand to white on dark for max contrast.
-     🔥 Task 86 — tagline tracks the logo at ~85 % opacity. */
+     🔥 Task 86 — tagline tracks the logo at ~85 % opacity.
+     🔥 Sprint 2a — new top-header classes. */
   .logoLarge { color: #fff; }
   .brandTagline { color: rgba(255, 255, 255, 0.85); }
+  .logoSmall { color: #fb923c; }
+  .taglineLarge { color: #fff; }
+  .topAuthBtn {
+    border-color: rgba(251, 146, 60, 0.40);
+    color: #fb923c;
+  }
+  .topAuthBtn:hover {
+    background: rgba(251, 146, 60, 0.10);
+    border-color: rgba(251, 146, 60, 0.60);
+  }
   .greetingLine { color: rgba(255, 255, 255, 0.75); }
 
   .logoutBtn { color: #aaa; }
@@ -776,11 +841,12 @@
   }
 }
 
-/* 🔥 Task 83 — 2×3 square grid replacing the 6 horizontal CTAs.
-   Senior-friendly: aspect-ratio:1/1 keeps every button a generous
-   touch target (~100px+ at mobile widths), big icon centered top,
-   single label below, no subtitle. Six saturated hues differentiate
-   actions at a glance. */
+/* 🔥 Sprint 2a (2026-05-10) — vertical 3-button layout. The original
+   2×3 grid (.gridRow with 2 columns) used aspect-ratio:1/1 to keep
+   every button square; with only 3 services it left an awkward empty
+   slot. Tim's mental model is "세 가지 책" (memoir / story / photo) —
+   one row each. .gridContainer stays flex column (already gap), and
+   buttons live directly inside (no .gridRow wrapper). */
 .gridContainer {
   width: 100%;
   display: flex;
@@ -789,27 +855,26 @@
   margin: 4px 0;
 }
 
-/* 🔥 Task 83 (revised) — Tim 요청: 2행 3줄. 즉 3 columns × 2 rows
-   가 아니라, 2 columns × 3 rows. 한 줄에 버튼 2개씩, 총 3 줄. */
+/* DEPRECATED Sprint 2a — kept for back-compat. */
 .gridRow {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
-/* 🔥 Task 84 — bigger touch target + 3D pop-out. The button has a
-   visible bottom edge (`box-shadow: 0 6px 0 0 <darker hue>`) so it
-   reads as physically raised; pressing it pulls the body down to meet
-   the edge for a satisfying "click" feel. CSS variables hold the per-
-   button accent colors so the shadow stack stays in one place. */
+/* 🔥 Sprint 2a (2026-05-10) — drop aspect-ratio:1/1 (vertical
+   layout doesn't want a square), use min-height for a generous
+   touch target, and switch flex-direction to row so the icon
+   sits next to the label horizontally — gives more vertical space
+   while keeping the 3D pop-out shadow stack from Task 84. */
 .gridBtn {
-  aspect-ratio: 1 / 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 18px 22px;
+  min-height: 110px;
   border: none;
   border-radius: 18px;
   cursor: pointer;
@@ -843,34 +908,34 @@
     inset 0 -1px 2px rgba(0, 0, 0, 0.20);
 }
 
-/* aspect-ratio fallback for iOS Safari < 15. Modern browsers ignore
-   this entire @supports block. */
+/* DEPRECATED Sprint 2a — vertical layout no longer uses aspect-ratio. */
 @supports not (aspect-ratio: 1 / 1) {
-  .gridBtn {
-    aspect-ratio: auto;
-    height: 0;
-    padding-bottom: 100%;
-    /* When using padding-bottom trick the flex children need a wrapper;
-       at our breakpoints aspect-ratio is universally supported in iOS
-       15+, so this branch is purely defensive. */
-  }
+  .gridBtn { aspect-ratio: auto; }
 }
 
+/* 🔥 Sprint 2a — icon size trimmed (56 → 50px) since horizontal
+   layout pairs the icon next to a wider label, not above it. */
 .gridIcon {
-  font-size: 56px;
+  font-size: 50px;
   line-height: 1;
+  flex-shrink: 0;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
+/* 🔥 Sprint 2a — label sits to the right of the icon (text-align
+   left), and is allowed to wrap onto two lines for languages with
+   longer translations. */
 .gridLabel {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
-  text-align: center;
-  line-height: 1.2;
+  text-align: left;
+  line-height: 1.25;
   word-break: keep-all;
   letter-spacing: -0.01em;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
+  flex: 1;
+  min-width: 0;
 }
 
 /* 🔥 Task 84 — three semantic color pairs. Each pair tells the senior
@@ -904,15 +969,16 @@
 }
 
 @media (max-width: 380px) {
-  .gridBtn   { padding: 10px 8px; gap: 8px; border-radius: 16px; }
-  .gridIcon  { font-size: 44px; }
-  .gridLabel { font-size: 15px; }
+  .gridBtn   { padding: 14px 16px; gap: 14px; min-height: 96px; border-radius: 16px; }
+  .gridIcon  { font-size: 42px; }
+  .gridLabel { font-size: 17px; }
   .gridPrivateBadge { font-size: 9px; padding: 2px 5px; top: 6px; right: 6px; }
 }
 
 @media (min-width: 768px) {
-  .gridIcon  { font-size: 64px; }
-  .gridLabel { font-size: 20px; }
+  .gridBtn   { min-height: 124px; padding: 22px 28px; gap: 22px; }
+  .gridIcon  { font-size: 58px; }
+  .gridLabel { font-size: 22px; }
 }
 
 /* DEPRECATED Task 83 — replaced by .gridBtn* family above. Kept here

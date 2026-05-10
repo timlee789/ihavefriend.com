@@ -115,15 +115,15 @@ export default function CustomizePage() {
     <div className={s.container}>
       <header className={s.header}>
         <button className={s.backBtn} onClick={() => router.push(`/book/${bookId}`)}>{m.backToBook}</button>
-        {/* 🔥 Architect Bot V2 (2026-05-09) — ❓ help icon → /architect?from=book.
-            Same pattern as /book/[bookId] page so seniors can always reach the
-            6-step overview from inside the customize flow too. */}
+        {/* 🔥 Sprint 2a (2026-05-10) — ❓ → "안내" 텍스트 버튼. Same
+            pattern as /book/[bookId] page so seniors get the unified
+            6-step overview entry from both surfaces. */}
         <button
           className={s.helpBtn}
           onClick={() => router.push('/architect?from=book')}
-          title="6단계 안내 다시 보기"
-          aria-label="6단계 안내 다시 보기"
-        >❓</button>
+          title={m.helpBtnTitle}
+          aria-label={m.helpBtnTitle}
+        >{m.helpBtn}</button>
       </header>
 
       <h1 className={s.title}>{m.customizeHeader}</h1>
