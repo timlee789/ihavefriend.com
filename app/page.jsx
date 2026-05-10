@@ -54,12 +54,14 @@ const HOME_MSGS = {
     privateLabel       : 'Private Mode',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    homeBtnMemoir      : '내 자서전',
+    // 🔥 Sprint 1 (2026-05-09) — "모든 서비스 = 책 만들기" 통합 메시지.
+    //   각 버튼 라벨에 "만들기" 추가하여 비즈니스 정체성 통일.
+    homeBtnMemoir      : '📘 내 자서전 만들기',
     homeBtnEssay       : '내 수필집',
     // 🔥 Task 99 — Tim 결정 (2026-05-04): 메인 home 4개 버튼.
     //   '기록하기' → '내 이야기' 라벨 변경. '기록하지 않기'와
     //   '샘플 이야기 보기'는 footer 작은 링크로 이동.
-    homeBtnRecord      : '내 이야기',
+    homeBtnRecord      : '📖 내 이야기책 만들기',
     homeBtnTalk        : '기록하지 않기',
     homeBtnMyStories   : '내 이야기 보기',
     homeBtnSamples     : '샘플 이야기 보기',
@@ -67,7 +69,7 @@ const HOME_MSGS = {
     //   교체하고, "내 이야기" (3번째) 가 /my-stories 목록 페이지로
     //   이동하도록 변경. 자서전·수필집·내 이야기·사진앨범 4개로 컨셉
     //   단순화. tellStoryFromList 는 my-stories 상단 CTA 에서 사용.
-    homeBtnPhotobook   : '사진 앨범집',
+    homeBtnPhotobook   : '📷 내 사진책 만들기',
     tellStoryFromList  : '이야기 하기',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -119,15 +121,16 @@ const HOME_MSGS = {
     privateLabel       : 'Private Mode',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    homeBtnMemoir      : 'My Memoir',
+    // 🔥 Sprint 1 (2026-05-09) — All services unified under "Make My ___".
+    homeBtnMemoir      : '📘 Make My Memoir',
     homeBtnEssay       : 'My Essays',
     // 🔥 Task 99 — Record renamed to clearer label.
-    homeBtnRecord      : 'My Stories',
+    homeBtnRecord      : '📖 Make My Story Book',
     homeBtnTalk        : "Don't Save",
     homeBtnMyStories   : 'View My Stories',
     homeBtnSamples     : 'Sample Stories',
     // Tim 2026-05-06 — see KO block above.
-    homeBtnPhotobook   : 'Photobook Collections',
+    homeBtnPhotobook   : '📷 Make My Photo Book',
     tellStoryFromList  : 'Tell a Story',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
@@ -177,15 +180,16 @@ const HOME_MSGS = {
     privateLabel       : 'Modo Privado',
 
     // 🔥 Task 83 — short labels for the 2×3 square grid (no subtitle).
-    homeBtnMemoir      : 'Mis memorias',
+    // 🔥 Sprint 1 (2026-05-09) — Identidad unificada "Crear Mi ___".
+    homeBtnMemoir      : '📘 Crear Mis Memorias',
     homeBtnEssay       : 'Mis ensayos',
     // 🔥 Task 99 — Grabar renombrado a etiqueta más clara.
-    homeBtnRecord      : 'Mis historias',
+    homeBtnRecord      : '📖 Crear Mi Libro de Historias',
     homeBtnTalk        : 'Sin guardar',
     homeBtnMyStories   : 'Ver mis historias',
     homeBtnSamples     : 'Historias de ejemplo',
     // Tim 2026-05-06 — ver bloque KO arriba.
-    homeBtnPhotobook   : 'Colecciones de álbumes',
+    homeBtnPhotobook   : '📷 Crear Mi Libro de Fotos',
     tellStoryFromList  : 'Contar una historia',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.

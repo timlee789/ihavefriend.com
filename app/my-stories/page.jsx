@@ -194,74 +194,229 @@ function EbookModal({ fragments, onClose, onSuccess, lang = 'KO' }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// UserCollection components (2026-04-26 — Task 36)
+// 목차 (Table of Contents) — 2026-05-09 Sprint 1
+//
+// REWRITTEN from the original modal-based CollectionDetailModal
+// pattern to match /book/[bookId]/customize's inline-expand
+// chapterBlock pattern. One unified UX: ▶/▼ toggle, inline ✏️/🗑️
+// actions, fragment list inside expanded block, "+ chapter" CTA at
+// page bottom. Same mental model whether the senior is shaping a
+// memoir or a free-story book.
+//
+// Data structure unchanged (Path A) — collections + fragments rows
+// stay exactly as they are. Only the visual + interaction layer
+// flipped to inline expand.
 // ═══════════════════════════════════════════════════════════════
 
 function CollectionsView({ collections, onCreated, onChanged, lang, fragments }) {
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [openCollectionId, setOpenCollectionId] = useState(null);
+  const [expanded, setExpanded] = useState({});           // { [collectionId]: bool }
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCol, setEditingCol] = useState(null);     // collection row being edited
+  const [confirmDel, setConfirmDel] = useState(null);     // { id, name }
+  const [addingFragmentTo, setAddingFragmentTo] = useState(null); // collection id
+
+  // Per-collection fragment cache so an open block doesn't refetch
+  // on every parent re-render. Keyed by collection id, value is
+  // the array of fragment rows (or null = loading, undefined = not
+  // yet fetched).
+  const [fragmentsByCol, setFragmentsByCol] = useState({});
+
+  const loadFragments = useCallback(async (colId) => {
+    setFragmentsByCol(prev => ({ ...prev, [colId]: null }));
+    try {
+      const res = await authFetch(`/api/collections/${colId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFragmentsByCol(prev => ({ ...prev, [colId]: data.collection?.fragments || [] }));
+      } else {
+        setFragmentsByCol(prev => ({ ...prev, [colId]: [] }));
+      }
+    } catch {
+      setFragmentsByCol(prev => ({ ...prev, [colId]: [] }));
+    }
+  }, []);
+
+  function toggleExpand(colId) {
+    const willOpen = !expanded[colId];
+    setExpanded(prev => ({ ...prev, [colId]: willOpen }));
+    if (willOpen && fragmentsByCol[colId] === undefined) {
+      loadFragments(colId);
+    }
+  }
+
+  async function handleRemoveFragment(colId, fragmentId) {
+    try {
+      const res = await authFetch(
+        `/api/collections/${colId}/fragments/${fragmentId}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) {
+        await loadFragments(colId);
+        onChanged();
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleConfirmDelete() {
+    if (!confirmDel) return;
+    try {
+      const res = await authFetch(`/api/collections/${confirmDel.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setConfirmDel(null);
+        onChanged();
+      }
+    } catch (e) { console.error(e); }
+  }
 
   return (
     <div className={s.collectionsContainer}>
-      <button
-        className={s.createCollectionBtn}
-        onClick={() => setShowCreateModal(true)}
-      >
-        ➕ {vm.createCollection}
-      </button>
-
       {collections.length === 0 ? (
-        <div className={s.emptyState}>
-          <div className={s.emptyIcon}>📚</div>
-          <div className={s.emptyTitle}>{vm.noCollections}</div>
-          <div className={s.emptyDesc}>{vm.noCollectionsHint}</div>
-        </div>
+        <>
+          <div className={s.emptyState}>
+            <div className={s.emptyIcon}>📚</div>
+            <div className={s.emptyTitle}>{vm.noCollections}</div>
+            <div className={s.emptyDesc}>{vm.noCollectionsHint}</div>
+          </div>
+          {/* Even on empty state, the bottom CTA is the way to start.
+              No top-of-page CTA — Tim's strategy says "+ at bottom"
+              like the chapter-add pattern. */}
+        </>
       ) : (
-        <div className={s.collectionsList}>
-          {collections.map(c => (
-            <button
-              key={c.id}
-              className={s.collectionCard}
-              onClick={() => setOpenCollectionId(c.id)}
-            >
-              <div className={s.collectionTitle}>{c.name}</div>
-              {c.description && (
-                <div className={s.collectionDesc}>{c.description}</div>
-              )}
-              <div className={s.collectionMeta}>
-                {vm.fragmentCountLabel(c.fragment_count || 0)} · {(c.total_word_count || 0).toLocaleString()}{vm.charsLabel}
+        <div className={s.collectionBlockList}>
+          {collections.map(c => {
+            const isOpen = !!expanded[c.id];
+            const frags = fragmentsByCol[c.id];
+            return (
+              <div key={c.id} className={s.collectionBlock}>
+                <div className={s.collectionHeader}>
+                  <button
+                    className={s.collectionToggle}
+                    onClick={() => toggleExpand(c.id)}
+                  >
+                    {isOpen ? '▼' : '▶'} 📖 {c.name}
+                  </button>
+                  <div className={s.collectionActions}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingCol(c); }}
+                      title={vm.editCollection}
+                    >✏️</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDel({ id: c.id, name: c.name });
+                      }}
+                      title={vm.deleteCollection}
+                    >🗑️</button>
+                  </div>
+                </div>
+
+                {isOpen && (
+                  <div className={s.fragmentListInline}>
+                    {c.description && (
+                      <p className={s.collectionInlineDesc}>{c.description}</p>
+                    )}
+                    <div className={s.collectionInlineMeta}>
+                      {vm.fragmentCountLabel(c.fragment_count || 0)} · {(c.total_word_count || 0).toLocaleString()}{vm.charsLabel}
+                    </div>
+
+                    {frags === null && <Spinner />}
+                    {Array.isArray(frags) && frags.length === 0 && (
+                      <div className={s.emptyHint}>{vm.noFragmentsInCollection}</div>
+                    )}
+                    {Array.isArray(frags) && frags.length > 0 && (
+                      <div className={s.fragmentRowList}>
+                        {frags.map(f => (
+                          <div key={f.id} className={s.fragmentRowInline}>
+                            <span className={s.fragmentRowInlineTitle}>📄 {f.title}</span>
+                            <span className={s.fragmentRowInlineMeta}>
+                              {(f.word_count || 0).toLocaleString()}{vm.charsLabel}
+                            </span>
+                            <button
+                              className={s.fragmentRowInlineRemove}
+                              onClick={() => handleRemoveFragment(c.id, f.id)}
+                              title={vm.removeFromCollection}
+                            >🗑️</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      className={s.addFragmentBtnInline}
+                      onClick={() => setAddingFragmentTo(c.id)}
+                    >
+                      {vm.addFragmentBtn}
+                    </button>
+                  </div>
+                )}
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {showCreateModal && (
-        <CreateCollectionModal
+      {/* "+ 새 목차 만들기" — page-bottom CTA matches chapter-add pattern */}
+      <button
+        className={s.addCollectionBtnBottom}
+        onClick={() => setShowAddModal(true)}
+      >
+        {vm.createCollection}
+      </button>
+
+      {showAddModal && (
+        <CollectionAddModal
           lang={lang}
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => setShowAddModal(false)}
           onCreated={() => {
-            setShowCreateModal(false);
+            setShowAddModal(false);
             onCreated();
           }}
         />
       )}
 
-      {openCollectionId && (
-        <CollectionDetailModal
-          collectionId={openCollectionId}
+      {editingCol && (
+        <CollectionEditModal
+          collection={editingCol}
           lang={lang}
-          fragments={fragments}
-          onClose={() => setOpenCollectionId(null)}
-          onChanged={onChanged}
+          onClose={() => setEditingCol(null)}
+          onSaved={() => {
+            setEditingCol(null);
+            onChanged();
+          }}
+        />
+      )}
+
+      {confirmDel && (
+        <CollectionDeleteConfirmModal
+          name={confirmDel.name}
+          lang={lang}
+          onCancel={() => setConfirmDel(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {addingFragmentTo && (
+        <AddFragmentToCollectionModal
+          collectionId={addingFragmentTo}
+          allFragments={fragments}
+          existingFragmentIds={(fragmentsByCol[addingFragmentTo] || []).map(f => f.id)}
+          lang={lang}
+          onClose={() => setAddingFragmentTo(null)}
+          onAdded={async () => {
+            await loadFragments(addingFragmentTo);
+            onChanged();
+          }}
         />
       )}
     </div>
   );
 }
 
-function CreateCollectionModal({ lang, onClose, onCreated }) {
+// ── Collection Add Modal (was CreateCollectionModal) ───────────
+function CollectionAddModal({ lang, onClose, onCreated }) {
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -346,219 +501,122 @@ function CreateCollectionModal({ lang, onClose, onCreated }) {
   );
 }
 
-function CollectionDetailModal({ collectionId, lang, fragments, onClose, onChanged }) {
+// ── Collection Edit Modal (matches chapter-edit pattern) ──────
+function CollectionEditModal({ collection, lang, onClose, onSaved }) {
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
-  const [collection, setCollection] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [showAddFragmentModal, setShowAddFragmentModal] = useState(false);
-  const [error, setError] = useState('');
+  const [name, setName]               = useState(collection.name || '');
+  const [description, setDescription] = useState(collection.description || '');
+  const [saving, setSaving]           = useState(false);
+  const [error, setError]             = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await authFetch(`/api/collections/${collectionId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCollection(data.collection);
-        setEditName(data.collection.name);
-        setEditDescription(data.collection.description || '');
-      }
-    } catch (e) {
-      console.error('[CollectionDetailModal load]', e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [collectionId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function handleSave() {
-    if (!editName.trim()) {
-      setError(vm.nameRequired);
-      return;
-    }
+  async function handleSubmit() {
+    if (!name.trim()) { setError(vm.nameRequired); return; }
+    setSaving(true);
     setError('');
     try {
-      const res = await authFetch(`/api/collections/${collectionId}`, {
+      const res = await authFetch(`/api/collections/${collection.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          name: editName.trim(),
-          description: editDescription.trim() || null,
+          name: name.trim(),
+          description: description.trim() || null,
         }),
       });
       if (res.ok) {
-        setEditing(false);
-        await load();
-        onChanged();
+        onSaved();
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || vm.errMsg);
       }
     } catch {
       setError(vm.errMsg);
+    } finally {
+      setSaving(false);
     }
-  }
-
-  async function handleDelete() {
-    if (!window.confirm(vm.confirmDelete)) return;
-    try {
-      const res = await authFetch(`/api/collections/${collectionId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        onChanged();
-        onClose();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async function handleRemoveFragment(fragmentId) {
-    try {
-      const res = await authFetch(
-        `/api/collections/${collectionId}/fragments/${fragmentId}`,
-        { method: 'DELETE' }
-      );
-      if (res.ok) {
-        await load();
-        onChanged();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  if (loading || !collection) {
-    return (
-      <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-        <div className={s.modal}>
-          <div className={s.modalHandle} />
-          <div className={s.modalBody}><Spinner /></div>
-        </div>
-      </div>
-    );
   }
 
   return (
-    <>
-      <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-        <div className={s.modal}>
-          <div className={s.modalHandle} />
-          <div className={s.modalHeader}>
-            <div className={s.modalTitle}>
-              {editing ? vm.editCollection : collection.name}
-            </div>
-            <button className={s.modalClose} onClick={onClose}>✕</button>
-          </div>
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div className={s.modalTitle}>{vm.editCollection}</div>
+          <button className={s.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          <label className={s.formLabelCol}>{vm.nameLabel}</label>
+          <input
+            type="text"
+            className={s.formInputCol}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            maxLength={200}
+            autoFocus
+          />
 
-          <div className={s.modalBody}>
-            {editing ? (
-              <>
-                <label className={s.formLabelCol}>{vm.nameLabel}</label>
-                <input
-                  type="text"
-                  className={s.formInputCol}
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  maxLength={200}
-                />
-                <label className={s.formLabelCol}>{vm.descriptionLabel}</label>
-                <textarea
-                  className={s.formTextareaCol}
-                  value={editDescription}
-                  onChange={e => setEditDescription(e.target.value)}
-                  maxLength={5000}
-                  rows={3}
-                  placeholder={vm.descriptionPlaceholder}
-                />
-                {error && <div className={s.errorMsg}>{error}</div>}
-                <div className={s.modalActions}>
-                  <button className={s.cancelBtn} onClick={() => { setEditing(false); setError(''); }}>
-                    {vm.cancelBtn}
-                  </button>
-                  <button className={s.btnPrimaryCol} onClick={handleSave}>
-                    {vm.saveBtn}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {collection.description && (
-                  <p className={s.collectionDescFull}>{collection.description}</p>
-                )}
-                <div className={s.collectionMetaFull}>
-                  {vm.fragmentCountLabel(collection.fragment_count || 0)} · {(collection.total_word_count || 0).toLocaleString()}{vm.charsLabel}
-                </div>
+          <label className={s.formLabelCol}>{vm.descriptionLabel}</label>
+          <textarea
+            className={s.formTextareaCol}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            maxLength={5000}
+            rows={3}
+            placeholder={vm.descriptionPlaceholder}
+          />
 
-                <button
-                  className={s.addFragmentBtn}
-                  onClick={() => setShowAddFragmentModal(true)}
-                >
-                  ➕ {vm.addFragmentBtn}
-                </button>
+          {error && <div className={s.errorMsg}>{error}</div>}
 
-                <div className={s.fragmentList}>
-                  {collection.fragments.length === 0 ? (
-                    <div className={s.emptyHint}>{vm.noFragmentsInCollection}</div>
-                  ) : (
-                    collection.fragments.map(f => (
-                      <div key={f.id} className={s.fragmentRow}>
-                        <div className={s.fragmentRowMain}>
-                          <div className={s.fragmentRowTitle}>📄 {f.title}</div>
-                          <div className={s.fragmentRowMeta}>
-                            {(f.word_count || 0).toLocaleString()}{vm.charsLabel}
-                            {f.continuation_count > 0 && ` · +${f.continuation_count}`}
-                          </div>
-                        </div>
-                        <button
-                          className={s.removeBtn}
-                          onClick={() => handleRemoveFragment(f.id)}
-                          title={vm.removeFromCollection}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {error && <div className={s.errorMsg}>{error}</div>}
-
-                <div className={s.modalActions}>
-                  <button className={s.btnDangerCol} onClick={handleDelete}>
-                    {vm.deleteCollection}
-                  </button>
-                  <button className={s.cancelBtn} onClick={() => setEditing(true)}>
-                    {vm.editCollection}
-                  </button>
-                  <button className={s.btnPrimaryCol} onClick={onClose}>
-                    {vm.closeBtn}
-                  </button>
-                </div>
-              </>
-            )}
+          <div className={s.modalActions}>
+            <button className={s.cancelBtn} onClick={onClose} disabled={saving}>
+              {vm.cancelBtn}
+            </button>
+            <button
+              className={s.btnPrimaryCol}
+              onClick={handleSubmit}
+              disabled={saving || !name.trim()}
+            >
+              {saving ? vm.saving : vm.saveBtn}
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {showAddFragmentModal && (
-        <AddFragmentToCollectionModal
-          collectionId={collectionId}
-          allFragments={fragments}
-          existingFragmentIds={collection.fragments.map(f => f.id)}
-          lang={lang}
-          onClose={() => setShowAddFragmentModal(false)}
-          onAdded={async () => {
-            await load();
-            onChanged();
-          }}
-        />
-      )}
-    </>
+// ── Collection Delete Confirm Modal ─────────────────────────────
+//
+// Single delete (no preserve/with-answers branch). Collections
+// are an organizational layer — fragments are NOT removed when a
+// collection is deleted, just unlinked. So the confirm copy is
+// reassuring ("이야기들은 그대로 남습니다").
+function CollectionDeleteConfirmModal({ name, lang, onCancel, onConfirm }) {
+  const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
+  return (
+    <div className={s.overlay} onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className={s.modal}>
+        <div className={s.modalHandle} />
+        <div className={s.modalHeader}>
+          <div className={s.modalTitle}>🗑️ {vm.deleteCollection}</div>
+          <button className={s.modalClose} onClick={onCancel}>✕</button>
+        </div>
+        <div className={s.modalBody}>
+          <p className={s.deletePromptInline}>
+            {`"${name}"`}
+          </p>
+          <div className={s.deleteHintInline}>
+            {vm.confirmDelete}
+          </div>
+          <div className={s.modalActions}>
+            <button className={s.cancelBtn} onClick={onCancel}>
+              {vm.cancelBtn}
+            </button>
+            <button className={s.btnDangerCol} onClick={onConfirm}>
+              {vm.deleteCollection}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
