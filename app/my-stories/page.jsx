@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import PhotoUploader from '@/components/photos/PhotoUploader';
-import FragmentModal from '@/components/fragments/FragmentModal';
+// 🔥 Sprint 2b (2026-05-10) — FragmentModal import 제거.
+//   카드 클릭이 setSelected(f) → router.push('/my-stories/[id]') 로
+//   변경되면서 이 페이지에서는 모달 직접 호출 없음. 새 페이지
+//   /my-stories/[fragmentId] 가 FragmentModal inline=true 로 렌더.
 import { VIS_MSGS } from '@/components/fragments/fragmentI18n';
 import {
   getToken,
@@ -211,10 +214,11 @@ export default function MyStoriesPage() {
   // 🔥 Sprint 2f — collections / activeTab state 제거 (목차는 별도
   //   페이지 /my-stories/customize 로 이동). 이 페이지는 fragments 만
   //   로드하고 목록을 보여줌.
+  // 🔥 Sprint 2b — selected state 제거. 카드 클릭이 모달 띄우는 대신
+  //   /my-stories/[fragmentId] 로 navigate 함.
   const [fragments, setFragments]   = useState([]);
   const [books, setBooks]           = useState([]);
   const [loading, setLoading]       = useState(true);
-  const [selected, setSelected]     = useState(null);   // fragment for detail modal
   const [showEbook, setShowEbook]   = useState(false);
   const [toast, setToast]           = useState('');
   const toastTimer = useRef(null);
@@ -267,26 +271,12 @@ export default function MyStoriesPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // ── Callbacks ────────────────────────────────────────────────
-  function handleUpdated(updated) {
-    setFragments(prev => prev.map(f => f.id === updated.id ? updated : f));
-    if (selected?.id === updated.id) setSelected(updated);
-    showToast(vm.toastSaved);
-  }
-
-  function handleDeleted(id) {
-    setFragments(prev => prev.filter(f => f.id !== id));
-    setSelected(null);
-    showToast(vm.toastDeleted);
-  }
-
-  // 🔥 Photos-only update path (Tim re-report). Updates the card
-  //   thumbnail list WITHOUT touching `selected`, so a photo upload /
-  //   delete inside the open modal never re-renders the modal sheet
-  //   and never hijacks the back-button click.
-  function handlePhotosChanged(fragmentId, photos) {
-    setFragments(prev => prev.map(f => (f.id === fragmentId ? { ...f, photos } : f)));
-  }
+  // 🔥 Sprint 2b — handleUpdated / handleDeleted / handlePhotosChanged
+  //   제거. 이전엔 모달 안에서 일어난 mutation 을 카드 목록에 반영해야
+  //   했지만, 이제 fragment 페이지가 별도라 이 페이지는 mutation 모름.
+  //   /my-stories 로 복귀할 때 useEffect → loadAll 이 자동으로 fresh
+  //   fragments 를 다시 가져옴 (next.js client navigation). 만약 stale
+  //   issue 발견되면 후속 sprint 에서 router.refresh 추가.
 
   function handleEbookSuccess() {
     // Refresh books after a moment
@@ -364,7 +354,15 @@ export default function MyStoriesPage() {
               {[...fragments]
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                 .map(f => (
-                  <FragmentCard key={f.id} fragment={f} onClick={() => setSelected(f)} lang={lang} />
+                  /* 🔥 Sprint 2b — 카드 클릭이 모달 띄우는 대신 별도
+                     페이지로 navigate. URL 변하고, browser back/refresh/
+                     공유 자연스러움. */
+                  <FragmentCard
+                    key={f.id}
+                    fragment={f}
+                    onClick={() => router.push(`/my-stories/${f.id}`)}
+                    lang={lang}
+                  />
                 ))}
             </div>
           )}
@@ -381,17 +379,9 @@ export default function MyStoriesPage() {
         </>
       )}
 
-      {/* ── Fragment Detail Modal ── */}
-      {selected && (
-        <FragmentModal
-          fragment={selected}
-          onClose={() => setSelected(null)}
-          onUpdated={handleUpdated}
-          onPhotosChanged={handlePhotosChanged}
-          onDeleted={handleDeleted}
-          lang={lang}
-        />
-      )}
+      {/* 🔥 Sprint 2b — FragmentModal overlay 제거.
+          카드 클릭 → /my-stories/[fragmentId] 별도 페이지가 자체 렌더.
+          이 페이지는 목록 + 빈 상태만 처리. */}
 
       {/* 🔥 Tim 2026-05-06 — EbookModal 제거 (책 만들기 흐름은 홈으로 이동).
           showEbook state 와 EbookModal 컴포넌트는 파일 상단에 남아있으나

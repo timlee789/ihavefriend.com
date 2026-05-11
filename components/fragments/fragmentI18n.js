@@ -89,6 +89,9 @@ export const VIS_MSGS = {
     customizeHeader     : '📋 목차 만들기',
     customizeIntro      : '이야기들을 챕터로 묶어 책의 목차로 만들 수 있어요',
     backToStories       : '← 내 이야기책으로',
+    // 🔥 Sprint 2b (2026-05-10) — /my-stories/[fragmentId] 페이지의
+    //   404 empty state. fragment 가 없거나 권한 X 일 때.
+    fragmentNotFound    : '이야기를 찾을 수 없습니다',
     // 🔥 Sprint 2c (2026-05-10) — 헤더 우상단 "안내" 버튼.
     //   /architect?type=story&from=stories 로 이동해 이야기책 6단계
     //   안내 페이지를 보여줌. 자서전의 /book/[id] "안내" 버튼과 동일
@@ -239,6 +242,7 @@ export const VIS_MSGS = {
     customizeHeader     : '📋 Shape Table of Contents',
     customizeIntro      : 'Group stories into chapters to build your book table of contents.',
     backToStories       : '← To My Story Book',
+    fragmentNotFound    : 'Story not found',
     helpBtn          : 'Guide',
     helpBtnTitle     : 'How to make a story book',
     tellStoryFromList: 'Tell a Story',
@@ -380,6 +384,7 @@ export const VIS_MSGS = {
     customizeHeader     : '📋 Da forma a tu Tabla de Contenidos',
     customizeIntro      : 'Agrupa historias en capítulos para crear la tabla de contenidos de tu libro.',
     backToStories       : '← A mi libro de historias',
+    fragmentNotFound    : 'Historia no encontrada',
     helpBtn          : 'Guía',
     helpBtnTitle     : 'Cómo hacer un libro de historias',
     tellStoryFromList: 'Contar una historia',
