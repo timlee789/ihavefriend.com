@@ -7,10 +7,14 @@
   color: #fdfdfd;
 }
 
+/* 🔥 Sprint 2f (2026-05-10) — Row 1 만 있는 헤더 (backBtn + helpBtn).
+   title 은 헤더 밖 별도 h1 (이미 자연스러운 2-row 구조). space-between
+   으로 backBtn 좌측 / helpBtn 우측 — 다른 페이지의 .headerRow1 과 시각 통일. */
 .header {
   padding: 12px 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
 }
 .backBtn {

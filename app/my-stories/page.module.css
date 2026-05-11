@@ -13,6 +13,10 @@
 }
 
 /* ── Header ── */
+/* 🔥 Sprint 2f (2026-05-10) — 2-row 헤더 (모바일 타이틀 잘림 해결).
+   Row 1: backBtn + headerRight (안내·목차) — flex space-between.
+   Row 2: 페이지 제목 (.title) full width — ellipsis 제거.
+   이전: single row + .pageTitle 이 가운데 끼여 잘림. */
 .header {
   position: sticky;
   top: 0;
@@ -23,10 +27,19 @@
   border-bottom: 1px solid rgba(0,0,0,0.06);
   padding: 14px 20px 12px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
 }
 
+.headerRow1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* DEPRECATED Sprint 2f — old single-row .headerLeft wrapper.
+   Kept for back-compat (no consumer); .headerRow1 replaces it. */
 .headerLeft {
   display: flex;
   align-items: center;
@@ -76,6 +89,61 @@
   font-weight: 700;
   color: #1a1a1a;
   letter-spacing: -0.4px;
+}
+
+/* 🔥 Sprint 2f (2026-05-10) — Row 2 의 페이지 제목 (h1).
+   24px / weight 700 / ellipsis 없음 (full width 라서 잘릴 일 없음).
+   /my-stories 와 /my-stories/customize 두 페이지 모두 사용. */
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.4px;
+  margin: 0;
+  line-height: 1.3;
+}
+@media (max-width: 380px) {
+  .title { font-size: 20px; }
+}
+
+/* customize 페이지의 설명문 (h1 아래) */
+.intro {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.55);
+  line-height: 1.6;
+  margin: 4px 0 0;
+}
+
+/* 🔥 Sprint 2f — 우상단 "📋 목차" 버튼. 자서전 /book/[bookId] 의
+   .customizeBtn 과 동일 visual (인디고 사각 텍스트). /my-stories
+   헤더의 .helpBtn 옆에 놓임. */
+.customizeBtn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  color: rgba(196, 181, 253, 0.92);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.customizeBtn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.45);
+}
+@media (prefers-color-scheme: light) {
+  .customizeBtn {
+    background: rgba(99, 102, 241, 0.10);
+    border-color: rgba(99, 102, 241, 0.30);
+    color: #4338ca;
+  }
+  .customizeBtn:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.45);
+  }
 }
 
 .refreshBtn {
@@ -1753,6 +1821,9 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .pageTitle  { color: #fdf8f4; }
+/* 🔥 Sprint 2f — Row 2 의 큰 페이지 제목 (24px, 이야기책 + customize 공용) */
+.title      { color: #fdf8f4; }
+.intro      { color: rgba(255, 255, 255, 0.65); }
 .refreshBtn { color: rgba(255, 255, 255, 0.6); }
 .refreshBtn:hover { color: #fdf8f4; }
 

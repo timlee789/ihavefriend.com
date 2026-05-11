@@ -68,31 +68,27 @@ export default function PhotobookListPage() {
 
   return (
     <div className={s.page}>
+      {/* 🔥 Sprint 2f (2026-05-10) — 헤더 2-row (모바일 타이틀 잘림 해결):
+            Row 1: [← 홈으로]  [안내][+ 새 사진 앨범집]
+            Row 2: 사진 앨범집 (full width, ellipsis 없음) */}
       <header className={s.header}>
-        <div className={s.headerLeft}>
-          {/* 🔥 Sprint 2e (2026-05-10) — ‹ 단일 아이콘 → "← 홈으로" 텍스트
-              사각 버튼 (자서전 /book/[bookId] 패턴). 세 책 흐름 backBtn
-              디자인 통일. aria-label 제거 — 텍스트 라벨 자체가 명확. */}
+        <div className={s.headerRow1}>
           <button className={s.backBtn} onClick={() => router.push('/')}>
             {m.backToHome}
           </button>
-          <span className={s.pageTitle}>{m.pageTitleList}</span>
+          <div className={s.headerRight}>
+            <button
+              className={s.helpBtn}
+              onClick={() => router.push('/architect?type=photobook&from=photobook')}
+              title={m.helpBtnTitle}
+              aria-label={m.helpBtnTitle}
+            >
+              {m.helpBtn}
+            </button>
+            <button className={s.newBtn} onClick={goNew}>{m.newBookBtn}</button>
+          </div>
         </div>
-        {/* 🔥 Sprint 2d (2026-05-10) — 우상단 "안내" + "+ 새 사진 앨범집"
-            두 버튼. /my-stories 헤더의 helpBtn 패턴 (Sprint 2c) 그대로
-            복제. 클릭 시 /architect?type=photobook&from=photobook 으로
-            이동해 사진책 6단계 안내 페이지를 띄움. */}
-        <div className={s.headerRight}>
-          <button
-            className={s.helpBtn}
-            onClick={() => router.push('/architect?type=photobook&from=photobook')}
-            title={m.helpBtnTitle}
-            aria-label={m.helpBtnTitle}
-          >
-            {m.helpBtn}
-          </button>
-          <button className={s.newBtn} onClick={goNew}>{m.newBookBtn}</button>
-        </div>
+        <h1 className={s.pageTitle}>{m.pageTitleList}</h1>
       </header>
 
       {loading ? (

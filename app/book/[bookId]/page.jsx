@@ -94,32 +94,29 @@ export default function BookOverviewPage() {
 
   return (
     <div className={s.container}>
+      {/* 🔥 Sprint 2f (2026-05-10) — 헤더 2-row 패턴 (모바일 타이틀 잘림 해결):
+            Row 1: [← 홈으로]  [안내][📋 목차]
+            Row 2: 📚 자서전 제목 (full width, ellipsis 없음) */}
       <header className={s.header}>
-        {/* 🔥 Task 83 — book overview backBtn jumps straight to /
-            (Tim's beta polish: skip the /book/select detour — that
-            templates surface is now reached via the home grid). */}
-        <button className={s.backBtn} onClick={() => router.push('/')}>{m.backToHome}</button>
-        {/* 🔥 Task 69 — localize the title via the template's i18n
-            name when present, falling back to whatever was stored
-            at start time. */}
+        <div className={s.headerRow1}>
+          <button className={s.backBtn} onClick={() => router.push('/')}>{m.backToHome}</button>
+          <div className={s.headerRight}>
+            <button
+              className={s.helpBtn}
+              onClick={() => router.push('/architect?from=book')}
+              title={m.helpBtnTitle}
+              aria-label={m.helpBtnTitle}
+            >{m.helpBtn}</button>
+            <button
+              className={s.customizeBtn}
+              onClick={() => router.push(`/book/${bookId}/customize`)}
+              title={m.customizeTitle}
+            >
+              {m.customizeBtn}
+            </button>
+          </div>
+        </div>
         <h1 className={s.title}>📚 {bookTitle}</h1>
-        {/* 🔥 Sprint 2a (2026-05-10) — ❓ 원형 아이콘 → "안내" 텍스트
-            버튼. Tim screenshot review: 시니어에게 "?" 는 의미 불분명.
-            위치도 좌상단 (← 옆) 에서 우상단 (목차 옆) 로 이동 — 정보
-            성격 (안내 + 목차) 끼리 묶임. */}
-        <button
-          className={s.helpBtn}
-          onClick={() => router.push('/architect?from=book')}
-          title={m.helpBtnTitle}
-          aria-label={m.helpBtnTitle}
-        >{m.helpBtn}</button>
-        <button
-          className={s.customizeBtn}
-          onClick={() => router.push(`/book/${bookId}/customize`)}
-          title={m.customizeTitle}
-        >
-          {m.customizeBtn}
-        </button>
       </header>
 
       {/* 🔥 Task 85 — Breadcrumb. On the book overview the only crumb

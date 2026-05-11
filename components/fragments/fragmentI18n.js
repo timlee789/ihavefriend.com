@@ -81,6 +81,14 @@ export const VIS_MSGS = {
     //   "← 홈으로" 녹색 사각 패턴으로 통일 (모든 책 흐름 페이지가
     //   동일한 backBtn). 자서전 lib/bookI18n.js 의 backToHome 과 동일 라벨.
     backToHome       : '← 홈으로',
+    // 🔥 Sprint 2f (2026-05-10) — 이야기책 목차 페이지화. /my-stories
+    //   헤더의 "📋 목차" 버튼 + /my-stories/customize 페이지 제목 +
+    //   설명문 + 돌아가기 라벨. 자서전 lib/bookI18n.js 와 동일 패턴.
+    customizeBtn        : '📋 목차',
+    customizeBtnTitle   : '목차 만들기',
+    customizeHeader     : '📋 목차 만들기',
+    customizeIntro      : '이야기들을 챕터로 묶어 책의 목차로 만들 수 있어요',
+    backToStories       : '← 내 이야기책으로',
     // 🔥 Sprint 2c (2026-05-10) — 헤더 우상단 "안내" 버튼.
     //   /architect?type=story&from=stories 로 이동해 이야기책 6단계
     //   안내 페이지를 보여줌. 자서전의 /book/[id] "안내" 버튼과 동일
@@ -226,6 +234,11 @@ export const VIS_MSGS = {
     continuationChildBlocked: 'Continuation entries follow their parent automatically.',
     pageTitle        : '📖 My Story Book',
     backToHome       : '← Home',
+    customizeBtn        : '📋 Table of Contents',
+    customizeBtnTitle   : 'Edit table of contents',
+    customizeHeader     : '📋 Shape Table of Contents',
+    customizeIntro      : 'Group stories into chapters to build your book table of contents.',
+    backToStories       : '← To My Story Book',
     helpBtn          : 'Guide',
     helpBtnTitle     : 'How to make a story book',
     tellStoryFromList: 'Tell a Story',
@@ -362,6 +375,11 @@ export const VIS_MSGS = {
     continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
     pageTitle        : '📖 Mi libro de historias',
     backToHome       : '← Inicio',
+    customizeBtn        : '📋 Tabla de Contenidos',
+    customizeBtnTitle   : 'Editar tabla de contenidos',
+    customizeHeader     : '📋 Da forma a tu Tabla de Contenidos',
+    customizeIntro      : 'Agrupa historias en capítulos para crear la tabla de contenidos de tu libro.',
+    backToStories       : '← A mi libro de historias',
     helpBtn          : 'Guía',
     helpBtnTitle     : 'Cómo hacer un libro de historias',
     tellStoryFromList: 'Contar una historia',
