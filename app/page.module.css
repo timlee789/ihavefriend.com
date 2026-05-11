@@ -292,14 +292,67 @@
   border-color: rgba(234, 88, 12, 0.50);
 }
 
-/* 🔥 Sprint 2a (2026-05-10) — Tagline hero. The page's leading
-   message ("이야기하면 책이 됩니다") sits at the top of the surface
-   in big bold type so the senior reads the value prop at a glance. */
+/* 🔥 Sprint 2g (2026-05-11) — Hero visual: 🎙️ → 📘 + 짧은 한 줄 텍스트.
+   Tim 의 brand 통찰: SayAndKeep 의 promise = 결과물 (📘 closed book),
+   변환은 commodity. 시각이 의미를 전달 (.heroVisual), 텍스트는 한 줄
+   보조 (.heroTagline). 모든 언어에서 동일 layout — 이전 .taglineLarge
+   28px 큰 글씨가 언어마다 줄 수 다른 문제 해결. */
 .taglineHero {
   text-align: center;
-  padding: 24px 16px 12px;
+  padding: 20px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
+.heroVisual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.heroIcon {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.10));
+}
+
+.heroArrow {
+  color: #fb923c;  /* SayAndKeep brand orange */
+  flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .heroIcon { font-size: 48px; }
+  .heroArrow { width: 48px; height: 20px; }
+}
+@media (min-width: 768px) {
+  .heroIcon { font-size: 64px; }
+  .heroArrow { width: 72px; height: 28px; }
+}
+
+.heroTagline {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(26, 20, 16, 0.65);
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+@media (max-width: 380px) {
+  .heroTagline { font-size: 14px; }
+}
+@media (min-width: 768px) {
+  .heroTagline { font-size: 18px; }
+}
+
+/* DEPRECATED Sprint 2g (2026-05-11) — replaced by .heroVisual +
+   .heroTagline. 28px 큰 글씨가 언어마다 줄 수 다름 (KO 1줄, EN 2줄,
+   ES 3줄) 이라 시각으로 대체. 클래스 자체는 다른 surface 에서 import
+   할 수 있으니 보존 — 향후 정리 가능. */
 .taglineLarge {
   font-size: 28px;
   font-weight: 800;
@@ -465,8 +518,12 @@
 @media (max-height: 700px) {
   .homeContainer { gap: 8px; padding: 8px 14px; }
   .homeTopHeader { padding: 4px 0 2px; }
-  .taglineHero   { padding: 14px 16px 8px; }
-  .taglineLarge  { font-size: 22px; }
+  /* Sprint 2g — short-viewport 에선 hero 도 살짝 축소. */
+  .taglineHero   { padding: 12px 16px 6px; gap: 6px; }
+  .heroIcon      { font-size: 44px; }
+  .heroArrow     { width: 48px; height: 20px; }
+  .heroTagline   { font-size: 13px; }
+  .taglineLarge  { font-size: 22px; }  /* DEPRECATED but kept for compat */
   .greetingLine  { font-size: 14px; margin: 2px 0 6px; }
   .gridBtn       { min-height: 92px; padding: 14px 18px; gap: 14px; }
   .gridIcon      { font-size: 40px; }
@@ -768,6 +825,10 @@
   .brandTagline { color: rgba(255, 255, 255, 0.85); }
   .logoSmall { color: #fb923c; }
   .taglineLarge { color: #fff; }
+  /* 🔥 Sprint 2g — Hero visual dark mode. */
+  .heroTagline { color: rgba(255, 255, 255, 0.70); }
+  .heroArrow   { color: #fb923c; }
+  .heroIcon    { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.30)); }
   .topAuthBtn {
     border-color: rgba(251, 146, 60, 0.40);
     color: #fb923c;

@@ -130,7 +130,9 @@ const HOME_MSGS = {
     tellStoryFromList  : 'Tell a Story',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
-    brandTagline       : "Tell your story. We'll make a book.",
+    // 🔥 Sprint 2g (2026-05-11) — 짧은 한 줄로 통일. Hero 의 🎙️ → 📘
+    //   시각이 의미 전달, 텍스트는 보조. KO/EN/ES 모두 한 줄 layout.
+    brandTagline       : 'Your voice, your book.',
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Terms of Service',
@@ -188,7 +190,8 @@ const HOME_MSGS = {
     tellStoryFromList  : 'Contar una historia',
 
     // 🔥 Task 86 — Brand tagline directly under the logo.
-    brandTagline       : 'Cuenta tu historia. Lo convertimos en un libro.',
+    // 🔥 Sprint 2g (2026-05-11) — frase corta, en una sola línea.
+    brandTagline       : 'Tu voz, tu libro.',
 
     // 🔥 Task 87 — Terms of Service link in footer.
     termsLabel         : 'Términos del servicio',
@@ -350,10 +353,43 @@ export default function Home() {
         )}
       </header>
 
-      {/* 🔥 Sprint 2a (2026-05-10) — Tagline hero. "이야기하면 책이
-          됩니다" 가 페이지의 진짜 제목이라는 Tim 의 비즈니스 정체성. */}
+      {/* 🔥 Sprint 2g (2026-05-11) — Hero visual: 🎙️ → 📘 (마이크 → 닫힌 책).
+          Tim 의 brand 통찰: SayAndKeep 의 차별점 = 결과물 (책), 변환은
+          commodity. 📘 (closed book) = "당신이 받게 될 것". 자서전 만들기
+          버튼의 큰 아이콘과 동일 → brand identity 강화. 가운데 SVG 부드러운
+          호 화살표가 "voice → book" 변환을 시각화. 텍스트는 한 줄 보조
+          (이전 .taglineLarge 28px 큰 글씨에서 .heroTagline 16px 보조 텍스트로). */}
       <div className={s.taglineHero}>
-        <p className={s.taglineLarge}>{msgs.brandTagline}</p>
+        <div className={s.heroVisual} aria-hidden="true">
+          <span className={s.heroIcon}>🎙️</span>
+          <svg
+            className={s.heroArrow}
+            width="60"
+            height="24"
+            viewBox="0 0 60 24"
+            fill="none"
+          >
+            {/* 부드러운 quadratic Bezier 곡선 (왼→오) */}
+            <path
+              d="M 4 14 Q 30 4, 52 14"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* 화살촉 */}
+            <path
+              d="M 48 10 L 52 14 L 48 18"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
+          <span className={s.heroIcon}>📘</span>
+        </div>
+        <p className={s.heroTagline}>{msgs.brandTagline}</p>
       </div>
 
       {/* Greeting (small line under the tagline hero). */}
