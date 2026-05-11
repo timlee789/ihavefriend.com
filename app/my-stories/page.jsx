@@ -812,7 +812,21 @@ export default function MyStoriesPage() {
           <button className={s.backBtn} onClick={() => router.back()}>‹</button>
           <span className={s.pageTitle}>{vm.pageTitle}</span>
         </div>
-        <button className={s.refreshBtn} onClick={loadAll} title={vm.refreshTitle}>↻</button>
+        {/* 🔥 Sprint 2c (2026-05-10) — 우상단 "안내" + ↻ 두 버튼.
+            자서전의 /book/[id] 헤더에 "안내" 가 있는 것과 동일 패턴.
+            클릭 시 /architect?type=story&from=stories 로 이동해
+            이야기책 6단계 안내 페이지를 띄움. */}
+        <div className={s.headerRight}>
+          <button
+            className={s.helpBtn}
+            onClick={() => router.push('/architect?type=story&from=stories')}
+            title={vm.helpBtnTitle}
+            aria-label={vm.helpBtnTitle}
+          >
+            {vm.helpBtn}
+          </button>
+          <button className={s.refreshBtn} onClick={loadAll} title={vm.refreshTitle}>↻</button>
+        </div>
       </div>
 
       {/* 🔥 Tim 2026-05-06 — 홈에서 "내 이야기" 가 /chat 직행이 아닌

@@ -77,6 +77,12 @@ export const VIS_MSGS = {
     noCollectionsYet : '먼저 목차를 만들어 주세요',
     continuationChildBlocked: '이어말한 이야기는 부모를 추가하면 함께 따라옵니다.',
     pageTitle        : '📖 내 이야기책',
+    // 🔥 Sprint 2c (2026-05-10) — 헤더 우상단 "안내" 버튼.
+    //   /architect?type=story&from=stories 로 이동해 이야기책 6단계
+    //   안내 페이지를 보여줌. 자서전의 /book/[id] "안내" 버튼과 동일
+    //   패턴 (두 흐름의 mental model 통일).
+    helpBtn          : '안내',
+    helpBtnTitle     : '이야기책 만드는 방법',
     // 🔥 Tim 2026-05-06 — /my-stories 상단 큰 CTA. 홈 페이지의 4번째
     //   버튼이 "사진앨범" 으로 바뀌면서, 기존 "내 이야기" (홈 3번째) 가
     //   /chat 직행이 아닌 /my-stories 목록으로 이동하게 됨. 그래서 이
@@ -215,6 +221,8 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Create a chapter first',
     continuationChildBlocked: 'Continuation entries follow their parent automatically.',
     pageTitle        : '📖 My Story Book',
+    helpBtn          : 'Guide',
+    helpBtnTitle     : 'How to make a story book',
     tellStoryFromList: 'Tell a Story',
     refreshTitle     : 'Refresh',
     statLabelStories : 'Stories',
@@ -348,6 +356,8 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Primero crea un capítulo',
     continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
     pageTitle        : '📖 Mi libro de historias',
+    helpBtn          : 'Guía',
+    helpBtnTitle     : 'Cómo hacer un libro de historias',
     tellStoryFromList: 'Contar una historia',
     refreshTitle     : 'Actualizar',
     statLabelStories : 'Historias',
