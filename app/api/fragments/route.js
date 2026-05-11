@@ -4,6 +4,7 @@
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { checkQuotaOrError } from '@/lib/quotas';
 
 export async function GET(request) {
   const { user, error } = await requireAuth(request);
@@ -42,6 +43,20 @@ export async function POST(request) {
   const db = createDb();
 
   try {
+    // 🔥 Sprint 2j (2026-05-11) — Trial quota check. Count user's existing
+    //   root fragments (parent_fragment_id IS NULL — continuations don't
+    //   count against the limit), bail with 403 + quota_exceeded if over.
+    const countResult = await db.query(
+      `SELECT COUNT(*)::int AS n FROM story_fragments
+        WHERE user_id = $1 AND parent_fragment_id IS NULL`,
+      [user.id]
+    );
+    const count = countResult.rows[0]?.n || 0;
+    const check = await checkQuotaOrError(user.id, 'maxFragments', count);
+    if (!check.ok) {
+      return Response.json(check.error, { status: 403 });
+    }
+
     const { createFragment } = require('@/lib/fragmentManager');
     const fragment = await createFragment(db, user.id, body);
     return Response.json({ fragment }, { status: 201 });

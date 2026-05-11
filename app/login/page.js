@@ -131,6 +131,26 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* 🔥 Sprint 2j V2 (2026-05-11) — Trial CTA on the login tab.
+            Senior conversion: "처음이세요? 무료 Trial 시작" 한 클릭으로
+            register 모드 전환. 가입 시 자동으로 tier='free' 가 적용됨. */}
+        {mode === 'login' && (
+          <>
+            <div style={styles.divider}>
+              <span style={styles.dividerLine} />
+              <span style={styles.dividerText}>또는 / or</span>
+              <span style={styles.dividerLine} />
+            </div>
+            <button
+              type="button"
+              style={styles.trialCta}
+              onClick={() => setMode('register')}
+            >
+              🌱 처음이세요? 무료 Trial 시작하기
+            </button>
+          </>
+        )}
+
         <p style={styles.footer}>
           {mode === 'login'
             ? "Don't have an account? "
@@ -241,4 +261,38 @@ const styles = {
   btnDisabled: { opacity: 0.6 },
   footer: { textAlign: 'center', marginTop: 24, color: '#94a3b8', fontSize: 14 },
   link: { color: '#a855f7', cursor: 'pointer', fontWeight: 500 },
+
+  // 🔥 Sprint 2j V2 — Trial CTA section.
+  divider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    margin: '22px 0 14px',
+    color: '#94a3b8',
+    fontSize: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    background: 'rgba(255, 255, 255, 0.10)',
+  },
+  dividerText: {
+    flexShrink: 0,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  trialCta: {
+    width: '100%',
+    background: 'rgba(34, 197, 94, 0.12)',
+    border: '1px solid rgba(134, 239, 172, 0.45)',
+    color: '#86efac',
+    borderRadius: 12,
+    padding: '14px 16px',
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    letterSpacing: '-0.01em',
+    transition: 'background 0.15s ease, border-color 0.15s ease',
+  },
 };

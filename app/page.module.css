@@ -262,6 +262,17 @@
   gap: 12px;
 }
 
+/* 🔥 Sprint 2j V2 (2026-05-11) — right cluster for TrialBadge + auth button. */
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+@media (max-width: 380px) {
+  .topRight { gap: 6px; }
+}
+
 .logoSmall {
   font-size: 18px;
   font-weight: 700;

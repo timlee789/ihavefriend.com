@@ -31,6 +31,7 @@
  */
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { checkQuotaOrError } from '@/lib/quotas';
 import { createDb } from '@/lib/db';
 import {
   makePhotoKey,
@@ -104,6 +105,23 @@ export async function POST(request, { params }) {
   const page = await loadOwnedPage(db, photobookId, pageId, user.id);
   if (!page) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
+
+  // 🔥 Sprint 2j (2026-05-11) — Trial quota check. Count user's existing
+  //   photobook photos across all their photobooks; 403 if at limit.
+  //   photobook_photos joins photobook_pages → user_books for ownership.
+  const photoCountRes = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM photobook_photos pp
+       JOIN photobook_pages  pg ON pg.id = pp.page_id
+       JOIN user_books       ub ON ub.id = pg.book_id
+      WHERE ub.user_id = $1`,
+    [user.id]
+  );
+  const photoCount = photoCountRes.rows[0]?.n || 0;
+  const photoCheck = await checkQuotaOrError(user.id, 'maxPhotos', photoCount);
+  if (!photoCheck.ok) {
+    return NextResponse.json(photoCheck.error, { status: 403 });
   }
 
   // Parse multipart.

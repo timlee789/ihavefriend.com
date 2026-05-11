@@ -27,19 +27,40 @@ export async function GET(request) {
 
   const db = createDb();
   try {
-    const result = await db.query(`
-      SELECT
-        u.id, u.email, u.name, u.role, u.tier,
-        u.free_token_limit, u.lifetime_tokens_used,
-        u.quota_blocked_at, u."createdAt" as created_at,
-        (SELECT COUNT(*)::int FROM chat_sessions   WHERE user_id = u.id) AS session_count,
-        (SELECT COUNT(*)::int FROM story_fragments WHERE user_id = u.id) AS fragment_count,
-        (SELECT COUNT(*)::int FROM user_books      WHERE user_id = u.id AND status = 'in_progress') AS active_books
-      FROM "User" u
-      ORDER BY u.lifetime_tokens_used DESC NULLS LAST, u.id ASC
-    `);
+    // 🔥 Sprint 2j V2 (2026-05-11) — LEFT JOIN user_limits for per-user
+    //   override fields (Sprint 2j adds max_fragments / max_photos /
+    //   max_books / allow_pdf / allow_audio_qr / allow_sharing /
+    //   data_retention_days). Plus tier_defaults table for admin to see
+    //   "what's the default" alongside user overrides.
+    const [usersRes, tierDefaultsRes] = await Promise.all([
+      db.query(`
+        SELECT
+          u.id, u.email, u.name, u.role, u.tier,
+          u.free_token_limit, u.lifetime_tokens_used,
+          u.quota_blocked_at, u."createdAt" as created_at,
+          ul.daily_minutes        AS daily_minutes,
+          ul.monthly_minutes      AS monthly_minutes,
+          ul.max_fragments        AS max_fragments,
+          ul.max_photos           AS max_photos,
+          ul.max_books            AS max_books,
+          ul.allow_pdf            AS allow_pdf,
+          ul.allow_audio_qr       AS allow_audio_qr,
+          ul.allow_sharing        AS allow_sharing,
+          ul.data_retention_days  AS data_retention_days,
+          (SELECT COUNT(*)::int FROM chat_sessions   WHERE user_id = u.id) AS session_count,
+          (SELECT COUNT(*)::int FROM story_fragments WHERE user_id = u.id) AS fragment_count,
+          (SELECT COUNT(*)::int FROM user_books      WHERE user_id = u.id AND status = 'in_progress') AS active_books
+        FROM "User" u
+        LEFT JOIN user_limits ul ON ul.user_id = u.id
+        ORDER BY u.lifetime_tokens_used DESC NULLS LAST, u.id ASC
+      `),
+      db.query(`SELECT * FROM tier_defaults ORDER BY
+                 CASE tier WHEN 'free' THEN 1 WHEN 'premium' THEN 2 WHEN 'unlimited' THEN 3 ELSE 9 END`),
+    ]);
+
     return Response.json({
-      users: result.rows,
+      users: usersRes.rows,
+      tier_defaults: tierDefaultsRes.rows,
       default_free_limit: parseInt(process.env.FREE_TOKEN_LIMIT || '100000', 10),
     });
   } catch (e) {

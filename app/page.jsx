@@ -14,6 +14,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUserPlan } from '@/components/auth/useUserPlan';
+import TrialBadge from '@/components/auth/TrialBadge';
 import s from './page.module.css';
 
 // ── Localization ─────────────────────────────────────────────────
@@ -219,6 +221,9 @@ export default function Home() {
   const [lang, setLang] = useLang();
   const [userName, setUserName] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
+  // 🔥 Sprint 2j V2 (2026-05-11) — TrialBadge data. Hook is no-op for
+  //   anonymous users (returns plan=null), so safe to call unconditionally.
+  const { plan } = useUserPlan();
   // 🆕 Stage 7 — surface in-progress books on the home page so the
   //   senior can resume in one tap (Task 83 routes them through the
   //   memoir / essay grid buttons by template_category).
@@ -348,15 +353,19 @@ export default function Home() {
           leading message instead of being a subtitle to the logo. */}
       <header className={s.homeTopHeader}>
         <h1 className={s.logoSmall}>SayAndKeep.com</h1>
-        {isLoggedIn ? (
-          <button className={s.topAuthBtn} onClick={handleLogout}>
-            {msgs.logout}
-          </button>
-        ) : (
-          <button className={s.topAuthBtn} onClick={() => router.push('/login')}>
-            {msgs.loginBtn}
-          </button>
-        )}
+        <div className={s.topRight}>
+          {/* 🔥 Sprint 2j V2 — Trial 사용자만 보이는 배지 (분 남음 · 이야기 N/M). */}
+          {plan && plan.isTrial && <TrialBadge plan={plan} />}
+          {isLoggedIn ? (
+            <button className={s.topAuthBtn} onClick={handleLogout}>
+              {msgs.logout}
+            </button>
+          ) : (
+            <button className={s.topAuthBtn} onClick={() => router.push('/login')}>
+              {msgs.loginBtn}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* 🔥 Sprint 2g (2026-05-11) — Hero visual: 🎙️ → 📘 (마이크 → 닫힌 책).

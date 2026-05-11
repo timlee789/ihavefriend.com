@@ -22,6 +22,7 @@
  *   • bulk-insert empty user_book_responses rows, one per question
  */
 import { requireAuth } from '@/lib/auth';
+import { checkQuotaOrError } from '@/lib/quotas';
 import { createDb } from '@/lib/db';
 
 export async function POST(request) {
@@ -273,6 +274,19 @@ async function startFromSample({ user, sampleId, customTitle }) {
         resumed: true,
         source:  'sample',
       });
+    }
+
+    // 🔥 Sprint 2j (2026-05-11) — maxBooks quota (per kind = memoir).
+    //   Resume path 위에서 통과 (기존 책 재진입은 limit X). 새 memoir 생성 시점만 체크.
+    const cntRes = await db.query(
+      `SELECT COUNT(*)::int AS n FROM user_books
+        WHERE user_id = $1 AND template_category = 'memoir'`,
+      [user.id]
+    );
+    const cnt = cntRes.rows[0]?.n || 0;
+    const check = await checkQuotaOrError(user.id, 'maxBooks', cnt);
+    if (!check.ok) {
+      return Response.json(check.error, { status: 403 });
     }
 
     // 3. structure snapshot — template path 와 동일한 markers 추가.

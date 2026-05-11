@@ -8,6 +8,7 @@
  *  - RETURNING value converted back to lowercase for API consumers
  */
 import { requireAuth } from '@/lib/auth';
+import { checkFeatureOrError } from '@/lib/quotas';
 import { createDb } from '@/lib/db';
 import { bookStatusToDb, bookStatusFromDb, bookFormatToDb } from '@/lib/enumMappers';
 
@@ -28,6 +29,13 @@ export async function POST(request) {
 
   if (!title?.trim()) {
     return Response.json({ error: '제목을 입력해 주세요.' }, { status: 400 });
+  }
+
+  // 🔥 Sprint 2j (2026-05-11) — PDF ebook 생성은 paid 기능. trial (free)
+  //   tier 는 차단 (403 + PDF_NOT_ALLOWED). 정식 등록 후 가능.
+  const pdfCheck = await checkFeatureOrError(user.id, 'allowPdf');
+  if (!pdfCheck.ok) {
+    return Response.json(pdfCheck.error, { status: 403 });
   }
 
   const db = createDb();

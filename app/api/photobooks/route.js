@@ -14,6 +14,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { checkQuotaOrError } from '@/lib/quotas';
 
 // ─────────────────────────────────────────────────────────────────
 // GET — list user's photobooks
@@ -110,6 +111,19 @@ export async function POST(request) {
   }
 
   const db = createDb();
+
+  // 🔥 Sprint 2j (2026-05-11) — maxBooks quota (per kind). Count user's
+  //   existing photobooks; bail with 403 if at limit.
+  const cntRes = await db.query(
+    `SELECT COUNT(*)::int AS n FROM user_books
+      WHERE user_id = $1 AND book_type = 'photobook'`,
+    [user.id]
+  );
+  const cnt = cntRes.rows[0]?.n || 0;
+  const check = await checkQuotaOrError(user.id, 'maxBooks', cnt);
+  if (!check.ok) {
+    return NextResponse.json(check.error, { status: 403 });
+  }
 
   try {
     const result = await db.query(
