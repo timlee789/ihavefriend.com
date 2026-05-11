@@ -56,6 +56,24 @@ const STEPS_STORY = [
     arrowAfter: null },
 ];
 
+// 🔥 Sprint 2d (2026-05-10) — 사진책 흐름. photo-first (시각 기반):
+//   사진 한 장에 추억 한 줄, 페이지 순서 정리. 4-5-6 (수정/표지/인쇄)
+//   는 자서전·이야기책과 완전 동일. ?type=photobook 으로 분기.
+const STEPS_PHOTOBOOK = [
+  { icon: '📷', title: '사진 모으기',       desc: '카메라나 앨범에서 사진을 추가합니다',
+    arrowAfter: 'bidirectional' },
+  { icon: '📝', title: '이야기 쓰기',       desc: '각 사진에 짧은 이야기를 적습니다',
+    arrowAfter: 'bidirectional' },
+  { icon: '🔀', title: '페이지 정리',       desc: '페이지 순서를 바꾸고 정리합니다',
+    arrowAfter: 'bidirectional' },
+  { icon: '✏️', title: '이야기 수정/편집',  desc: '직접 다듬기',
+    arrowAfter: 'forward' },
+  { icon: '🎨', title: '표지 만들기',       desc: '책의 얼굴 정하기',
+    arrowAfter: 'forward' },
+  { icon: '📦', title: '책 인쇄',           desc: '완성된 책을 손에',
+    arrowAfter: null },
+];
+
 export default function ArchitectOverviewPage() {
   // useSearchParams() requires Suspense boundary for static prerendering
   // (Next.js 16 / Turbopack). Inner component reads the params; outer
@@ -85,23 +103,30 @@ function ArchitectOverviewInner() {
   //   /book/[id] 의 ❓ 아이콘으로 6단계 안내를 다시 볼 수 있어야 함.
   //   ?from=book 쿼리가 있으면 resume guard 우회 + CTA 를 "돌아가기" 로 변경.
   //
-  // 🔥 Sprint 2c (2026-05-10) — ?type=story 분기 추가.
-  //   ?type=story: 이야기책 안내 (STEPS_STORY). 항상 도움말 모드 —
-  //   이야기책은 시작 CTA 가 없고 (/my-stories 가 진입점), 이 페이지는
-  //   순수히 안내용. resume guard API 호출도 우회.
-  //   ?from=stories: /my-stories 에서 호출됐음을 표시 (back / CTA 가
-  //   "내 이야기책으로 돌아가기" 로 바뀜).
-  const fromParam   = searchParams.get('from');
-  const typeParam   = searchParams.get('type');
-  const isStoryType = typeParam === 'story';
-  const isHelpMode  = fromParam === 'book' || fromParam === 'stories' || isStoryType;
+  // 🔥 Sprint 2c (2026-05-10) — ?type=story 분기 추가 (이야기책 안내).
+  // 🔥 Sprint 2d (2026-05-10) — ?type=photobook 분기 추가 (사진책 안내).
+  //   세 흐름 (자서전 / 이야기책 / 사진책) 한 컴포넌트에서 처리.
+  //   ?type=story|photobook 은 항상 도움말 모드 — 진입점이 다른 페이지
+  //   (/my-stories, /photobook) 라서 resume guard API 호출 불필요.
+  //   우선순위: photobook > story > 자서전 default.
+  const fromParam       = searchParams.get('from');
+  const typeParam       = searchParams.get('type');
+  const isStoryType     = typeParam === 'story';
+  const isPhotobookType = typeParam === 'photobook';
+  const isHelpMode      = !!fromParam || isStoryType || isPhotobookType;
 
-  // Active STEPS / 제목 / 인트로 / 부속 텍스트 모두 type 으로 분기.
-  const STEPS      = isStoryType ? STEPS_STORY : STEPS_MEMOIR;
-  const titleText  = isStoryType ? '📖 이야기책 만들기' : '📚 책 만들기 시작';
-  const introText  = isStoryType
-    ? '이야기를 자유롭게 모으고, 나중에 책으로 묶으세요.\n어디부터 시작해도 좋아요.'
-    : '당신과 비슷한 인생 이야기를 골라보세요.\n그 위에 당신의 이야기를 만들어 갑시다.';
+  // Active STEPS / 제목 / 인트로 — 3-way (photobook > story > memoir).
+  const STEPS = isPhotobookType ? STEPS_PHOTOBOOK
+              : isStoryType     ? STEPS_STORY
+              : STEPS_MEMOIR;
+  const titleText = isPhotobookType ? '📷 사진 앨범집 만들기'
+                  : isStoryType     ? '📖 이야기책 만들기'
+                  : '📚 책 만들기 시작';
+  const introText = isPhotobookType
+    ? '사진 한 장에 추억 한 줄.\n가족과 함께 펼쳐볼 작은 책을 만들어요.'
+    : isStoryType
+      ? '이야기를 자유롭게 모으고, 나중에 책으로 묶으세요.\n어디부터 시작해도 좋아요.'
+      : '당신과 비슷한 인생 이야기를 골라보세요.\n그 위에 당신의 이야기를 만들어 갑시다.';
 
   const [state, setState]       = useState('checking'); // 'checking' | 'ready'
   const [currentBookId, setCurrentBookId] = useState(null); // help 모드에서 돌아갈 책
@@ -110,16 +135,20 @@ function ArchitectOverviewInner() {
     // ── Auth gate ──
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
-      const target = isStoryType ? '/architect?type=story&from=stories' : '/architect';
+      // Sprint 2d: 3-way postLoginRedirect — type 에 따라 적절한 URL 저장
+      // 해서 로그인 후 정확한 안내 페이지로 복귀.
+      const target = isPhotobookType ? '/architect?type=photobook&from=photobook'
+                   : isStoryType     ? '/architect?type=story&from=stories'
+                   : '/architect';
       try { sessionStorage.setItem('postLoginRedirect', target); } catch {}
       router.replace('/login');
       return;
     }
 
-    // 🔥 Sprint 2c (2026-05-10) — 이야기책 모드는 항상 안내 페이지.
-    //   /my-stories 가 진입점이고 이 페이지는 순수 도움말이라 자서전
+    // 🔥 Sprint 2c/2d — 이야기책 / 사진책 모드는 항상 안내 페이지.
+    //   진입점이 다른 페이지 (/my-stories, /photobook) 라서 자서전
     //   resume guard API 호출이 불필요. 즉시 ready 로.
-    if (isStoryType) {
+    if (isStoryType || isPhotobookType) {
       setState('ready');
       return;
     }
@@ -152,7 +181,7 @@ function ArchitectOverviewInner() {
         if (!cancelled) setState('ready');
       });
     return () => { cancelled = true; };
-  }, [router, isHelpMode, isStoryType]);
+  }, [router, isHelpMode, isStoryType, isPhotobookType]);
 
   if (state === 'checking') {
     return (
@@ -165,21 +194,26 @@ function ArchitectOverviewInner() {
     );
   }
 
-  // 🔥 Sprint 2c — back / CTA 라벨은 세 가지 모드에 따라 분기:
-  //   1) isStoryType  → 내 이야기책으로 (always)
-  //   2) isHelpMode (자서전) → 자서전으로
-  //   3) 그 외 (기본 자서전 시작) → 홈으로
-  const backLabel = isStoryType ? '내 이야기책으로'
-                  : isHelpMode  ? '자서전으로'
+  // 🔥 Sprint 2d — 4가지 모드 분기 (우선순위 photobook > story > help > default):
+  //   1) isPhotobookType → 사진 앨범집으로
+  //   2) isStoryType     → 내 이야기책으로
+  //   3) isHelpMode (자서전 ?from=book) → 자서전으로
+  //   4) 그 외 (default 자서전 시작) → 홈으로
+  const backLabel = isPhotobookType ? '사진 앨범집으로'
+                  : isStoryType     ? '내 이야기책으로'
+                  : isHelpMode      ? '자서전으로'
                   : '홈으로';
-  const ctaLabel  = isStoryType ? '← 내 이야기책으로 돌아가기'
-                  : isHelpMode  ? '← 자서전으로 돌아가기'
+  const ctaLabel  = isPhotobookType ? '← 사진 앨범집으로 돌아가기'
+                  : isStoryType     ? '← 내 이야기책으로 돌아가기'
+                  : isHelpMode      ? '← 자서전으로 돌아가기'
                   : '▶ 1단계 시작하기';
-  const ctaSubLabel = isStoryType
-    ? '이야기책은 자유롭게 만드세요. 위 단계는 참고용입니다.'
-    : isHelpMode
-      ? '이미 자서전을 시작하셨어요. 위 단계를 참고해 주세요.'
-      : '5개 시나리오 중에서 비슷한 것을 고르세요';
+  const ctaSubLabel = isPhotobookType
+    ? '사진 앨범집은 자유롭게 만드세요. 위 단계는 참고용입니다.'
+    : isStoryType
+      ? '이야기책은 자유롭게 만드세요. 위 단계는 참고용입니다.'
+      : isHelpMode
+        ? '이미 자서전을 시작하셨어요. 위 단계를 참고해 주세요.'
+        : '5개 시나리오 중에서 비슷한 것을 고르세요';
 
   return (
     <div className={s.page}>
@@ -188,6 +222,10 @@ function ArchitectOverviewInner() {
           type="button"
           className={s.backBtn}
           onClick={() => {
+            if (isPhotobookType) {
+              router.push('/photobook');
+              return;
+            }
             if (isStoryType) {
               router.push('/my-stories');
               return;
@@ -241,6 +279,10 @@ function ArchitectOverviewInner() {
         type="button"
         className={s.cta}
         onClick={() => {
+          if (isPhotobookType) {
+            router.push('/photobook');
+            return;
+          }
           if (isStoryType) {
             router.push('/my-stories');
             return;

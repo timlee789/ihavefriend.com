@@ -73,7 +73,21 @@ export default function PhotobookListPage() {
           <button className={s.backBtn} onClick={() => router.push('/')} aria-label={m.backBtn}>‹</button>
           <span className={s.pageTitle}>{m.pageTitleList}</span>
         </div>
-        <button className={s.newBtn} onClick={goNew}>{m.newBookBtn}</button>
+        {/* 🔥 Sprint 2d (2026-05-10) — 우상단 "안내" + "+ 새 사진 앨범집"
+            두 버튼. /my-stories 헤더의 helpBtn 패턴 (Sprint 2c) 그대로
+            복제. 클릭 시 /architect?type=photobook&from=photobook 으로
+            이동해 사진책 6단계 안내 페이지를 띄움. */}
+        <div className={s.headerRight}>
+          <button
+            className={s.helpBtn}
+            onClick={() => router.push('/architect?type=photobook&from=photobook')}
+            title={m.helpBtnTitle}
+            aria-label={m.helpBtnTitle}
+          >
+            {m.helpBtn}
+          </button>
+          <button className={s.newBtn} onClick={goNew}>{m.newBookBtn}</button>
+        </div>
       </header>
 
       {loading ? (
