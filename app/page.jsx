@@ -318,9 +318,15 @@ export default function Home() {
   //   without git archaeology if needed.
 
   function onMemoirClick() {
-    if (!isLoggedIn) return requireLogin('/architect');
-    if (memoirBook) router.push(`/book/${memoirBook.id}`);
-    else router.push('/architect');
+    // 🔥 Sprint 2i (2026-05-11) — soft paywall. Anonymous 사용자도
+    //   /architect 안내 페이지 진입 가능 — 6단계 시각화로 가치 이해 후
+    //   "▶ 1단계 시작하기" 클릭 시 login 요구. 시니어 conversion funnel:
+    //   "보고 결정" > "보지 않고 가입".
+    if (isLoggedIn && memoirBook) {
+      router.push(`/book/${memoirBook.id}`);
+      return;
+    }
+    router.push('/architect');
   }
 
   // function onEssayClick() {
@@ -422,7 +428,11 @@ export default function Home() {
 
         <button
           className={`${s.gridBtn} ${s.gridBtnRecord}`}
-          onClick={() => isLoggedIn ? router.push('/my-stories') : requireLogin('/my-stories')}
+          onClick={() => isLoggedIn
+            ? router.push('/my-stories')
+            // 🔥 Sprint 2i — anonymous: 이야기책 안내 페이지 (open).
+            //   CTA "← 내 이야기책으로 돌아가기" 클릭 시 login 요구.
+            : router.push('/architect?type=story&from=stories')}
         >
           {/* 🔥 Sprint 2a (2026-05-10) — 🎙️ → 📖. 마이크는 "녹음" 함의가
               강한데 이 버튼은 "이야기책 만들기" 라서 책 아이콘이 더 적합. */}
@@ -432,7 +442,11 @@ export default function Home() {
 
         <button
           className={`${s.gridBtn} ${s.gridBtnMyStories}`}
-          onClick={() => isLoggedIn ? router.push('/photobook') : requireLogin('/photobook')}
+          onClick={() => isLoggedIn
+            ? router.push('/photobook')
+            // 🔥 Sprint 2i — anonymous: 사진책 안내 페이지 (open).
+            //   CTA "← 사진 앨범집으로 돌아가기" 클릭 시 login 요구.
+            : router.push('/architect?type=photobook&from=photobook')}
         >
           <div className={s.gridIcon}>📷</div>
           <div className={s.gridLabel}>{msgs.homeBtnPhotobook}</div>

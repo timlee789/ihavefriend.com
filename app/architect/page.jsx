@@ -134,14 +134,13 @@ function ArchitectOverviewInner() {
   useEffect(() => {
     // ── Auth gate ──
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    // 🔥 Sprint 2i (2026-05-11) — soft paywall. Anonymous 사용자도 안내
+    //   페이지 보임 (login 요구 X). 가치 이해 후 CTA 시점에만 login 요구.
+    //   시니어 conversion funnel: "보지 않고 가입 X" → "보고 결정" 의 영구
+    //   baseline. /architect 가 open 이면 베타 link / SEO 진입도 자연스러움.
     if (!token) {
-      // Sprint 2d: 3-way postLoginRedirect — type 에 따라 적절한 URL 저장
-      // 해서 로그인 후 정확한 안내 페이지로 복귀.
-      const target = isPhotobookType ? '/architect?type=photobook&from=photobook'
-                   : isStoryType     ? '/architect?type=story&from=stories'
-                   : '/architect';
-      try { sessionStorage.setItem('postLoginRedirect', target); } catch {}
-      router.replace('/login');
+      setState('ready');
       return;
     }
 
@@ -279,6 +278,24 @@ function ArchitectOverviewInner() {
         type="button"
         className={s.cta}
         onClick={() => {
+          // 🔥 Sprint 2i (2026-05-11) — soft paywall 의 login gate.
+          //   Anonymous 사용자가 안내 페이지 본 뒤 CTA 클릭 시점에 login 요구.
+          //   postLoginRedirect 에 정확한 목적지 저장해서 로그인 후 자연스럽게
+          //   대상 페이지로 복귀.
+          const token = typeof window !== 'undefined'
+            ? localStorage.getItem('token')
+            : null;
+          if (!token) {
+            const target = isPhotobookType ? '/photobook'
+                         : isStoryType     ? '/my-stories'
+                         : '/architect';   // 자서전 default: 다시 /architect 로
+                                           //   (logged-in 이면 resume guard 가 처리)
+            try { sessionStorage.setItem('postLoginRedirect', target); } catch {}
+            router.push('/login');
+            return;
+          }
+
+          // Logged-in: 기존 로직 (대상 페이지로).
           if (isPhotobookType) {
             router.push('/photobook');
             return;
