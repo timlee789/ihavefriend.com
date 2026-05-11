@@ -70,7 +70,12 @@ export default function PhotobookListPage() {
     <div className={s.page}>
       <header className={s.header}>
         <div className={s.headerLeft}>
-          <button className={s.backBtn} onClick={() => router.push('/')} aria-label={m.backBtn}>‹</button>
+          {/* 🔥 Sprint 2e (2026-05-10) — ‹ 단일 아이콘 → "← 홈으로" 텍스트
+              사각 버튼 (자서전 /book/[bookId] 패턴). 세 책 흐름 backBtn
+              디자인 통일. aria-label 제거 — 텍스트 라벨 자체가 명확. */}
+          <button className={s.backBtn} onClick={() => router.push('/')}>
+            {m.backToHome}
+          </button>
           <span className={s.pageTitle}>{m.pageTitleList}</span>
         </div>
         {/* 🔥 Sprint 2d (2026-05-10) — 우상단 "안내" + "+ 새 사진 앨범집"

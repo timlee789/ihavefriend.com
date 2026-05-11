@@ -77,6 +77,10 @@ export const VIS_MSGS = {
     noCollectionsYet : '먼저 목차를 만들어 주세요',
     continuationChildBlocked: '이어말한 이야기는 부모를 추가하면 함께 따라옵니다.',
     pageTitle        : '📖 내 이야기책',
+    // 🔥 Sprint 2e (2026-05-10) — backBtn 디자인 통일. 자서전 페이지의
+    //   "← 홈으로" 녹색 사각 패턴으로 통일 (모든 책 흐름 페이지가
+    //   동일한 backBtn). 자서전 lib/bookI18n.js 의 backToHome 과 동일 라벨.
+    backToHome       : '← 홈으로',
     // 🔥 Sprint 2c (2026-05-10) — 헤더 우상단 "안내" 버튼.
     //   /architect?type=story&from=stories 로 이동해 이야기책 6단계
     //   안내 페이지를 보여줌. 자서전의 /book/[id] "안내" 버튼과 동일
@@ -221,6 +225,7 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Create a chapter first',
     continuationChildBlocked: 'Continuation entries follow their parent automatically.',
     pageTitle        : '📖 My Story Book',
+    backToHome       : '← Home',
     helpBtn          : 'Guide',
     helpBtnTitle     : 'How to make a story book',
     tellStoryFromList: 'Tell a Story',
@@ -356,6 +361,7 @@ export const VIS_MSGS = {
     noCollectionsYet : 'Primero crea un capítulo',
     continuationChildBlocked: 'Las continuaciones siguen automáticamente al padre.',
     pageTitle        : '📖 Mi libro de historias',
+    backToHome       : '← Inicio',
     helpBtn          : 'Guía',
     helpBtnTitle     : 'Cómo hacer un libro de historias',
     tellStoryFromList: 'Contar una historia',

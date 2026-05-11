@@ -809,12 +809,14 @@ export default function MyStoriesPage() {
       {/* ── Header ── */}
       <div className={s.header}>
         <div className={s.headerLeft}>
-          {/* 🔥 Sprint 2d (2026-05-10) — router.back() → router.push('/').
-              이전 router.back() 패턴이 안내 페이지 (/architect?type=story)
-              와 무한 루프 만들었음 (안내 → 이야기책 ← 안내 ← 이야기책 ...).
-              명확한 destination (홈) 으로 push 하면 history 의존 없이
-              루프 끊김. /photobook 도 이미 같은 패턴. */}
-          <button className={s.backBtn} onClick={() => router.push('/')}>‹</button>
+          {/* 🔥 Sprint 2d — router.back() → router.push('/') (무한 루프 fix).
+              🔥 Sprint 2e (2026-05-10) — ‹ 단일 아이콘 → "← 홈으로" 텍스트
+                 사각 버튼. 자서전 /book/[bookId] backBtn 과 동일 visual
+                 (녹색 톤, 44px, book/green identity). 세 책 흐름의
+                 backBtn 디자인 통일. */}
+          <button className={s.backBtn} onClick={() => router.push('/')}>
+            {vm.backToHome}
+          </button>
           <span className={s.pageTitle}>{vm.pageTitle}</span>
         </div>
         {/* 🔥 Sprint 2c (2026-05-10) — 우상단 "안내" + ↻ 두 버튼.

@@ -30,6 +30,10 @@ export const PB_MSGS = {
     //   6단계 안내 페이지를 보여줌. 자서전·이야기책과 동일 패턴.
     helpBtn         : '안내',
     helpBtnTitle    : '사진 앨범집 만드는 방법',
+    // 🔥 Sprint 2e (2026-05-10) — backBtn 디자인 통일 (자서전 페이지의
+    //   "← 홈으로" 녹색 사각 패턴). 세 책 흐름 (자서전·이야기책·사진책)
+    //   모두 동일 라벨.
+    backToHome      : '← 홈으로',
 
     // ── 새 책 만들기 ──
     pageTitleNew    : '새 사진 앨범집 만들기',
@@ -145,6 +149,7 @@ export const PB_MSGS = {
     loadFailed      : 'Could not load your books.',
     helpBtn         : 'Guide',
     helpBtnTitle    : 'How to make a photo book',
+    backToHome      : '← Home',
 
     pageTitleNew    : 'New photobook collection',
     titleLabel      : 'Title',
@@ -252,6 +257,7 @@ export const PB_MSGS = {
     loadFailed      : 'No se pudieron cargar los álbumes.',
     helpBtn         : 'Guía',
     helpBtnTitle    : 'Cómo hacer un libro de fotos',
+    backToHome      : '← Inicio',
 
     pageTitleNew    : 'Nueva colección',
     titleLabel      : 'Título',
