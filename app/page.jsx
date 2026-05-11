@@ -354,42 +354,49 @@ export default function Home() {
       </header>
 
       {/* 🔥 Sprint 2g (2026-05-11) — Hero visual: 🎙️ → 📘 (마이크 → 닫힌 책).
-          Tim 의 brand 통찰: SayAndKeep 의 차별점 = 결과물 (책), 변환은
-          commodity. 📘 (closed book) = "당신이 받게 될 것". 자서전 만들기
-          버튼의 큰 아이콘과 동일 → brand identity 강화. 가운데 SVG 부드러운
-          호 화살표가 "voice → book" 변환을 시각화. 텍스트는 한 줄 보조
-          (이전 .taglineLarge 28px 큰 글씨에서 .heroTagline 16px 보조 텍스트로). */}
+          📘 = SayAndKeep 의 promise (결과물). 자서전 만들기 버튼의 아이콘과
+          동일 → brand identity 강화. SVG 부드러운 호 = "voice → book" 변환.
+
+          🔥 Sprint 2h (2026-05-11) — Tim production 검증 후 hero card 화.
+          3개 컬러 버튼 (110px) 이 시각적으로 압도 → hero 가 "그냥 장식"
+          으로 읽힘. .heroCard wrapper 추가 (165px, 따뜻한 크림 배경, brand
+          톤 border + shadow). 아이콘 56→76px, 화살표 stroke 2.5→4.5 (80%
+          두꺼움), 텍스트 16→17px weight 500→600 + 진한 톤 (0.65→0.80).
+          → Hero 가 primary visual, 3개 액션 버튼은 secondary. 시니어 첫
+          인상: "이게 뭐 하는 거구나" → "어떤 책 만들까?" 자연스러운 flow. */}
       <div className={s.taglineHero}>
-        <div className={s.heroVisual} aria-hidden="true">
-          <span className={s.heroIcon}>🎙️</span>
-          <svg
-            className={s.heroArrow}
-            width="60"
-            height="24"
-            viewBox="0 0 60 24"
-            fill="none"
-          >
-            {/* 부드러운 quadratic Bezier 곡선 (왼→오) */}
-            <path
-              d="M 4 14 Q 30 4, 52 14"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
+        <div className={s.heroCard}>
+          <div className={s.heroVisual} aria-hidden="true">
+            <span className={s.heroIcon}>🎙️</span>
+            <svg
+              className={s.heroArrow}
+              width="72"
+              height="28"
+              viewBox="0 0 60 24"
               fill="none"
-            />
-            {/* 화살촉 */}
-            <path
-              d="M 48 10 L 52 14 L 48 18"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
-          <span className={s.heroIcon}>📘</span>
+            >
+              {/* 부드러운 quadratic Bezier 곡선 (왼→오) */}
+              <path
+                d="M 4 14 Q 30 4, 52 14"
+                stroke="currentColor"
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* 화살촉 */}
+              <path
+                d="M 48 10 L 52 14 L 48 18"
+                stroke="currentColor"
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            <span className={s.heroIcon}>📘</span>
+          </div>
+          <p className={s.heroTagline}>{msgs.brandTagline}</p>
         </div>
-        <p className={s.heroTagline}>{msgs.brandTagline}</p>
       </div>
 
       {/* Greeting (small line under the tagline hero). */}

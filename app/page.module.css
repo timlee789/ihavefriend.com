@@ -293,60 +293,110 @@
 }
 
 /* 🔥 Sprint 2g (2026-05-11) — Hero visual: 🎙️ → 📘 + 짧은 한 줄 텍스트.
-   Tim 의 brand 통찰: SayAndKeep 의 promise = 결과물 (📘 closed book),
-   변환은 commodity. 시각이 의미를 전달 (.heroVisual), 텍스트는 한 줄
-   보조 (.heroTagline). 모든 언어에서 동일 layout — 이전 .taglineLarge
-   28px 큰 글씨가 언어마다 줄 수 다른 문제 해결. */
+   📘 = SayAndKeep 의 promise (결과물). 시각이 의미를 전달, 텍스트는
+   한 줄 보조. 모든 언어에서 동일 layout (이전 .taglineLarge 28px 큰
+   글씨가 언어마다 줄 수 다른 문제 해결).
+
+   🔥 Sprint 2h (2026-05-11) — Tim 검증 후 hero card 화. .heroCard
+   wrapper 가 165px (= 버튼 110px × 1.5) 의 카드 형태로 brand promise 를
+   primary visual 로 격상. 3개 action 버튼은 secondary. 아이콘 / 화살표 /
+   텍스트 모두 비례 ↑.  */
 .taglineHero {
-  text-align: center;
-  padding: 20px 16px 10px;
+  /* Sprint 2h — 외부 padding 줄임. 카드 자체가 visual 무게를 차지. */
+  padding: 8px 0 12px;
+}
+
+/* 🔥 Sprint 2h (2026-05-11) — Hero promise card. 3개 action 버튼과 같은
+   visual 어휘 (border-radius 18px, padding, shadow) 이지만 1.5배 크기 +
+   따뜻한 크림 배경으로 brand promise 무게 부여. */
+.heroCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 165px;
+  padding: 24px 20px;
+  border-radius: 18px;
+  background: #fffbf5;  /* 홈 배경 #fff7ed 위 살짝 밝은 따뜻한 크림 */
+  border: 1px solid rgba(234, 88, 12, 0.12);
+  box-shadow:
+    0 2px 8px rgba(234, 88, 12, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: background-color 0.15s ease;
+  box-sizing: border-box;
+}
+@media (max-width: 380px) {
+  .heroCard {
+    min-height: 145px;
+    padding: 20px 16px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+}
+@media (min-width: 768px) {
+  .heroCard {
+    min-height: 185px;
+    padding: 28px 24px;
+    gap: 16px;
+  }
 }
 
 .heroVisual {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 18px;  /* Sprint 2h — 14 → 18 (큰 아이콘 사이 호흡) */
+}
+@media (max-width: 380px) {
+  .heroVisual { gap: 14px; }
+}
+@media (min-width: 768px) {
+  .heroVisual { gap: 24px; }
 }
 
 .heroIcon {
-  font-size: 56px;
+  /* Sprint 2h — 56 → 76px (Tim 의 "더 크게" 정확) */
+  font-size: 76px;
   line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.10));
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.10));
+}
+@media (max-width: 380px) {
+  .heroIcon { font-size: 64px; }
+}
+@media (min-width: 768px) {
+  .heroIcon { font-size: 88px; }
 }
 
 .heroArrow {
   color: #fb923c;  /* SayAndKeep brand orange */
   flex-shrink: 0;
+  /* default width/height: JSX attribute 72×28 (Sprint 2h 비례 ↑) */
 }
-
 @media (max-width: 380px) {
-  .heroIcon { font-size: 48px; }
-  .heroArrow { width: 48px; height: 20px; }
+  .heroArrow { width: 56px; height: 22px; }
 }
 @media (min-width: 768px) {
-  .heroIcon { font-size: 64px; }
-  .heroArrow { width: 72px; height: 28px; }
+  .heroArrow { width: 88px; height: 32px; }
 }
 
 .heroTagline {
-  font-size: 16px;
-  font-weight: 500;
-  color: rgba(26, 20, 16, 0.65);
+  /* Sprint 2h — 16 → 17px, weight 500 → 600, 0.65 → 0.80 (강조 ↑) */
+  font-size: 17px;
+  font-weight: 600;
+  color: rgba(26, 20, 16, 0.80);
   margin: 0;
   letter-spacing: -0.01em;
   line-height: 1.4;
   word-break: keep-all;
+  text-align: center;
 }
 @media (max-width: 380px) {
-  .heroTagline { font-size: 14px; }
+  .heroTagline { font-size: 15px; }
 }
 @media (min-width: 768px) {
-  .heroTagline { font-size: 18px; }
+  .heroTagline { font-size: 20px; }
 }
 
 /* DEPRECATED Sprint 2g (2026-05-11) — replaced by .heroVisual +
@@ -518,11 +568,14 @@
 @media (max-height: 700px) {
   .homeContainer { gap: 8px; padding: 8px 14px; }
   .homeTopHeader { padding: 4px 0 2px; }
-  /* Sprint 2g — short-viewport 에선 hero 도 살짝 축소. */
-  .taglineHero   { padding: 12px 16px 6px; gap: 6px; }
-  .heroIcon      { font-size: 44px; }
-  .heroArrow     { width: 48px; height: 20px; }
-  .heroTagline   { font-size: 13px; }
+  /* Sprint 2g/2h — short-viewport 에선 hero card 도 살짝 축소.
+     min-height 130px 로 줄여서 화면 작은 폰 (SE) 에서 hero + 버튼 모두
+     보이도록 균형. 카드 형태 + visual balance 는 유지. */
+  .taglineHero   { padding: 4px 0 8px; }
+  .heroCard      { min-height: 130px; padding: 16px 18px; gap: 10px; }
+  .heroIcon      { font-size: 56px; }
+  .heroArrow     { width: 56px; height: 22px; }
+  .heroTagline   { font-size: 14px; }
   .taglineLarge  { font-size: 22px; }  /* DEPRECATED but kept for compat */
   .greetingLine  { font-size: 14px; margin: 2px 0 6px; }
   .gridBtn       { min-height: 92px; padding: 14px 18px; gap: 14px; }
@@ -826,9 +879,17 @@
   .logoSmall { color: #fb923c; }
   .taglineLarge { color: #fff; }
   /* 🔥 Sprint 2g — Hero visual dark mode. */
-  .heroTagline { color: rgba(255, 255, 255, 0.70); }
+  /* 🔥 Sprint 2h — heroCard 카드 배경 + heroTagline 진하게 (0.70 → 0.85) */
+  .heroCard {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(251, 146, 60, 0.20);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.20),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .heroTagline { color: rgba(255, 255, 255, 0.85); }
   .heroArrow   { color: #fb923c; }
-  .heroIcon    { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.30)); }
+  .heroIcon    { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.30)); }
   .topAuthBtn {
     border-color: rgba(251, 146, 60, 0.40);
     color: #fb923c;
