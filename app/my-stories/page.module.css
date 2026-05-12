@@ -2173,3 +2173,180 @@
 .inlineContainer .modalBody {
   padding: 0 20px 20px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2M (2026-05-11) — Desktop layer.
+
+   이 파일은 4 surface 가 공유 (한 CSS 모듈):
+     1. /my-stories             (list)        → Pattern 5 grid
+     2. /my-stories/customize   (TOC)         → Pattern 5 chapter cards
+     3. /my-stories/[fragmentId] (detail)     → Pattern 4 sidebar + main
+                                                 (via FragmentModal inline)
+     4. /book/[id]/question/[qId] inline 답변  → 같은 sidebar+main 효과
+                                                 (FragmentModal inline=true)
+
+   모든 desktop CSS = @media (min-width: 768px) 안. Mobile (~767px)
+   layout 100% 보존.
+
+   Sprint 2L 의 variables 활용: --bp-tablet, --max-content,
+   --sidebar-wide, --space-*.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  /* ── .page wrapper (4 surfaces 모두) ──
+     모바일의 max-width 430 → desktop 1200. 카드 → full content. */
+  .page {
+    max-width: var(--max-content);
+  }
+
+  /* ── Header (sticky, 3 페이지 공통) ──
+     2-row 패턴 그대로 — padding 만 살짝 여유. */
+  .header {
+    padding: 16px 32px 14px;
+  }
+  .title {
+    font-size: 28px;
+  }
+
+  /* ── List 페이지: Pattern 5 Grid (1→2→3→4 columns) ──
+     .cardList 가 fragments 카드 grid. */
+  .cardList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    padding: 0 var(--space-xl);
+  }
+
+  /* tellStoryCta 도 desktop padding 맞춤 */
+  .tellStoryCta {
+    max-width: 100%;
+    margin: 16px var(--space-xl) 4px;
+  }
+
+  /* ── /my-stories/[fragmentId] — Pattern 4 light (FragmentModal inline) ──
+     .inlineContainer 가 detail 페이지의 본문 wrapper. 데스크톱에선
+     2-column 그리드: 본문 main + 사진 sidebar. .modalContent (텍스트
+     /textarea) 와 .modalActions 는 column 1, .photosSection 은
+     column 2 (sidebar 로 float). 나머지 (.threadSection 등) 는 자연
+     스럽게 main column 에 따라 흐름. */
+  .inlineContainer {
+    margin: var(--space-lg) auto 0;
+    max-width: var(--max-content);
+    width: 100%;
+  }
+  .inlineContainer .modalHeader {
+    padding: 18px var(--space-xl) 10px;
+  }
+  .inlineContainer .modalTitle {
+    font-size: 22px;
+  }
+  .inlineContainer .modalBody {
+    padding: 0 var(--space-xl) var(--space-xl);
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar-wide);
+    grid-auto-flow: row dense;  /* photos 우측 sidebar 효과 */
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  /* photosSection 우측 sidebar 로 — 여러 row 자동 흐름. */
+  .inlineContainer .modalBody .photosSection {
+    grid-column: 2;
+    grid-row: 1 / span 20;       /* sidebar 가 main 전체 높이를 차지 */
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    align-self: start;
+  }
+  /* main column 의 다른 모든 children — column 1 명시. */
+  .inlineContainer .modalBody > *:not(.photosSection) {
+    grid-column: 1;
+  }
+  /* textarea 가 desktop 에선 더 길게 */
+  .inlineContainer .editArea {
+    min-height: 360px;
+  }
+
+  /* ── /my-stories/customize — Pattern 5 chapter grid (간단 desktop) ──
+     모바일의 inline-expand 패턴 보존하면서 desktop 에선 chapter card
+     를 2-column grid 로 펼침. 펼치면 한 cell 에서 fragmentListInline
+     이 표시 — 자연스러운 확장. */
+  .collectionsContainer {
+    padding: 0 var(--space-xl) var(--space-xl);
+  }
+  .collectionBlockList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+  }
+  .addCollectionBtnBottom {
+    grid-column: 1 / -1;  /* 전체 폭 */
+  }
+
+  /* ── Modal overlay (non-inline) — 2 페이지의 detail modal ──
+     /my-stories 의 fragment 카드 detail (Sprint 2b 이전엔 직접 사용,
+     이제 inline 만 사용) — 안전을 위해 centered 보존. */
+  .overlay {
+    align-items: center;
+    padding: var(--space-xl);
+  }
+  .modal {
+    border-radius: 24px;
+    max-width: var(--max-edit);
+    max-height: 88dvh;
+  }
+
+  /* tabBar (deprecated Sprint 2f, 안전을 위해 padding 만 정리) */
+  .tabBar {
+    padding: 0 var(--space-xl);
+  }
+  /* sectionTitle desktop padding */
+  .sectionTitle {
+    padding: 24px var(--space-xl) 12px;
+  }
+  /* empty state desktop */
+  .emptyState {
+    padding: 80px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* ── Full desktop (Pattern 5 grid: 3 columns) ── */
+  .cardList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  /* Customize chapter grid stays 2-column (chapters are wider/info-dense). */
+
+  /* Header / inlineContainer padding 살짝 더 ↑ */
+  .header {
+    padding: 18px 40px 16px;
+  }
+  .inlineContainer .modalHeader {
+    padding: 20px 40px 12px;
+  }
+  .inlineContainer .modalBody {
+    padding: 0 40px 40px;
+  }
+  .collectionsContainer {
+    padding: 0 40px 40px;
+  }
+  .cardList,
+  .tabBar,
+  .sectionTitle {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .tellStoryCta {
+    margin: 20px 40px 6px;
+  }
+}
+
+@media (min-width: 1440px) {
+  /* ── Wide screens (Pattern 5: 4 columns) ── */
+  .cardList {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .collectionBlockList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
