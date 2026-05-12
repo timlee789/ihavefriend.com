@@ -1176,3 +1176,34 @@
 }
 .resumeProgress { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
 .resumeArrow { font-size: 22px; color: rgba(255, 255, 255, 0.5); flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2O (2026-05-11) — Home desktop polish (Tier 2).
+   Tim 결정 (a): 단순 max-width 확장. 2-column hero 등 큰 변경 X.
+
+   Mobile (~767px): max-width 430 그대로 (Sprint 2a centered card).
+   Tablet+ (768px+): max-width var(--max-reading) 720 — Reading
+   pattern. Hero card / 3 버튼 stacked / footer 자연 확대.
+   Wide (1024+): padding 살짝 ↑.
+
+   Sprint 2g (🎙️ → 📘 brand) + Sprint 2h (hero card balance) 의
+   visual idiom 100% 보존. JSX / state / logic 변경 0개.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .homeContainer {
+    max-width: var(--max-reading);  /* 430 → 720 */
+    padding: 16px var(--space-xl);
+    gap: 14px;
+  }
+  /* 3 버튼 stacked 그대로 (Tim 단순 결정).
+     큰 화면에서 버튼이 너무 길어 보이지 않도록 max-width 살짝 제한:
+     .gridContainer 가 720 폭에 가득 차지 않고 자연스럽게 펼침. */
+}
+
+@media (min-width: 1024px) {
+  .homeContainer {
+    padding: 20px var(--space-2xl);
+    gap: 16px;
+  }
+}

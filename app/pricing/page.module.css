@@ -406,3 +406,26 @@
   .moatTitle { color: #fff; }
   .moatDesc  { color: rgba(255, 255, 255, 0.72); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2O (2026-05-11) — /pricing desktop polish (Tier 2).
+
+   Sprint 2k 가 이미 .page max-width 1100 + .tiers 760px+ 3-col +
+   Premium scale 1.03 적용했음. Sprint 2O 는 design system 과 표준화:
+     - .page max-width 1100 → var(--max-content) 1200
+     - 1024px+ 에서 추가 breathing space
+
+   Sprint 2k 의 brand visual (3-tier 카드, 환불, Why 5 Moats) 100% 보존.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  .page {
+    max-width: var(--max-content);  /* 1100 → 1200 standardize */
+  }
+  .main {
+    padding: var(--space-lg) var(--space-2xl) 0;
+  }
+  .hero {
+    padding: var(--space-xl) 16px;
+  }
+}

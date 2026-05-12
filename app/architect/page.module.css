@@ -257,3 +257,50 @@
   font-size: 14px;
   color: #888;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2O (2026-05-11) — /architect desktop polish (Tier 2).
+
+   Pattern 2 — Reading. 6 단계 안내 + 가격 박스 + CTA 가 긴 텍스트
+   콘텐츠라서 720px reading width 가 자연. Mobile (~767px) max-width
+   430 그대로, 768px+ var(--max-reading) 720.
+
+   Sprint 2g/2k 의 brand 요소 (6 단계 + 화살표 + 가격 박스 + CTA)
+   100% 보존. JSX 변경 0개.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .page {
+    max-width: var(--max-reading);  /* 430 → 720 */
+  }
+  .header {
+    padding: 14px var(--space-xl);
+  }
+  .titleBlock {
+    padding: var(--space-xl) var(--space-xl) 14px;
+  }
+  .title {
+    font-size: 32px;
+  }
+  .intro {
+    max-width: 480px;
+    font-size: 16.5px;
+  }
+  .steps {
+    padding: var(--space-lg) var(--space-xl) 4px;
+  }
+  .cta {
+    width: calc(100% - 64px);
+    margin: var(--space-lg) var(--space-xl) var(--space-sm);
+  }
+  /* Sprint 2k 가격 박스도 desktop margin 맞춤 */
+  .pricingBox {
+    margin: var(--space-lg) var(--space-xl) 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page {
+    padding-bottom: var(--space-2xl);
+  }
+}
