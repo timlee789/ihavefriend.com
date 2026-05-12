@@ -1,0 +1,152 @@
+/* SayAndKeep — Layout utility classes (Sprint 2L, 2026-05-11).
+   영구 baseline — 모든 향후 페이지가 mobile-first base 위에 desktop
+   layer 를 얹을 때 사용. globals.css 의 --max-* / --space-* / --bp-*
+   variables 위에 build.
+
+   Mobile (~767px): max-width: 100%, padding: var(--space-md).
+   Desktop (768px+): pattern 마다 max-width + padding 확장.
+
+   사용 방법:
+     import u from '@/app/util.module.css';
+     import s from './page.module.css';
+     <div className={`${u.containerEdit} ${s.pageBody}`}>…</div>
+
+   Pages can also skip this file and apply --max-* variables directly
+   in their own .module.css. Both approaches stay valid.
+   docs/responsive-design-system.md 의 6 patterns 참조. */
+
+/* Pattern 1 — Centered Card (현재 모바일 카드 유지) */
+.containerMobile {
+  width: 100%;
+  max-width: var(--max-mobile);
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+
+/* Pattern 2 — Reading (긴 텍스트, terms / /architect) */
+.containerReading {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+@media (min-width: 768px) {
+  .containerReading {
+    max-width: var(--max-reading);
+    padding: var(--space-xl);
+  }
+}
+
+/* Pattern 3 — Edit Single-Column (단순 편집, sidebar 없음) */
+.containerEdit {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+@media (min-width: 768px) {
+  .containerEdit {
+    max-width: var(--max-edit);
+    padding: var(--space-xl);
+  }
+}
+
+/* Pattern 5 — Standard Content (Grid / Pattern 4 의 wrapper) */
+.containerContent {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+@media (min-width: 768px) {
+  .containerContent {
+    max-width: var(--max-content);
+    padding: var(--space-xl);
+  }
+}
+
+/* Wide variant (Pattern 5 grid 의 wide screen) */
+.containerWide {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+@media (min-width: 768px) {
+  .containerWide {
+    max-width: var(--max-wide);
+    padding: var(--space-xl);
+  }
+}
+
+/* ── Pattern 4 — Edit Sidebar + Main (helper grid) ──
+   Page 가 본인 .pageBody 안에 이 grid 패턴 적용 가능. 또는 page 가
+   직접 grid-template-columns 작성 (sidebar 폭 variant 자유).
+   이 utility 는 standard 320px sidebar + 1fr main 의 가장 흔한 case. */
+.editLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+@media (min-width: 768px) {
+  .editLayout {
+    display: grid;
+    grid-template-columns: var(--sidebar-medium) 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+}
+
+/* Sidebar narrow variant */
+.editLayoutNarrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+@media (min-width: 768px) {
+  .editLayoutNarrow {
+    display: grid;
+    grid-template-columns: var(--sidebar-narrow) 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+}
+
+/* Sidebar wide variant (photo gallery / 부가 panel 큰 경우) */
+.editLayoutWide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+@media (min-width: 768px) {
+  .editLayoutWide {
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar-wide);
+    gap: var(--space-xl);
+    align-items: start;
+  }
+}
+
+/* ── Pattern 5 — Grid 의 standard responsive cards ──
+   1 / 2 / 3 / 4 columns 자동 전환. cardList wrapper 로 사용. */
+.gridCards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+@media (min-width: 768px) {
+  .gridCards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+  }
+}
+@media (min-width: 1024px) {
+  .gridCards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1440px) {
+  .gridCards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

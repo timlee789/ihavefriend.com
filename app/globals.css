@@ -14,6 +14,60 @@
   --yellow: #f59e0b;
   --radius: 16px;
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
+
+  /* ═══════════════════════════════════════════════════════════════
+     SayAndKeep Design System — Sprint 2L (2026-05-11)
+     Tim 의 4 결정: Hybrid + 진짜 desktop + Tablet=Desktop 축소 +
+     Design system 먼저. 영구 baseline.
+
+     사용법:
+       Each page.module.css 가 @media (min-width: var(--bp-tablet))
+       에서 var(--max-edit) / var(--sidebar-medium) 등을 활용.
+       Mobile (~767px) 은 현재 layout 그대로 — 변경 X.
+
+     6 Layout patterns (docs/responsive-design-system.md 참조):
+       1. Centered Card    — var(--max-mobile)
+       2. Reading          — var(--max-reading)
+       3. Edit single      — var(--max-edit)
+       4. Edit sidebar+main — var(--max-content) + var(--sidebar-*)
+       5. Grid             — var(--max-content) ~ var(--max-wide)
+       6. Two-column hero  — var(--max-content)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Responsive breakpoints — 영구 표준 (Tim 결정 3-B). */
+  --bp-tablet:  768px;
+  --bp-desktop: 1024px;
+  --bp-wide:    1440px;
+
+  /* Max-width tokens — 6 layout pattern 의 container 폭. */
+  --max-mobile:   430px;
+  --max-reading:  720px;
+  --max-edit:     960px;
+  --max-content: 1200px;
+  --max-wide:    1440px;
+
+  /* Spacing scale — 모든 padding/margin/gap 에 재사용. */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Typography scale — 모든 font-size 의 ref. */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  28px;
+  --text-3xl:  36px;
+
+  /* Sidebar widths (Pattern 4 — Edit Sidebar + Main). */
+  --sidebar-narrow: 260px;
+  --sidebar-medium: 320px;
+  --sidebar-wide:   380px;
 }
 
 html, body {
