@@ -177,3 +177,18 @@
   max-width: 90vw;
   text-align: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2Q (2026-05-12) — /photobook/[id]/edit header unification.
+
+   ⚠️ 중요: .page 에 max-width 추가 X. 편집기는 full viewport 가 필요
+   (PageCanvas 가 자체 wrap + padding). header 의 max-width 만 영구
+   표준 960 으로 통일 → 다른 페이지 헤더와 시각 일관.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .header {
+    max-width: var(--max-edit);  /* 560 → 960 (영구 desktop 표준) */
+    padding: 14px 32px;
+  }
+}

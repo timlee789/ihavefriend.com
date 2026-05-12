@@ -2248,7 +2248,11 @@
   .inlineContainer .modalBody {
     padding: 0 var(--space-xl) var(--space-xl);
     display: grid;
-    grid-template-columns: 1fr var(--sidebar-wide);
+    /* Sprint 2M: --sidebar-wide 380. Sprint 2Q (2026-05-12):
+       380 → --sidebar-medium 320. 960 폭에서 main 564 + sidebar
+       320 + gap 32 + padding = 자연 fit. 사진 카드 overflow 해결.
+       /book/[id] sidebar 320 과 통일. */
+    grid-template-columns: 1fr var(--sidebar-medium);
     grid-auto-flow: row dense;  /* photos 우측 sidebar 효과 */
     gap: var(--space-xl);
     align-items: start;

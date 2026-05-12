@@ -313,3 +313,37 @@
     gap: 16px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2Q (2026-05-12) — /photobook desktop unification (Tier 2).
+
+   Sprint 2P 누락 페이지 보완: 사용자 페이지 영구 표준 max-width 960
+   적용. 기존 600px+ 2-col grid 패턴 위에 padding/title 비례 polish.
+   1024+ 에서 3-col grid (사진책 카드 시각화).
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .page {
+    max-width: var(--max-edit);  /* 560 → 960 (영구 desktop 표준) */
+  }
+  .header {
+    padding: 16px 32px 14px;
+  }
+  .pageTitle {
+    font-size: 28px;
+  }
+  .list {
+    padding: var(--space-md) var(--space-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+    padding: var(--space-md) var(--space-2xl);
+  }
+  .header {
+    padding: 18px 40px 16px;
+  }
+}

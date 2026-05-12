@@ -539,3 +539,22 @@ button.fragmentCard:hover {
    no longer referenced — the page renders fragments via inline
    FragmentModal now. Definitions are left in place so any future
    revival doesn't have to re-author the styles. */
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2Q (2026-05-12) — Desktop unification (max-width 960).
+
+   Sprint 2P 빈틈 보완: /book/[id]/question/[qId] 가 desktop 영구
+   표준 var(--max-edit) 960 에서 빠져 있었음. Mobile 600 centered
+   그대로 두고 768px+ 에 영구 표준 적용.
+
+   FragmentModal inline 답변은 별도 CSS (/my-stories/page.module.css
+   의 .inlineContainer) — Sprint 2P 에서 이미 960 통일됨.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-edit);
+    padding: var(--space-md) var(--space-xl);
+  }
+}
+
