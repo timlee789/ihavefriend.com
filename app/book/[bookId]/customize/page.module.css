@@ -255,3 +255,58 @@
   background: #1a1410;
   min-height: 100dvh;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2N (2026-05-11) — Desktop layer for /book/[id]/customize.
+   Pattern 5 chapter cards (2-col grid) — Sprint 2M 의
+   /my-stories/customize 와 동일 접근. Mobile 의 inline-expand 패턴
+   보존, desktop 에선 chapter card 가 2-column grid 로 펼침.
+
+   Sprint 2L variables 활용. Mobile (~767px) CSS 0 변경.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-content);
+    padding: var(--space-md) var(--space-xl);
+  }
+
+  /* Header / title / intro full width above chapter grid. */
+  .title {
+    font-size: 28px;
+  }
+
+  /* Chapter cards 2-column grid. Inline-expand 펼치면 그 cell 만
+     세로 늘어남 — 인접 cell 은 영향 X (자연스러운 grid 동작). */
+  .chapterList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+  }
+
+  /* "⬇️ 챕터 추가" 버튼은 전체 폭 — sticky 처럼 하단 강조. */
+  .addChapterBtn {
+    grid-column: 1 / -1;
+  }
+
+  /* Done 버튼도 화면 가로 폭 살리되 너무 길지 않게. */
+  .doneBtn {
+    max-width: var(--max-edit);
+    margin: 0 auto;
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: var(--space-md) var(--space-2xl);
+  }
+}
+
+@media (min-width: 1440px) {
+  /* Wide screens — 3 columns 의 chapter grid. */
+  .chapterList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

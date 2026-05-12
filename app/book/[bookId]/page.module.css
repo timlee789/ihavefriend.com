@@ -280,3 +280,74 @@
   line-height: 1.5;
   text-align: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2N (2026-05-11) — Desktop layer for /book/[id].
+   Pattern 4: Chapter sidebar (left) + Main content (right).
+
+   DOM order (모바일):
+     header → progressCard → milestoneCard? → bookActions →
+     sectionTitle ("챕터 진행") → chapterList → (회귀 안전)
+
+   Desktop split via grid-column:
+     col 1 (sidebar var(--sidebar-medium)): sectionTitle + chapterList
+     col 2 (main, 1fr): progressCard + milestoneCard + bookActions + error
+     header: col 1 / -1 (full width top)
+
+   Sprint 2L variables 활용. Mobile (~767px) CSS 0 변경 — 회귀 위험 0.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-content);
+    padding: var(--space-md) var(--space-xl);
+    display: grid;
+    grid-template-columns: var(--sidebar-medium) 1fr;
+    column-gap: var(--space-xl);
+    row-gap: 0;
+    align-items: start;
+  }
+
+  /* Header — Row 1 of grid, full width */
+  .header {
+    grid-column: 1 / -1;
+  }
+
+  /* Sidebar (col 1) — chapter list section */
+  .sectionTitle {
+    grid-column: 1;
+    margin-top: 0;
+  }
+  .chapterList {
+    grid-column: 1;
+  }
+
+  /* Main column (col 2) — progress + milestones + actions */
+  .progressCard {
+    grid-column: 2;
+    margin-bottom: var(--space-lg);
+  }
+  .milestoneCard {
+    grid-column: 2;
+    margin: 0 0 var(--space-lg);
+  }
+  .bookActions {
+    grid-column: 2;
+    margin-bottom: var(--space-lg);
+  }
+  .bookActionsError {
+    grid-column: 2;
+  }
+
+  /* Title 큰 desktop */
+  .title {
+    font-size: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: var(--space-md) var(--space-2xl);
+    column-gap: var(--space-2xl);
+  }
+}

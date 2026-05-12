@@ -1252,3 +1252,25 @@
   align-items: center;
   gap: 3px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sprint 2N (2026-05-11) — Desktop layer for /chat.
+
+   Tim 의 결정 (Sprint 2N 직전):
+     - /chat desktop = (b) Mobile pattern + max-width 확장
+     - PC Emma mode = 둘 다 (음성 + 글)
+     - 자녀 도움 시나리오 = 고려 X (영구 product 원칙)
+
+   변경:
+     .screen max-width 430 → var(--max-edit) 960 (Pattern 3 — Edit
+     single-column). State / JSX / logic 변경 0개. 모든 inner layout
+     (top nav, messages, voice/text input) 그대로 — 자연스럽게 확대.
+
+   Sprint 2L variables 활용. Mobile (~767px) 100% 보존.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .screen {
+    max-width: var(--max-edit);
+  }
+}
