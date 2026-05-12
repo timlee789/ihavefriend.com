@@ -2194,9 +2194,11 @@
 
 @media (min-width: 768px) {
   /* ── .page wrapper (4 surfaces 모두) ──
-     모바일의 max-width 430 → desktop 1200. 카드 → full content. */
+     Sprint 2M: 430 → 1200. Sprint 2P (2026-05-12): 1200 → 960
+     (영구 desktop 표준). Pattern 4 sidebar+main + Pattern 5 grid
+     모두 자연 적응. */
   .page {
-    max-width: var(--max-content);
+    max-width: var(--max-edit);
   }
 
   /* ── Header (sticky, 3 페이지 공통) ──
@@ -2231,7 +2233,10 @@
      스럽게 main column 에 따라 흐름. */
   .inlineContainer {
     margin: var(--space-lg) auto 0;
-    max-width: var(--max-content);
+    /* Sprint 2M: var(--max-content) 1200. Sprint 2P: 1200 → var(--max-edit)
+       960 (영구 desktop 표준 — .page 와 일관). FragmentModal inline 의
+       Pattern 4 sidebar+main 이 960 폭에서 자연 작동. */
+    max-width: var(--max-edit);
     width: 100%;
   }
   .inlineContainer .modalHeader {
@@ -2341,12 +2346,7 @@
   }
 }
 
-@media (min-width: 1440px) {
-  /* ── Wide screens (Pattern 5: 4 columns) ── */
-  .cardList {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .collectionBlockList {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+/* 🔥 Sprint 2P (2026-05-12) — Wide (1440+) 의 4-col grid 제거.
+   .page max-width 가 영구 표준 var(--max-edit) 960px 이라 wide
+   viewport 에서도 컨테이너 자체가 960 캡. 4 cols / 3 cols 더 늘려도
+   캡 안에서 의미 없음. 1024+ 의 3 cols 가 영구 baseline. */

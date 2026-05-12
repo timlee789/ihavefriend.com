@@ -1192,13 +1192,13 @@
 
 @media (min-width: 768px) {
   .homeContainer {
-    max-width: var(--max-reading);  /* 430 → 720 */
+    /* Sprint 2O: max-width 720. Sprint 2P (2026-05-12): 720 → 960
+       (SayAndKeep desktop 영구 표준, 모든 페이지 통일). 3 버튼
+       stacked 그대로 — Hero card / 버튼 자연 확대. */
+    max-width: var(--max-edit);
     padding: 16px var(--space-xl);
     gap: 14px;
   }
-  /* 3 버튼 stacked 그대로 (Tim 단순 결정).
-     큰 화면에서 버튼이 너무 길어 보이지 않도록 max-width 살짝 제한:
-     .gridContainer 가 720 폭에 가득 차지 않고 자연스럽게 펼침. */
 }
 
 @media (min-width: 1024px) {

@@ -299,7 +299,10 @@
 
 @media (min-width: 768px) {
   .container {
-    max-width: var(--max-content);
+    /* Sprint 2N: var(--max-content) 1200. Sprint 2P (2026-05-12):
+       1200 → var(--max-edit) 960 (영구 desktop 표준). Pattern 4
+       sidebar 320 + main ~620 — 자연 적응. */
+    max-width: var(--max-edit);
     padding: var(--space-md) var(--space-xl);
     display: grid;
     grid-template-columns: var(--sidebar-medium) 1fr;

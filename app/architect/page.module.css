@@ -271,7 +271,10 @@
 
 @media (min-width: 768px) {
   .page {
-    max-width: var(--max-reading);  /* 430 → 720 */
+    /* Sprint 2O: max-width 720 (Reading). Sprint 2P (2026-05-12):
+       720 → 960 (영구 desktop 표준). 6 단계 + 가격 박스 + CTA 자연
+       확대. .intro 내부 max-width 480 그대로 (긴 텍스트 reading width). */
+    max-width: var(--max-edit);
   }
   .header {
     padding: 14px var(--space-xl);

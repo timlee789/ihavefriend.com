@@ -7,7 +7,10 @@
   color: #1a1410;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  max-width: 1100px;
+  /* Sprint 2k: 1100. Sprint 2P (2026-05-12): 1100 → 960 (영구 desktop
+     표준). Tier grid 가 자연 3 cols × ~290px. Mobile viewport < 960
+     이라 mobile 영향 없음. */
+  max-width: var(--max-edit);
   margin: 0 auto;
   padding-bottom: 48px;
 }
@@ -419,9 +422,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @media (min-width: 1024px) {
-  .page {
-    max-width: var(--max-content);  /* 1100 → 1200 standardize */
-  }
+  /* Sprint 2P (2026-05-12) — .page max-width override 제거 (top-level
+     이 이미 var(--max-edit) 960 = 영구 표준). padding 만 desktop 비례. */
   .main {
     padding: var(--space-lg) var(--space-2xl) 0;
   }

@@ -39,10 +39,16 @@
   --bp-desktop: 1024px;
   --bp-wide:    1440px;
 
-  /* Max-width tokens — 6 layout pattern 의 container 폭. */
+  /* Max-width tokens — 6 layout pattern 의 container 폭.
+     🔥 Sprint 2P (2026-05-12) — SayAndKeep desktop 영구 표준:
+     모든 페이지 desktop max-width = var(--max-edit) 960px.
+     Tim production 검증 후 결정: 화면 폭 통일 + 시니어 친화.
+     /chat 의 기존 960 을 기준 폭으로 채택. 7 페이지 (Home / pricing /
+     architect / my-stories+자식 / book/[id]+자식) 가 모두 960 으로
+     수렴. /login 은 inline-styles centered card 420 그대로 (이미 OK). */
   --max-mobile:   430px;
   --max-reading:  720px;
-  --max-edit:     960px;
+  --max-edit:     960px;   /* ⭐ 영구 desktop 표준 (Sprint 2P) */
   --max-content: 1200px;
   --max-wide:    1440px;
 
