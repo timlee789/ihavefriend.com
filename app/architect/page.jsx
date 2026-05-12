@@ -274,6 +274,25 @@ function ArchitectOverviewInner() {
         ))}
       </div>
 
+      {/* 🔥 Sprint 2k (2026-05-11) — 안내 페이지 마지막에 가격 박스.
+          시니어가 "어떻게 작동하는지" 본 뒤 "가치 + 가격" 동시 인지.
+          Trial = 무료 (지금 바로 시작), Premium = $199 (한국어 출시 예정).
+          "💰 자세히 보기" → /pricing (anonymous open). */}
+      <section className={s.pricingBox}>
+        <h3 className={s.pricingTitle}>💰 SayAndKeep 가격</h3>
+        <div className={s.pricingList}>
+          <div className={s.pricingItem}>🌱 Trial 무료 — 지금 바로 시작</div>
+          <div className={s.pricingItem}>📘 Premium $199 — 한국어 출시 예정</div>
+        </div>
+        <button
+          type="button"
+          className={s.pricingLink}
+          onClick={() => router.push('/pricing')}
+        >
+          💰 자세히 보기
+        </button>
+      </section>
+
       <button
         type="button"
         className={s.cta}

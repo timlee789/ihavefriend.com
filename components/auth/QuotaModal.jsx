@@ -80,9 +80,11 @@ export default function QuotaModal({ open, onClose, type = 'fragment', tier = 'f
 
   function handleUpgrade() {
     if (onUpgrade) { onUpgrade(); return; }
-    // Default: anonymous → /login, logged-in free → /pricing (placeholder).
-    const target = typeof window !== 'undefined' && localStorage.getItem('token') ? '/pricing' : '/login';
-    router.push(target);
+    // 🔥 Sprint 2k (2026-05-11) — 모든 경로 (anonymous + trial) /pricing 으로.
+    //   /pricing 은 anonymous open (Sprint 2i 패턴) — 가입 전에도 가격 정보
+    //   확인 가능. modal 도 닫음.
+    router.push('/pricing');
+    if (onClose) onClose();
   }
 
   return (

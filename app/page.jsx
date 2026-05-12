@@ -80,6 +80,8 @@ const HOME_MSGS = {
     //   기존 키 (footerDontSave / footerSamples / footerEssays /
     //   essayComingSoon) 는 백압-호환 위해 남겨둠 — 사용처 없음.
     footerCompanion    : 'Emma와 대화',
+    // 🔥 Sprint 2k (2026-05-11) — 가격 페이지 link.
+    footerPricing      : '💰 가격',
     footerDontSave     : '기록하지 않기',
     footerSamples      : '샘플 이야기',
     footerEssays       : '수필집',
@@ -140,6 +142,7 @@ const HOME_MSGS = {
     termsLabel         : 'Terms of Service',
     // 🔥 Sprint 2a (2026-05-10) — footer cleanup; legacy keys kept.
     footerCompanion    : 'Talk with Emma',
+    footerPricing      : '💰 Pricing',
     footerDontSave     : "Don't Save Mode",
     footerSamples      : 'Sample Stories',
     footerEssays       : 'Essays',
@@ -199,6 +202,7 @@ const HOME_MSGS = {
     termsLabel         : 'Términos del servicio',
     // 🔥 Sprint 2a (2026-05-10) — limpieza del footer; claves legadas se mantienen.
     footerCompanion    : 'Hablar con Emma',
+    footerPricing      : '💰 Precios',
     footerDontSave     : 'Modo sin guardar',
     footerSamples      : 'Historias de ejemplo',
     footerEssays       : 'Ensayos',
@@ -474,6 +478,10 @@ export default function Home() {
             onClick={() => isLoggedIn ? router.push('/chat?mode=companion') : requireLogin('/chat?mode=companion')}
           >
             {msgs.footerCompanion}
+          </button>
+          {/* 🔥 Sprint 2k (2026-05-11) — /pricing 페이지 link. Anonymous open. */}
+          <button className={s.footerTermsBtn} onClick={() => router.push('/pricing')}>
+            {msgs.footerPricing}
           </button>
           <button className={s.footerTermsBtn} onClick={() => router.push('/terms')}>
             {msgs.termsLabel}
