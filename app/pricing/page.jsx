@@ -219,20 +219,37 @@ export default function PricingPage() {
   const router = useRouter();
   const lang = useLang();
   const M = PRICING_MSGS[lang] || PRICING_MSGS.KO;
-  const { plan } = useUserPlan();
+  const { loading: planLoading, plan } = useUserPlan();
 
   // 🔥 Sprint 2X (2026-05-13) — Stripe Checkout 활성화 (한국어 only).
   //   "Coming Soon" disabled → Stripe Checkout Session 생성 + redirect.
   //   EN/ES 는 Sprint 2V 의 mailto 그대로 (handleBetaApply / handleContact).
   //   Anonymous 사용자는 login redirect (postLoginRedirect 로 /pricing 복귀).
+  //
+  // 🔥 Sprint 2Y' (2026-05-13) — Tim production bug fix:
+  //   localStorage 에 token 있으면 즉시 "로그인 상태" 구분 (🏳️‍⚧).
+  //   useUserPlan 의 loading 중 이전에 user 타이프 보끌 활용.
+  //   loading=true 일 때는 버튼 상태 disable (사용자 클릭 시 anonymous 처리 X).
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const isLoggedIn = !!plan;  // useUserPlan returns null when anonymous.
+  const [hasToken, setHasToken] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setHasToken(!!localStorage.getItem('token'));
+  }, []);
+  // "로그인됨" = token 있고 plan loaded (plan 이 있거나 loading 중).
+  //   token 이 없으면 anonymous (login redirect).
+  //   token 이 있면 plan loading 완료까지 대기 (button disabled).
+  const isLoggedIn = hasToken;
 
   async function handlePremiumCheckout() {
-    // Anonymous → /login (postLoginRedirect 로 /pricing 복귀).
+    // Anonymous (no token) → /login (postLoginRedirect 로 /pricing 복귀).
     if (!isLoggedIn) {
       try { sessionStorage.setItem('postLoginRedirect', '/pricing'); } catch {}
       router.push('/login');
+      return;
+    }
+    // plan 이 아직 load 안 됐으면 대기 (버튼 disabled 로 이미 막는다면 이 곣 도달 X).
+    if (planLoading) {
       return;
     }
     // 이미 premium / unlimited 회원 안내
@@ -347,12 +364,14 @@ export default function PricingPage() {
             <button
               className={s.premiumBtn}
               onClick={lang === 'KO' ? handlePremiumCheckout : handleBetaApply}
-              disabled={lang === 'KO' && checkoutLoading}
+              disabled={lang === 'KO' && (checkoutLoading || (isLoggedIn && planLoading))}
             >
               {lang === 'KO'
                 ? (checkoutLoading
                     ? '잠시만요…'
-                    : (!isLoggedIn ? '로그인 후 가입하기' : '📘 Premium 가입하기'))
+                    : !isLoggedIn
+                      ? '로그인 후 가입하기'
+                      : (planLoading ? '잘시만요…' : '📘 Premium 가입하기'))
                 : M.premiumCta}
             </button>
             <div className={s.premiumNote2}>{M.premiumNote2}</div>
