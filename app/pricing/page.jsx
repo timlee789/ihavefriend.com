@@ -252,10 +252,18 @@ export default function PricingPage() {
     if (planLoading) {
       return;
     }
-    // 이미 premium / unlimited 회원 안내
+    // 🔥 Sprint 2X'' (2026-05-13) — Tim production bug fix: "이미 회원" loop.
+    //   증상: alert → OK → /pricing 으로 다시 돌아옴 → 반복 (Tim admin = unlimited).
+    //   원인: router.push('/my-stories') Next 15+ 가 같은 page 의 client navigation
+    //         으로 처리 (또는 plan reload trigger 후 다시 isPaid loop).
+    //   해결: window.location.href 사용 (full page navigation, 확실 종료).
+    //         + admin (unlimited) → /admin/quota, premium → /my-stories
+    //         + button text/onClick 자체를 isPaid 일 때 다른 동작으로 (loop 차단).
     if (plan?.isPaid) {
-      alert('이미 Premium 회원이세요. 자서전 만들기를 시작해 보세요 😊');
-      router.push('/my-stories');
+      const destination = plan.tier === 'unlimited' ? '/admin/quota' : '/my-stories';
+      if (typeof window !== 'undefined') {
+        window.location.href = destination;
+      }
       return;
     }
     setCheckoutLoading(true);
@@ -371,7 +379,11 @@ export default function PricingPage() {
                     ? '잠시만요…'
                     : !isLoggedIn
                       ? '로그인 후 가입하기'
-                      : (planLoading ? '잘시만요…' : '📘 Premium 가입하기'))
+                      : planLoading
+                        ? '잠시만요…'
+                        : plan?.isPaid
+                          ? (plan.tier === 'unlimited' ? '✅ 이미 회원 (admin) →' : '✅ 이미 Premium →')
+                          : '📘 Premium 가입하기')
                 : M.premiumCta}
             </button>
             <div className={s.premiumNote2}>{M.premiumNote2}</div>
