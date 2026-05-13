@@ -2964,21 +2964,16 @@ export default function EmmaChat({ initialMode }) {
       {/* ── top nav ── */}
       <header className={`${styles.topnav} ${isDay ? styles.topnavDay : styles.topnavNight}`}>
         {/* Sprint 2S — "← 뒤로" 텍스트 버튼 (다른 페이지 backBtn 통일).
-            Sprint 2T (2026-05-13) Tim 결정 7-C.4-A — 종료 logic 통합:
-              - 대화 중 (isConnected) 또는 메시지 있음 → disconnect() +
-                feedback modal 띄움 (feedback modal 의 "건너뛰기" /
-                "보내기" 가 router.push('/') 처리)
-              - 빈 welcome 화면 → 즉시 router.push('/')
-            하단 X (CloseIcon) 가 제거되면서 이 버튼이 종료 진입점. */}
+            Sprint 2T: 종료 logic 통합 (disconnect + feedback modal).
+            🔥 Sprint 2U (2026-05-13) — Tim 결정 정정: feedback modal
+              비활성화. 단순 disconnect + home navigation. feedback
+              modal JSX / logic 자체는 보존 (미래 use case / 다른 trigger
+              가능) — 이 버튼에서 호출만 끊음. */}
         <button
           className={styles.backBtn}
           onClick={() => {
-            if (isConnected || messages.length > 0) {
-              disconnect();
-              setShowFeedback(true);
-            } else {
-              router.push('/');
-            }
+            if (isConnected) disconnect();
+            router.push('/');
           }}
         >← 뒤로</button>
 

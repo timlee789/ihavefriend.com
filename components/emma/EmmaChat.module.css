@@ -414,10 +414,12 @@
 }
 
 /* controls row */
+/* 🔥 Sprint 2U (2026-05-13) — Tim: Sprint 2T 에서 ≡/X 제거 후 마이크
+   버튼만 남아 space-between 으로 좌측 배치됨. center 로 변경. */
 .voiceControls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 }
 .sideBtn {
   width: 38px; height: 38px;
