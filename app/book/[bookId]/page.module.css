@@ -298,51 +298,42 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @media (min-width: 768px) {
+  /* Sprint 2N: Pattern 4 sidebar + main (320 + 1fr).
+     Sprint 2P: 1200 → 960.
+     Sprint 2S (2026-05-13) — Tim 결정: Pattern 4 grid 제거 → single
+     column stacked. "한 행으로 + 글씨 중앙 정렬". Pattern 3 (Edit
+     single-column) 로 전환. DOM 순서 그대로 자연 stacking. */
   .container {
-    /* Sprint 2N: var(--max-content) 1200. Sprint 2P (2026-05-12):
-       1200 → var(--max-edit) 960 (영구 desktop 표준). Pattern 4
-       sidebar 320 + main ~620 — 자연 적응. */
     max-width: var(--max-edit);
     padding: var(--space-md) var(--space-xl);
-    display: grid;
-    grid-template-columns: var(--sidebar-medium) 1fr;
-    column-gap: var(--space-xl);
-    row-gap: 0;
-    align-items: start;
+    /* grid 제거 — block 흐름 (DOM order = visual order). */
   }
 
-  /* Header — Row 1 of grid, full width */
-  .header {
-    grid-column: 1 / -1;
-  }
-
-  /* Sidebar (col 1) — chapter list section */
+  /* 헤더 + 정보 블록 모두 가운데 정렬 (Tim "글씨 중앙 정렬"). */
+  .progressCard,
+  .milestoneCard,
+  .bookActions,
+  .bookActionsError,
   .sectionTitle {
-    grid-column: 1;
-    margin-top: 0;
-  }
-  .chapterList {
-    grid-column: 1;
+    text-align: center;
   }
 
-  /* Main column (col 2) — progress + milestones + actions */
-  .progressCard {
-    grid-column: 2;
-    margin-bottom: var(--space-lg);
+  /* progressLabel 안 fraction 도 가운데 정렬 위해 flex 조정. */
+  .progressLabel {
+    justify-content: center;
   }
-  .milestoneCard {
-    grid-column: 2;
-    margin: 0 0 var(--space-lg);
-  }
+
+  /* Book action 버튼들 중앙 정렬 (이미 flex 인 경우 보강). */
   .bookActions {
-    grid-column: 2;
-    margin-bottom: var(--space-lg);
-  }
-  .bookActionsError {
-    grid-column: 2;
+    justify-content: center;
   }
 
-  /* Title 큰 desktop */
+  /* Chapter list 의 row 자체는 좌측 정렬 그대로 (정보 list — 시각적
+     계층 보존). chapterList 컨테이너만 가운데 정렬 안 함. */
+  .chapterList {
+    text-align: left;
+  }
+
   .title {
     font-size: 28px;
   }
@@ -350,7 +341,7 @@
 
 @media (min-width: 1024px) {
   .container {
+    /* Sprint 2S: grid 제거됨 — column-gap 도 정리 (no-op 이었지만 명확화). */
     padding: var(--space-md) var(--space-2xl);
-    column-gap: var(--space-2xl);
   }
 }

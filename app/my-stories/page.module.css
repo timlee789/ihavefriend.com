@@ -2247,30 +2247,18 @@
   }
   .inlineContainer .modalBody {
     padding: 0 var(--space-xl) var(--space-xl);
-    display: grid;
-    /* Sprint 2M: --sidebar-wide 380. Sprint 2Q (2026-05-12):
-       380 → --sidebar-medium 320. 960 폭에서 main 564 + sidebar
-       320 + gap 32 + padding = 자연 fit. 사진 카드 overflow 해결.
-       /book/[id] sidebar 320 과 통일. */
-    grid-template-columns: 1fr var(--sidebar-medium);
-    grid-auto-flow: row dense;  /* photos 우측 sidebar 효과 */
-    gap: var(--space-xl);
-    align-items: start;
+    /* Sprint 2M: Pattern 4 grid (1fr + sidebar). Sprint 2Q: sidebar
+       380 → 320. Sprint 2S (2026-05-13) — Tim 결정: grid 제거 →
+       single column stacked. "사진도 글 밑에 위치, 전체 1행". 이야기
+       = 글 + 사진 의 통합 단위 (시니어 친화 한 흐름 reading).
+       DOM 순서 그대로 자연 stacking — block 흐름. */
   }
-  /* photosSection 우측 sidebar 로 — 여러 row 자동 흐름. */
+  /* photosSection grid-column / grid-row 제거 — 자연 stacking 으로
+     main 안에 위치 (글 다음). margin / padding / border 그대로 복원. */
   .inlineContainer .modalBody .photosSection {
-    grid-column: 2;
-    grid-row: 1 / span 20;       /* sidebar 가 main 전체 높이를 차지 */
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-    align-self: start;
+    /* (grid 속성 모두 제거 — 자연 흐름) */
   }
-  /* main column 의 다른 모든 children — column 1 명시. */
-  .inlineContainer .modalBody > *:not(.photosSection) {
-    grid-column: 1;
-  }
-  /* textarea 가 desktop 에선 더 길게 */
+  /* textarea 가 desktop 에선 더 길게 (single column 폭 full 960). */
   .inlineContainer .editArea {
     min-height: 360px;
   }

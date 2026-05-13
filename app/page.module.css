@@ -1010,7 +1010,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start;
+  /* Sprint 2S (2026-05-13) — Tim 결정: flex-start → center.
+     아이콘 + 텍스트 가운데 정렬 (시니어 친화). 3 버튼 모두 일관. */
+  justify-content: center;
   gap: 18px;
   padding: 18px 22px;
   min-height: 110px;
@@ -1068,12 +1070,15 @@
   font-size: 20px;
   font-weight: 700;
   color: #fff;
-  text-align: left;
+  /* Sprint 2S (2026-05-13) — Tim 결정: left → center.
+     아이콘이 .gridBtn justify-content:center 로 가운데로 갔으니
+     라벨도 텍스트 자체 중앙 정렬해야 시각 균형. flex:1 제거 (가운데
+     모인 cluster 그대로 두고 라벨이 늘어나지 않도록). */
+  text-align: center;
   line-height: 1.25;
   word-break: keep-all;
   letter-spacing: -0.01em;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
-  flex: 1;
   min-width: 0;
 }
 

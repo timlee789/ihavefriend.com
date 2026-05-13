@@ -2976,7 +2976,10 @@ export default function EmmaChat({ initialMode }) {
 
       {/* ── top nav ── */}
       <header className={`${styles.topnav} ${isDay ? styles.topnavDay : styles.topnavNight}`}>
-        <button className={styles.backBtn} onClick={() => { disconnect(); router.push('/'); }}>←</button>
+        {/* Sprint 2S (2026-05-13) — Tim: "← 뒤로" 텍스트 버튼 (다른
+            페이지 backBtn 패턴과 통일). 단순 화살표 아이콘 → 명시적
+            라벨. CSS 도 사각 텍스트 형태로 변경. */}
+        <button className={styles.backBtn} onClick={() => { disconnect(); router.push('/'); }}>← 뒤로</button>
 
         <div className={`${styles.navAvatar} ${isDay ? styles.navAvatarDay : styles.navAvatarNight}`}>
           <EmmaAvatar size="md" mode={mode} />
