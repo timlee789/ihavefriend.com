@@ -524,3 +524,46 @@
   }
   .ttsNotSupported { color: rgba(255, 255, 255, 0.45); }
 }
+
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960 + Tier 2 polish.
+   Tim 결정 2-B: /sharing-stories = 통일 + grid.
+   .bookEntryStack 의 책 카드들은 stacked 그대로. .cardList (short
+   stories) 만 grid 로 변환 (2 cols at 768+, 3 cols at 1024+). */
+@media (min-width: 768px) {
+  .page {
+    max-width: var(--max-edit);
+  }
+  .header {
+    padding: 16px 32px 14px;
+  }
+  .pageTitle {
+    font-size: 24px;
+  }
+  .subtitleSection {
+    padding: 22px 32px 4px;
+  }
+  .bookEntryStack {
+    padding: 18px var(--space-xl) 6px;
+  }
+  .cardList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+    padding: 12px var(--space-xl);
+  }
+  .shortStoriesDivider {
+    margin: 28px var(--space-xl) 6px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cardList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .header {
+    padding: 18px 40px 16px;
+  }
+  .bookEntryStack {
+    padding: 20px 40px 6px;
+  }
+}

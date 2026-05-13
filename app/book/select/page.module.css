@@ -89,3 +89,12 @@
 }
 
 .spinner { font-size: 24px; }
+
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. Sprint 2P 영구
+   표준 적용. Mobile 600 그대로, 768px+ 부터 var(--max-edit) 960. */
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-edit);
+    padding: 16px var(--space-xl);
+  }
+}

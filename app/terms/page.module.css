@@ -179,3 +179,18 @@
     border-color: rgba(74, 222, 128, 0.30);
   }
 }
+
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. Tim 결정 3-B:
+   일관성 우선. .container 만 영구 표준 960 (page wrapper). .content
+   는 reading line length 보호를 위해 720 centered 유지 — 긴 약관 글
+   의 가독성 확보. Mobile (~767px) 720 그대로. */
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-edit);
+    padding: 32px var(--space-xl);
+  }
+  .content {
+    max-width: var(--max-reading);  /* 720 — line length 가독성 */
+    margin: 0 auto;
+  }
+}

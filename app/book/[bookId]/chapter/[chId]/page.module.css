@@ -126,3 +126,13 @@
   background: #1a1410;
   min-height: 100dvh;
 }
+
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. Image 2 (Tim
+   production 검증) 의 페이지. Mobile 600 centered 그대로, 768px+
+   부터 영구 표준 var(--max-edit) 960. */
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--max-edit);
+    padding: 16px var(--space-xl);
+  }
+}

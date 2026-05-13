@@ -117,3 +117,17 @@
 .cta:hover:not(:disabled) { opacity: 0.92; }
 .cta:active { transform: scale(0.98); }
 .cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. Mobile 560
+   centered 그대로, 768px+ 부터 var(--max-edit) 960. */
+@media (min-width: 768px) {
+  .page {
+    max-width: var(--max-edit);
+  }
+  .header {
+    padding: 14px 32px;
+  }
+  .body {
+    padding: 32px var(--space-xl) 40px;
+  }
+}
