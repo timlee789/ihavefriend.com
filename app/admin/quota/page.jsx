@@ -24,7 +24,8 @@ const NUMERIC_OVERRIDE_KEYS = [
   'max_fragments', 'max_photos', 'max_books',
   'data_retention_days',
 ];
-const BOOL_OVERRIDE_KEYS = ['allow_pdf', 'allow_audio_qr', 'allow_sharing'];
+// Sprint 2V (2026-05-13) — allow_book_print 추가 (Lulu 인쇄 발주 gate).
+const BOOL_OVERRIDE_KEYS = ['allow_pdf', 'allow_audio_qr', 'allow_sharing', 'allow_book_print'];
 const ALL_OVERRIDE_KEYS = [...NUMERIC_OVERRIDE_KEYS, ...BOOL_OVERRIDE_KEYS];
 
 export default function AdminQuotaPage() {

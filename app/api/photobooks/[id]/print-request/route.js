@@ -19,12 +19,21 @@
  */
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
+import { checkFeatureOrError } from '@/lib/quotas';
 
 export const maxDuration = 60;
 
 export async function POST(request, { params }) {
   const { user, error } = await requireAuth(request);
   if (error) return error;
+
+  // 🔥 Sprint 2V (2026-05-13) — Tim 결정 9-B: Lulu 인쇄 발주는 Premium 만.
+  //   Trial (free tier) 는 사진책 작성 / 편집 / preview 가능 — 인쇄
+  //   발주 (이 endpoint) 만 차단. 403 + ALLOW_BOOK_PRINT_NOT_ALLOWED.
+  const printCheck = await checkFeatureOrError(user.id, 'allowBookPrint');
+  if (!printCheck.ok) {
+    return Response.json(printCheck.error, { status: 403 });
+  }
 
   const { id: photobookId } = await params;
   if (!photobookId) {

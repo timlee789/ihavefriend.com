@@ -46,6 +46,7 @@ export async function GET(request) {
           ul.allow_pdf            AS allow_pdf,
           ul.allow_audio_qr       AS allow_audio_qr,
           ul.allow_sharing        AS allow_sharing,
+          ul.allow_book_print     AS allow_book_print,
           ul.data_retention_days  AS data_retention_days,
           (SELECT COUNT(*)::int FROM chat_sessions   WHERE user_id = u.id) AS session_count,
           (SELECT COUNT(*)::int FROM story_fragments WHERE user_id = u.id) AS fragment_count,

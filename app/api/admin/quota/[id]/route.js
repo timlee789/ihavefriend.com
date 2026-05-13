@@ -96,7 +96,8 @@ export async function PATCH(request, { params }) {
       'max_fragments', 'max_photos', 'max_books',
       'data_retention_days',
     ];
-    const BOOL_OVERRIDES = ['allow_pdf', 'allow_audio_qr', 'allow_sharing'];
+    // Sprint 2V — allow_book_print 추가 (Lulu 인쇄 발주 gate).
+    const BOOL_OVERRIDES = ['allow_pdf', 'allow_audio_qr', 'allow_sharing', 'allow_book_print'];
 
     const overrideSets = [];
     const overrideVals = [];
@@ -157,7 +158,7 @@ export async function PATCH(request, { params }) {
         ON CONFLICT (user_id) DO UPDATE SET ${overrideSets.join(', ')}
         RETURNING user_id, daily_minutes, monthly_minutes,
                   max_fragments, max_photos, max_books,
-                  allow_pdf, allow_audio_qr, allow_sharing,
+                  allow_pdf, allow_audio_qr, allow_sharing, allow_book_print,
                   data_retention_days
       `;
       const r = await db.query(upsertSql, overrideVals);

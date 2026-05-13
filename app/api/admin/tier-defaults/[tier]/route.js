@@ -56,7 +56,8 @@ export async function PATCH(request, { params }) {
     'max_fragments', 'max_photos', 'max_books',
     'data_retention_days',
   ];
-  const BOOL = ['allow_pdf', 'allow_audio_qr', 'allow_sharing'];
+  // Sprint 2V — allow_book_print 추가 (Lulu 인쇄 발주 gate).
+  const BOOL = ['allow_pdf', 'allow_audio_qr', 'allow_sharing', 'allow_book_print'];
 
   const sets = [];
   const vals = [];

@@ -7,9 +7,18 @@
  *   2. Adds override columns to `user_limits` — per-user overrides (nullable)
  *   3. Seeds `tier_defaults` with Tim's V2 sweet-spot values
  *
+ * 🔥 Sprint 2V (2026-05-13) — Pricing V4 update:
+ *   - NEW column `allow_book_print` (BOOLEAN) on tier_defaults + user_limits.
+ *     Gates /api/photobooks/[id]/print-request (Lulu order). Trial X, Premium ✓.
+ *   - Seeds 갱신 (Pricing V4):
+ *       free:    daily 10→5, max_books 1 (그대로 — entity creation 허용),
+ *                allow_book_print FALSE
+ *       premium: max_fragments 200→100, max_photos 100→50, max_books 3→1,
+ *                allow_book_print TRUE
+ *   - 기존 seeded rows 가 있으면 UPDATE 로 새 값 + 새 column 적용.
+ *
  * Idempotent. Matches the existing apply-quota-schema.js pattern — raw SQL
- * via @neondatabase/serverless, bypasses Prisma migrate (production has
- * tier/free_token_limit columns added via the same script pattern).
+ * via @neondatabase/serverless, bypasses Prisma migrate.
  *
  * Usage:
  *   DATABASE_URL="postgresql://..." node scripts/apply-tier-defaults.js
@@ -33,38 +42,51 @@ const { neon } = require('@neondatabase/serverless');
       allow_pdf           BOOLEAN   NOT NULL DEFAULT FALSE,
       allow_audio_qr      BOOLEAN   NOT NULL DEFAULT FALSE,
       allow_sharing       BOOLEAN   NOT NULL DEFAULT FALSE,
+      allow_book_print    BOOLEAN   NOT NULL DEFAULT FALSE,
       data_retention_days INT       NOT NULL DEFAULT 30,
       updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
-  console.log('▶ seeding tier_defaults (V2 Tim sweet-spot)…');
+  // Sprint 2V — 기존 table 에 새 column 추가 (idempotent).
+  console.log('▶ adding allow_book_print column to tier_defaults (Sprint 2V)…');
+  await sql`ALTER TABLE tier_defaults ADD COLUMN IF NOT EXISTS allow_book_print BOOLEAN NOT NULL DEFAULT FALSE`;
+
+  console.log('▶ seeding tier_defaults (Pricing V4 — Sprint 2V)…');
+  // 기존 rows 가 있으면 UPDATE — Pricing V4 새 값 + new column 반영.
   await sql`
     INSERT INTO tier_defaults
       (tier, daily_minutes, monthly_minutes, max_fragments, max_photos, max_books,
-       allow_pdf, allow_audio_qr, allow_sharing, data_retention_days)
+       allow_pdf, allow_audio_qr, allow_sharing, allow_book_print, data_retention_days)
     VALUES
-      ('free',      10,   30,    5,    3,    1,    FALSE, FALSE, FALSE, 30),
-      ('premium',   60,   1800,  200,  100,  3,    TRUE,  TRUE,  TRUE,  99999),
-      ('unlimited', 9999, 99999, 9999, 9999, 9999, TRUE,  TRUE,  TRUE,  99999)
-    ON CONFLICT (tier) DO NOTHING
+      ('free',      5,    30,    5,    3,    1,    FALSE, FALSE, FALSE, FALSE, 30),
+      ('premium',   60,   1800,  100,  50,   1,    TRUE,  TRUE,  TRUE,  TRUE,  99999),
+      ('unlimited', 9999, 99999, 9999, 9999, 9999, TRUE,  TRUE,  TRUE,  TRUE,  99999)
+    ON CONFLICT (tier) DO UPDATE SET
+      daily_minutes       = EXCLUDED.daily_minutes,
+      monthly_minutes     = EXCLUDED.monthly_minutes,
+      max_fragments       = EXCLUDED.max_fragments,
+      max_photos          = EXCLUDED.max_photos,
+      max_books           = EXCLUDED.max_books,
+      allow_pdf           = EXCLUDED.allow_pdf,
+      allow_audio_qr      = EXCLUDED.allow_audio_qr,
+      allow_sharing       = EXCLUDED.allow_sharing,
+      allow_book_print    = EXCLUDED.allow_book_print,
+      data_retention_days = EXCLUDED.data_retention_days,
+      updated_at          = NOW()
   `;
 
   console.log('▶ adding override columns to user_limits…');
   // Existing user_limits has: user_id, daily_minutes, monthly_minutes, memory_kb.
   // Sprint 2j adds NULLABLE override columns (NULL = use tier default).
-  // Note: existing daily_minutes / monthly_minutes are NOT NULL with defaults.
-  //   Sprint 2j treats them as overrides too (the existing values become
-  //   user-specific values); for resolution, getUserQuotas() will check
-  //   if value differs from tier default — but simpler: just treat them as
-  //   non-null override columns (Tim's UI lets admin clear them).
-  //   New columns are purely nullable.
+  // Sprint 2V adds allow_book_print column.
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS max_fragments        INT`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS max_photos           INT`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS max_books            INT`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS allow_pdf            BOOLEAN`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS allow_audio_qr       BOOLEAN`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS allow_sharing        BOOLEAN`;
+  await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS allow_book_print     BOOLEAN`;
   await sql`ALTER TABLE user_limits ADD COLUMN IF NOT EXISTS data_retention_days  INT`;
 
   console.log('▶ ensuring Tim (admin@companionai.com / systeco@hotmail.com) is unlimited…');

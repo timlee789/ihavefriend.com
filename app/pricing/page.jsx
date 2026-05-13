@@ -43,16 +43,26 @@ const PRICING_MSGS = {
     heroLead      : '부모님의 인생을 책으로',
     heroDesc      : '매년 부모님께 카네이션 한 송이만 드리시나요?\n6개월 동안 매일 대화하며 200-300페이지 화보집을 선물하세요.',
 
+    // 🔥 Sprint 2V (2026-05-13) — Pricing V4 (Tim 10 결정):
+    //   - Trial: 시간 ↓ (10→5분), 책 작성 가능 (인쇄만 X, 결정 9-B).
+    //   - Premium: "무제한" 표현 X (진실됨, Tim 영구 원칙).
+    //     "AI Emma 와 대화로 글 만들기 (일 60분 / 월 30시간)" — brand
+    //     promise (🎙️ → 📘) 의 텍스트 표현 (결정 ⭐).
+    //   - Special slot → 📷 사진책 만들기 Coming Soon (결정 4).
+    //   - 평생 lock-in 표현 제거 (결정 5, 진실됨).
+    //   - 베타 mention 제거 (베타 = admin 수동 grant, 별도, 결정 2).
+
     // Trial card
     trialBadge    : '🌱 Trial',
     trialPrice    : '무료',
     trialSubtitle : '지금 바로 시작',
     trialPerks    : [
-      'AI Emma 와 10분 대화 (일)',
-      '자서전 / 이야기책 / 사진책 각 1개',
-      '이야기 5개',
-      '사진 3장',
+      'AI Emma 와 5분 대화 (일)',
+      '이야기 5개 (테스트)',
+      '사진 3장 (테스트)',
+      '자서전 / 이야기책 작성 (미리 보기)',
       '30일 데이터 보존',
+      '⚠️ 책 인쇄 발주는 Premium 만',
     ],
     trialCta      : '🌱 무료 Trial 시작하기',
     trialAlready  : '이미 사용 중이세요 😊',
@@ -63,29 +73,30 @@ const PRICING_MSGS = {
     premiumNote   : '한국어 출시 예정',
     premiumBreakdown : '$60 (가입 시 계약금) + $139 (책 인쇄 신청 시) = 6개월 + 책 1권',
     premiumPerks  : [
-      'AI Emma 무제한 대화 (일 60분 / 월 30시간)',
-      '자서전 / 이야기책 / 사진책 각 3개',
+      'AI Emma 와 대화로 글 만들기 (일 60분 / 월 30시간)',
+      '자서전 + 이야기책 작성 (시간 한도 내)',
+      '자서전 또는 이야기책 1권 (인쇄)',
       '이야기 100개',
       '사진 50장',
       'PDF 다운로드',
       '가족 음성 QR 코드',
       '가족 공유',
       '영구 데이터 보존',
-      'Tim 직접 검수 + 200-300p 화보집 1권 (Lulu Premium Color, hardcover)',
-      '우편 배송',
+      '책 우편배송',
     ],
-    premiumCta    : '📘 베타 신청하기',
-    premiumNote2  : '베타 5명 모집 중 (한국어, 6개월 무료 + 책 1권 무료)',
+    premiumCta    : 'Coming Soon',
+    premiumNote2  : '한국어 출시 예정',
 
-    // Special card
-    specialBadge  : '👑 Special',
-    specialPrice  : '문의',
+    // Special card — 사진책 만들기 (Sprint 2V 결정 4: 별도 slot)
+    specialBadge  : '📷 사진책 만들기',
+    specialPrice  : 'Coming Soon',
     specialPerks  : [
-      '가족 plan',
-      '베타 사용자 평생 lock-in',
-      '무제한 사용',
+      '자서전 / 이야기책과 별도',
+      '가족 사진 + 캡션',
+      '페이지 별 가격',
+      '20p ~ 100p+',
     ],
-    specialCta    : '문의하기',
+    specialCta    : 'Coming Soon',
 
     // Other languages
     langTitle     : '🌍 다른 언어',
@@ -279,20 +290,35 @@ export default function PricingPage() {
             <ul className={s.tierPerks}>
               {M.premiumPerks.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
-            <button className={s.premiumBtn} onClick={handleBetaApply}>
+            {/* 🔥 Sprint 2V (2026-05-13) — Premium CTA = "Coming Soon" 비활성
+                (Tim 결정 6-A: 베타 발송 후 활성화 결정). mailto onClick
+                제거. handleBetaApply 함수 자체는 보존 (미래 use case).
+                다른 언어 (EN/ES) 는 그대로 mailto — 한국어 베타만 영향. */}
+            <button
+              className={`${s.premiumBtn} ${lang === 'KO' ? s.ctaDisabled : ''}`}
+              onClick={lang === 'KO' ? undefined : handleBetaApply}
+              disabled={lang === 'KO'}
+              aria-disabled={lang === 'KO' ? 'true' : undefined}
+            >
               {M.premiumCta}
             </button>
             <div className={s.premiumNote2}>{M.premiumNote2}</div>
           </article>
 
-          {/* 👑 Special — 인디고 */}
+          {/* 📷 사진책 만들기 — Coming Soon (Sprint 2V 결정 4: 별도 slot) */}
           <article className={`${s.tierCard} ${s.specialCard}`}>
             <div className={s.tierBadge}>{M.specialBadge}</div>
             <div className={s.tierPrice}>{M.specialPrice}</div>
             <ul className={s.tierPerks}>
               {M.specialPerks.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
-            <button className={s.specialBtn} onClick={handleContact}>
+            {/* 🔥 Sprint 2V — Special slot 도 한국어 "Coming Soon" 비활성. */}
+            <button
+              className={`${s.specialBtn} ${lang === 'KO' ? s.ctaDisabled : ''}`}
+              onClick={lang === 'KO' ? undefined : handleContact}
+              disabled={lang === 'KO'}
+              aria-disabled={lang === 'KO' ? 'true' : undefined}
+            >
               {M.specialCta}
             </button>
           </article>

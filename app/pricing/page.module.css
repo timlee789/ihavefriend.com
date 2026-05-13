@@ -431,3 +431,19 @@
     padding: var(--space-xl) 16px;
   }
 }
+
+/* 🔥 Sprint 2V (2026-05-13) — Coming Soon disabled CTA.
+   Tim 결정 6-A: Premium / 사진책 만들기 CTA 한국어 비활성. mailto
+   호출 제거 + visual 흐려짐 + pointer-events 차단. */
+.ctaDisabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  box-shadow: none !important;
+  filter: grayscale(0.25);
+}
+.ctaDisabled:hover {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none !important;
+}
