@@ -1,0 +1,131 @@
+/* /checkout/success + /checkout/canceled shared styles (Sprint 2X, 2026-05-13).
+   시니어 친화 — 큰 글씨 / 큰 버튼 / warm beige. Sprint 2P 의 영구
+   desktop 표준 (max-width 480 centered card) 적용. */
+
+.page {
+  min-height: 100dvh;
+  background: #fdf8f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 40px 28px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(139, 111, 71, 0.10);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1410;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+  word-break: keep-all;
+}
+
+.message {
+  font-size: 17px;
+  color: #2d1510;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  word-break: keep-all;
+}
+
+.subMessage {
+  font-size: 15px;
+  color: #5a4a3a;
+  line-height: 1.65;
+  margin: 0 0 24px;
+  word-break: keep-all;
+  max-width: 380px;
+}
+
+.timeline {
+  font-size: 14px;
+  color: #6a5a4a;
+  background: rgba(234, 88, 12, 0.08);
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin: 0 0 24px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.ctaPrimary {
+  display: inline-block;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+  margin-bottom: 12px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+  transition: opacity 0.15s, transform 0.1s;
+  min-width: 200px;
+}
+.ctaPrimary:hover  { opacity: 0.92; transform: translateY(-1px); }
+.ctaPrimary:active { transform: scale(0.98); }
+
+.ctaSecondary {
+  display: inline-block;
+  padding: 12px 24px;
+  color: #666;
+  font-size: 14px;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ctaSecondary:hover { color: #1a1410; }
+
+@media (max-width: 380px) {
+  .card  { padding: 32px 22px; }
+  .icon  { font-size: 48px; }
+  .title { font-size: 22px; }
+  .message    { font-size: 16px; }
+  .subMessage { font-size: 14px; }
+  .ctaPrimary { padding: 14px 28px; font-size: 16px; }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .page  { background: #1a1410; }
+  .card  {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+  .title       { color: #fff; }
+  .message     { color: rgba(255, 255, 255, 0.92); }
+  .subMessage  { color: rgba(255, 255, 255, 0.70); }
+  .timeline    {
+    background: rgba(234, 88, 12, 0.16);
+    color: rgba(253, 186, 116, 0.95);
+  }
+  .ctaSecondary { color: rgba(255, 255, 255, 0.55); }
+  .ctaSecondary:hover { color: #fff; }
+}

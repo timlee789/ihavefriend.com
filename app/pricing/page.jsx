@@ -221,6 +221,54 @@ export default function PricingPage() {
   const M = PRICING_MSGS[lang] || PRICING_MSGS.KO;
   const { plan } = useUserPlan();
 
+  // 🔥 Sprint 2X (2026-05-13) — Stripe Checkout 활성화 (한국어 only).
+  //   "Coming Soon" disabled → Stripe Checkout Session 생성 + redirect.
+  //   EN/ES 는 Sprint 2V 의 mailto 그대로 (handleBetaApply / handleContact).
+  //   Anonymous 사용자는 login redirect (postLoginRedirect 로 /pricing 복귀).
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const isLoggedIn = !!plan;  // useUserPlan returns null when anonymous.
+
+  async function handlePremiumCheckout() {
+    // Anonymous → /login (postLoginRedirect 로 /pricing 복귀).
+    if (!isLoggedIn) {
+      try { sessionStorage.setItem('postLoginRedirect', '/pricing'); } catch {}
+      router.push('/login');
+      return;
+    }
+    // 이미 premium / unlimited 회원 안내
+    if (plan?.isPaid) {
+      alert('이미 Premium 회원이세요. 자서전 만들기를 시작해 보세요 😊');
+      router.push('/my-stories');
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const res = await fetch('/api/checkout/premium', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.message || '결제 시스템 오류. 잠시 후 다시 시도해 주세요.');
+        setCheckoutLoading(false);
+        return;
+      }
+      if (data.url) {
+        // Stripe Checkout 으로 redirect — 이 페이지 떠남.
+        window.location.href = data.url;
+        return;
+      }
+      // Defensive — url 누락 (이론상 발생 X)
+      alert('결제 페이지를 열 수 없어요. 잠시 후 다시 시도해 주세요.');
+      setCheckoutLoading(false);
+    } catch (err) {
+      console.error('[handlePremiumCheckout]', err?.message || err);
+      alert('결제 시스템 오류. 잠시 후 다시 시도해 주세요.');
+      setCheckoutLoading(false);
+    }
+  }
+
   // CTA handlers — Sprint 2k 결정 1-A, 2-A+C, 3-A, 4-A.
   function handleTrialStart() {
     if (plan?.isPaid) {
@@ -290,17 +338,22 @@ export default function PricingPage() {
             <ul className={s.tierPerks}>
               {M.premiumPerks.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
-            {/* 🔥 Sprint 2V (2026-05-13) — Premium CTA = "Coming Soon" 비활성
-                (Tim 결정 6-A: 베타 발송 후 활성화 결정). mailto onClick
-                제거. handleBetaApply 함수 자체는 보존 (미래 use case).
-                다른 언어 (EN/ES) 는 그대로 mailto — 한국어 베타만 영향. */}
+            {/* 🔥 Sprint 2X (2026-05-13) — Premium CTA Stripe Checkout 활성화
+                (한국어 only). Sprint 2V 의 disabled → handlePremiumCheckout.
+                - Anonymous: /login redirect (postLoginRedirect=/pricing)
+                - Trial: Stripe Checkout Session → redirect
+                - 이미 premium: alert + /my-stories
+                EN/ES 는 Sprint 2V 의 mailto 그대로 (handleBetaApply 보존). */}
             <button
-              className={`${s.premiumBtn} ${lang === 'KO' ? s.ctaDisabled : ''}`}
-              onClick={lang === 'KO' ? undefined : handleBetaApply}
-              disabled={lang === 'KO'}
-              aria-disabled={lang === 'KO' ? 'true' : undefined}
+              className={s.premiumBtn}
+              onClick={lang === 'KO' ? handlePremiumCheckout : handleBetaApply}
+              disabled={lang === 'KO' && checkoutLoading}
             >
-              {M.premiumCta}
+              {lang === 'KO'
+                ? (checkoutLoading
+                    ? '잠시만요…'
+                    : (!isLoggedIn ? '로그인 후 가입하기' : '📘 Premium 가입하기'))
+                : M.premiumCta}
             </button>
             <div className={s.premiumNote2}>{M.premiumNote2}</div>
           </article>
