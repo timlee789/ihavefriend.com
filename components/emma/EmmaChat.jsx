@@ -9,6 +9,7 @@ import { detectBurst } from '@/lib/transcriptNoise';
 import { filterEmmaResponse } from '@/lib/emmaResponseFilter';
 import { createWakeLockGuard } from '@/lib/wakelockFallback';
 import QuotaBlockedModal from '@/components/QuotaBlockedModal';
+import QuestionBox from '@/components/book/QuestionBox';
 import { BOOK_MSGS } from '@/lib/bookI18n';
 
 // ── Short, varied opening prompts (Task 51 #2 → revised in Task 52 #1) ──
@@ -1415,26 +1416,12 @@ export default function EmmaChat({ initialMode }) {
         console.warn('[EmmaChat] continueFragment title fetch failed:', e.message);
       }
 
-      const currentLang = langRef.current || 'KO';
-      const introText =
-        currentLang === 'KO'
-          ? (parentTitle
-              ? `"${parentTitle}" 이야기에 더 들려주실 부분이 있으시군요. 시작할게요…`
-              : '이어가실 이야기가 있으시군요. 시작할게요…')
-          : currentLang === 'ES'
-          ? (parentTitle
-              ? `Quieres añadir más a "${parentTitle}". Comenzando…`
-              : 'Quieres continuar una historia. Comenzando…')
-          : (parentTitle
-              ? `You want to add more to "${parentTitle}". Starting…`
-              : 'Continuing your story. Starting now…');
-
-      setMessages([{
-        id: Date.now(),
-        role: 'emma',
-        text: introText,
-        timestamp: nowStr(),
-      }]);
+      // 🔥 Sprint 2T (2026-05-13) — Tim 결정 #6: 중복 메시지 제거.
+      //   이전엔 두 메시지 표시 (TTS 없는 introText + LLM 의 TTS greeting).
+      //   시니어가 같은 의미의 메시지를 두 번 읽는 friction. introText 만
+      //   제거 — LLM 의 실제 greeting (lib/recallEngine.js 의 continuation
+      //   opener) 이 TTS 와 함께 자연스럽게 표시됨.
+      setMessages([]);
 
       // Force story mode for continuation
       setConversationMode('story');
@@ -2976,10 +2963,24 @@ export default function EmmaChat({ initialMode }) {
 
       {/* ── top nav ── */}
       <header className={`${styles.topnav} ${isDay ? styles.topnavDay : styles.topnavNight}`}>
-        {/* Sprint 2S (2026-05-13) — Tim: "← 뒤로" 텍스트 버튼 (다른
-            페이지 backBtn 패턴과 통일). 단순 화살표 아이콘 → 명시적
-            라벨. CSS 도 사각 텍스트 형태로 변경. */}
-        <button className={styles.backBtn} onClick={() => { disconnect(); router.push('/'); }}>← 뒤로</button>
+        {/* Sprint 2S — "← 뒤로" 텍스트 버튼 (다른 페이지 backBtn 통일).
+            Sprint 2T (2026-05-13) Tim 결정 7-C.4-A — 종료 logic 통합:
+              - 대화 중 (isConnected) 또는 메시지 있음 → disconnect() +
+                feedback modal 띄움 (feedback modal 의 "건너뛰기" /
+                "보내기" 가 router.push('/') 처리)
+              - 빈 welcome 화면 → 즉시 router.push('/')
+            하단 X (CloseIcon) 가 제거되면서 이 버튼이 종료 진입점. */}
+        <button
+          className={styles.backBtn}
+          onClick={() => {
+            if (isConnected || messages.length > 0) {
+              disconnect();
+              setShowFeedback(true);
+            } else {
+              router.push('/');
+            }
+          }}
+        >← 뒤로</button>
 
         <div className={`${styles.navAvatar} ${isDay ? styles.navAvatarDay : styles.navAvatarNight}`}>
           <EmmaAvatar size="md" mode={mode} />
@@ -3046,6 +3047,18 @@ export default function EmmaChat({ initialMode }) {
           </div>
         );
       })()}
+
+      {/* 🆕 Sprint 2T (2026-05-13) — Tim 의 통찰: 시니어가 답변 페이지로
+          진입 후 "이 질문이 뭐였더라?" 잊지 않도록 prompt box 표시.
+          /book/[id]/question/[qId] 의 .promptBox 디자인과 일관 (orange
+          tint). 자유 대화 (mode=story 또는 기본) 일 때는 안 보임. */}
+      {isBookMode && (
+        <QuestionBox
+          bookId={bookId}
+          bookQuestionId={bookQuestionId}
+          lang={lang}
+        />
+      )}
 
       {/* ── chat scroll area ── */}
       <div className={styles.chatArea} ref={scrollRef}>
@@ -3239,15 +3252,12 @@ export default function EmmaChat({ initialMode }) {
         </div>
 
         {/* controls row */}
+        {/* 🔥 Sprint 2T (2026-05-13) — Tim 결정 #7:
+              - 좌측 ≡ (TextIcon placeholder) 제거 — 작동 X 였음.
+              - 우측 X (CloseIcon disconnect) 제거 — disconnect logic
+                은 좌측 상단 "← 뒤로" 버튼이 통합 (handleBack).
+              마이크 버튼만 중앙에 남음 — 깨끗한 UX. */}
         <div className={styles.voiceControls}>
-          {/* text mode toggle (placeholder) */}
-          <button
-            className={`${styles.sideBtn} ${isDay ? styles.sideBtnDay : styles.sideBtnNight}`}
-            title="텍스트로 전환"
-          >
-            <TextIcon color={isDay ? '#ea580c' : '#a855f7'} />
-          </button>
-
           {/* main mic button */}
           <div className={styles.micCenter}>
             <button
@@ -3267,15 +3277,6 @@ export default function EmmaChat({ initialMode }) {
                 : statusMsg || emma.micLabel_idle}
             </span>
           </div>
-
-          {/* end session */}
-          <button
-            className={`${styles.sideBtn} ${isDay ? styles.sideBtnDay : styles.sideBtnNight}`}
-            title="대화 종료"
-            onClick={() => disconnect()}
-          >
-            <CloseIcon color={isDay ? '#ea580c' : '#a855f7'} />
-          </button>
         </div>
       </div>
       )}
@@ -3481,7 +3482,8 @@ function CloseIcon({ color }) {
 }
 function SpeakerIcon({ color }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+    // Sprint 2T — 14 → 20px (.navIcon 44×44 button 안 비례 확대).
+    <svg width="20" height="20" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <path d="M2 5h2.5L8 2v10L4.5 9H2a1 1 0 01-1-1V6a1 1 0 011-1z" fill={color} />
       <path d="M10 4.5a3.5 3.5 0 010 5" stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" />
       <path d="M11.5 2.5a6 6 0 010 9" stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" />
@@ -3490,7 +3492,7 @@ function SpeakerIcon({ color }) {
 }
 function SpeakerMutedIcon({ color }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <path d="M2 5h2.5L8 2v10L4.5 9H2a1 1 0 01-1-1V6a1 1 0 011-1z" fill={color} />
       <line x1="10" y1="4" x2="14" y2="10" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
       <line x1="14" y1="4" x2="10" y2="10" stroke={color} strokeWidth="1.4" strokeLinecap="round" />

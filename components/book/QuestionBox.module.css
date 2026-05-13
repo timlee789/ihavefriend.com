@@ -1,0 +1,55 @@
+/* QuestionBox — Sprint 2T (2026-05-13).
+   /book/[id]/question/[qId] 의 .promptBox 디자인 복제 (visual 일관성).
+   orange tint + border + 큰 prompt 글씨 (시니어 친화). */
+
+.promptBox {
+  padding: 20px 22px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(234, 88, 12, 0.12)), #2a2a2a;
+  border: 1px solid rgba(234, 88, 12, 0.25);
+  border-radius: 16px;
+  margin: 0 0 var(--space-lg);
+  color: #fdfdfd;
+}
+
+.prompt {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 10px;
+}
+
+.hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.meta {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 380px) {
+  .promptBox { padding: 16px 18px; }
+  .prompt    { font-size: 18px; }
+}
+
+@media (min-width: 768px) {
+  .promptBox { padding: 22px 24px; }
+  .prompt    { font-size: 21px; }
+  .hint      { font-size: 15px; }
+}
+
+/* Light mode override (some pages use light theme — /write). */
+@media (prefers-color-scheme: light) {
+  .promptBox {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), rgba(234, 88, 12, 0.08)), #fff;
+    border-color: rgba(234, 88, 12, 0.30);
+    color: #1a1410;
+  }
+  .prompt { color: #1a1410; }
+  .hint   { color: rgba(26, 20, 16, 0.65); }
+  .meta   { color: rgba(26, 20, 16, 0.50); }
+}

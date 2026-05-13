@@ -32,6 +32,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PhotoUploader from '@/components/photos/PhotoUploader';
+import QuestionBox from '@/components/book/QuestionBox';
 import s from './page.module.css';
 
 const WRITE_MSGS = {
@@ -402,6 +403,18 @@ function Inner() {
             : m.pageTitle}
         </h1>
       </header>
+
+      {/* 🆕 Sprint 2T (2026-05-13) — book 답변 mode 일 때 question prompt
+          를 상단에 box 디자인으로 표시. 시니어가 답변 페이지로 진입 후
+          "이 질문이 뭐였더라?" 잊지 않도록. 자유 글쓰기 / 편집 mode 는
+          영향 X. */}
+      {isBookMode && (
+        <QuestionBox
+          bookId={bookId}
+          bookQuestionId={bookQId}
+          lang={lang}
+        />
+      )}
 
       {/* 🆕 Task 95 — edit-mode info banner. Tells the senior they can
           revise existing text AND append. Only shows when actually

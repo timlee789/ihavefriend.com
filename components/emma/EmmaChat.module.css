@@ -91,15 +91,18 @@
 .navStatus        { font-size: 13px; font-weight: 500; color: #22c55e; } /* 11 → 13 */
 .navStatusOffline { font-size: 13px; font-weight: 500; color: #a8a29e; } /* 11 → 13 */
 
-.navActions { margin-left: auto; display: flex; gap: 8px; }
+/* Sprint 2T (2026-05-13) — Tim: 우측 상단 버튼 크기 ↑. 30px → 44px
+   (시니어 터치 영역 표준 44px), font-size 14 → 20px, gap 8 → 10. */
+.navActions { margin-left: auto; display: flex; gap: 10px; }
 .navIcon {
-  width: 30px; height: 30px;
+  width: 44px; height: 44px;
   border-radius: 50%;
   border: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 20px;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 }
 .navIcon:hover { opacity: 0.72; }
 .navIconDay   { background: rgba(234,88,12,0.08); }
