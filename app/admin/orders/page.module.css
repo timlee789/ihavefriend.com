@@ -1,0 +1,242 @@
+/* Sprint 2AA — Admin Orders UI.
+   시니어 친화 (Tim 본인 admin 친화), warm beige + orange accent.
+   Sprint 2P 의 max-width 960 desktop 표준. */
+
+.page {
+  min-height: 100dvh;
+  background: #fdf8f4;
+  color: #1a1410;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 0 60px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  background: rgba(253, 248, 244, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+}
+
+.backBtn {
+  padding: 10px 18px;
+  background: rgba(234, 88, 12, 0.10);
+  color: #ea580c;
+  border: 1px solid rgba(234, 88, 12, 0.25);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1410;
+  margin: 0;
+}
+
+.section {
+  padding: 24px 20px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1410;
+  margin: 0 0 16px;
+}
+
+.empty {
+  color: #888;
+  text-align: center;
+  padding: 40px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.10);
+}
+
+.orderList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.orderCard {
+  background: #fff;
+  border: 1.5px solid rgba(251, 146, 60, 0.30);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .orderCard {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.orderInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.userName {
+  font-size: 16px;
+  color: #1a1410;
+}
+
+.email {
+  font-size: 13px;
+  color: #6a5a4a;
+}
+
+.orderMeta {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+  color: #6a5a4a;
+  margin-bottom: 6px;
+}
+
+.amount {
+  color: #ea580c;
+  font-weight: 700;
+}
+
+.bookTitle {
+  font-size: 14px;
+  color: #2d1510;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.category {
+  color: #888;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btnPdf {
+  padding: 10px 16px;
+  background: rgba(99, 102, 241, 0.10);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.btnFulfill {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 40px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.30);
+}
+
+.refundGuide {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #2d1510;
+  line-height: 1.6;
+}
+
+.refundGuide ol {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.refundGuide li {
+  margin-bottom: 4px;
+}
+
+.subTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1410;
+  margin: 20px 0 12px;
+}
+
+.refundList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.refundCard {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.refundInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.refundDate {
+  color: #888;
+  font-size: 12px;
+}
+
+.loading,
+.error {
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.error {
+  color: #dc2626;
+}
