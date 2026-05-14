@@ -163,12 +163,18 @@
 /* Sprint 2W (2026-05-13) — Tim: pricingBox 글씨 안 보임 fix.
    배경 (light gradient ~5% opacity orange+purple = ~흰색) 에 대비 ↑.
    .pricingTitle: orange → 진한 brown-orange (darker, weight ↑)
-   .pricingItem: 0.85 opacity → 1.0 + weight 500 (시니어 친화 가독성) */
+   .pricingItem: 0.85 opacity → 1.0 + weight 500 (시니어 친화 가독성)
+   
+   Sprint 2Y' (2026-05-13) — Tim production bug: light mode 에서 여전히
+   안 보임 (image 경우). 때문이 dark mode override 가 system pref 따라
+   적용되지만 .page 배경은 hard-coded #fdf8f4 (light). 해결:
+   1) light mode color !important 강화 (specificity 높임)
+   2) dark mode override 제거 (또는 완전 dark mode prefersDark page 경우만) */
 .pricingTitle {
   font-size: 17px;
   font-weight: 800;
   margin: 0 0 12px;
-  color: #9a3a08;  /* darker orange-brown, 흰 배경 대비 ↑ */
+  color: #9a3a08 !important;  /* darker orange-brown, light bg 안전 */
   letter-spacing: -0.01em;
 }
 .pricingList {
@@ -179,7 +185,7 @@
 }
 .pricingItem {
   font-size: 14.5px;
-  color: #2d1510;  /* full opacity, 가독성 ↑ */
+  color: #2d1510 !important;  /* dark brown, light bg 안전 */
   font-weight: 500;
   line-height: 1.5;
   word-break: keep-all;
@@ -203,12 +209,17 @@
 .pricingLink:active { transform: scale(0.98); }
 
 @media (prefers-color-scheme: dark) {
+  /* Sprint 2Y' (2026-05-13) — Tim production bug fix:
+     .page 배경이 hard-coded #fdf8f4 (light) 이므로, system 이
+     dark mode 일 때에도 실제 페이지 배경 은 여전히 light.
+     따라서 dark mode override 가 적용되면 흰 글씨 가 light bg 에 안 보임.
+     해결: dark mode override 제거. light mode color 이 항상 적용.
+     (향후 전체 page dark mode 지원 시 여기 다시 검토) */
   .pricingBox {
-    background: linear-gradient(135deg, rgba(234, 88, 12, 0.10), rgba(99, 102, 241, 0.08));
-    border-color: rgba(251, 146, 60, 0.30);
+    background: linear-gradient(135deg, rgba(234, 88, 12, 0.08), rgba(99, 102, 241, 0.06));
+    border-color: rgba(234, 88, 12, 0.22);
   }
-  .pricingTitle { color: #fdba74; }
-  .pricingItem  { color: rgba(255, 255, 255, 0.85); }
+  /* .pricingTitle / .pricingItem color override 제거 — light mode color !important 가 일관 적용 */
 }
 
 /* ── CTA ── */
