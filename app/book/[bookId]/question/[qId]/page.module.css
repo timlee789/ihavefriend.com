@@ -1,21 +1,40 @@
+/*
+ * /book/[bookId]/question/[qId]/page.module.css
+ *
+ * Milestone 4 Step A (2026-05-20) — dark → V3 light 톤 전면 전환.
+ * Visual Tree + ChapterEntryV3 와 동일 색 시스템. dark + prefers-color-scheme
+ * 분기 제거하고 단일 light 통일.
+ *
+ * 색 시스템 요약 (Visual Tree 와 일치):
+ *   - 배경:     베이지 그라데이션 #FFFAF0 → #F2E8D5 → #E8D5BC
+ *   - 텍스트:   진한 갈색 #2A1F14
+ *   - 황금:     #FFE89A / #D89A20 / #B8800E (in_progress 잎 / saved 안내)
+ *   - 갈색:     #5C4020 / #3D2310 / #2A1808 (CTA, 본문 강조)
+ *   - 주황:     #F2A058 / #F08838 / #D86810 (completed 잎, 다음 액션)
+ *   - 초록:     #8AC868 (옅은 hint 만 — 카드 border tint)
+ *
+ * 버튼 hover: translateY(-2px) + shadow lift + transition 0.25s cubic-bezier.
+ */
+
 .container {
   max-width: 600px;
   margin: 0 auto;
   padding: 16px;
   min-height: 100dvh;
-  background: #1a1410;
-  color: #fdfdfd;
+  background: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
+  color: #2A1F14;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
 }
 
 .header { padding: 12px 0; }
-/* 🔥 Task 85 — bigger back button for senior fingers (44px iOS hit
-   target), green-tinted to match the book/green identity. */
+
+/* 뒤로가기 — 흰 반투명 + 갈색 테두리 (ChapterEntryV3 backBtn 과 동일) */
 .backBtn {
-  background: rgba(34, 197, 94, 0.10);
-  border: 1px solid rgba(134, 239, 172, 0.40);
-  color: rgba(220, 252, 231, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(154, 104, 16, 0.4);
+  color: #5C4020;
   padding: 10px 18px;
-  border-radius: 12px;
+  border-radius: 22px;
   font-size: 16px;
   font-weight: 600;
   min-height: 44px;
@@ -24,71 +43,90 @@
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .backBtn:hover {
-  background: rgba(34, 197, 94, 0.18);
-  border-color: rgba(134, 239, 172, 0.65);
+  background: #fff;
+  border-color: #5C4020;
 }
 @media (max-width: 380px) {
   .backBtn { padding: 8px 14px; font-size: 14px; min-height: 40px; }
 }
-@media (prefers-color-scheme: light) {
-  .backBtn {
-    background: rgba(21, 128, 61, 0.08);
-    border-color: rgba(21, 128, 61, 0.40);
-    color: #14532d;
-  }
-  .backBtn:hover {
-    background: rgba(21, 128, 61, 0.14);
-    border-color: rgba(21, 128, 61, 0.65);
-  }
-}
 
 .breadcrumb {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(92, 64, 32, 0.65);
   margin: 16px 0 4px;
 }
 .questionNum {
   font-size: 13px;
-  color: #fb923c;
-  font-weight: 600;
+  color: #D89A20;
+  font-weight: 700;
   margin-bottom: 20px;
 }
 
+/* 프롬프트 박스 — 황금 그라데이션 (Visual Tree in_progress 잎 색) + 좌측 황금 강조선 */
 .promptBox {
   position: relative;
   padding: 24px 60px 24px 24px;
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(234, 88, 12, 0.12)), #2a2a2a;
-  border: 1px solid rgba(234, 88, 12, 0.25);
+  background: linear-gradient(135deg, #FFF8E0 0%, #FFE89A 100%);
+  border: 1px solid rgba(216, 154, 32, 0.4);
+  border-left: 4px solid #D89A20;
   border-radius: 16px;
   margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(216, 154, 32, 0.15);
 }
 .prompt {
+  font-family: "Noto Serif KR", Georgia, serif;
   font-size: 22px;
   font-weight: 500;
   line-height: 1.6;
   margin-bottom: 16px;
+  color: #2A1F14;
 }
 .hint {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(92, 64, 32, 0.75);
   margin-bottom: 12px;
   line-height: 1.5;
 }
 .meta {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(92, 64, 32, 0.55);
 }
 
+/* Step A2 — V3 콤팩트 프롬프트 박스. 힌트/예상시간 없이 주제만. */
+.promptBoxCompact {
+  padding: 18px 56px 18px 20px;
+}
+
+/* "이번 주제" 작은 라벨 — 황금 대문자, prompt 위 */
+.topicLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #B8800E;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* 콤팩트 박스의 prompt — margin-bottom 제거 (밑에 힌트/시간 없음), 살짝 작게 */
+.promptBoxCompact .prompt {
+  margin-bottom: 0;
+  font-size: 21px;
+}
+
+/* 답변 영역 라벨 */
 .existingResponses { margin-bottom: 24px; }
 .existingLabel {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(92, 64, 32, 0.75);
   margin-bottom: 8px;
+  font-weight: 600;
 }
+
+/* (DEPRECATED — FragmentModal inline 으로 대체. Task 83) — 색만 V3 톤으로. */
 .fragmentCard {
   padding: 14px 16px;
-  background: #2a2a2a;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: #fff;
+  border: 1px solid rgba(138, 200, 104, 0.3);
   border-radius: 10px;
   margin-bottom: 8px;
 }
@@ -96,32 +134,49 @@
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 4px;
+  color: #2A1F14;
 }
 .fragmentPreview {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(92, 64, 32, 0.65);
   line-height: 1.5;
 }
 
 .actions { margin-top: 32px; }
+
+/* 음성 답변 — 짙은 갈색 그라데이션 (CTA primary) */
 .startBtn {
   display: block;
   width: 100%;
   padding: 18px;
-  background: #ea580c;
-  color: white;
+  background: linear-gradient(135deg, #5C4020 0%, #3D2310 100%);
+  color: #fff;
   border: none;
   border-radius: 14px;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(92, 64, 32, 0.3);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.startBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #3D2310 0%, #2A1808 100%);
+  box-shadow: 0 8px 20px rgba(92, 64, 32, 0.45);
+}
+.startBtn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(92, 64, 32, 0.3);
 }
 .startBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
 .comingSoon {
   display: block;
   font-size: 12px;
@@ -136,105 +191,113 @@
   justify-content: center;
 }
 .skipBtn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(154, 104, 16, 0.3);
+  color: rgba(92, 64, 32, 0.85);
   padding: 10px 16px;
   border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.skipBtn:hover { background: rgba(255, 255, 255, 0.05); }
+.skipBtn:hover {
+  background: #fff;
+  border-color: rgba(154, 104, 16, 0.55);
+}
 
 .loading {
   padding: 60px 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  background: #1a1410;
+  color: rgba(92, 64, 32, 0.65);
+  background: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
   min-height: 100dvh;
 }
 
-/* 🆕 Stage 5 — fragment importer styles */
+/* ===== 가져온 fragment 섹션 ===== */
 
 .importedSection { margin-bottom: 24px; }
 .importedLabel {
   font-size: 14px;
-  color: rgba(99, 102, 241, 0.92);
+  color: #B8800E;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .importedCard {
-  border-color: rgba(99, 102, 241, 0.30);
+  border-color: rgba(216, 154, 32, 0.4);
 }
 .removeImportBtn {
   margin-top: 8px;
-  background: transparent;
-  border: 1px solid rgba(220, 38, 38, 0.35);
-  color: rgba(248, 113, 113, 0.92);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(208, 48, 48, 0.4);
+  color: #8B2D2D;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.removeImportBtn:hover { background: rgba(220, 38, 38, 0.10); }
+.removeImportBtn:hover {
+  background: rgba(208, 48, 48, 0.08);
+  border-color: #8B2D2D;
+}
 
+/* "기존 이야기 가져오기" — 흰 + 갈색 점선 */
 .importBtn {
   display: block;
   width: 100%;
   padding: 14px;
-  background: rgba(99, 102, 241, 0.15);
-  color: rgba(196, 181, 253, 0.95);
-  border: 1px solid rgba(99, 102, 241, 0.30);
+  background: rgba(255, 250, 240, 0.7);
+  color: #5C4020;
+  border: 2px dashed rgba(154, 104, 16, 0.4);
   border-radius: 12px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   margin-bottom: 16px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              border-color 0.25s ease;
 }
-.importBtn:hover { background: rgba(99, 102, 241, 0.25); }
+.importBtn:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  border-color: rgba(154, 104, 16, 0.7);
+}
 
-/* 🆕 Task 93 — typed-answer alternative. Sits between the primary
-   voice button (.startBtn / .redoBtn, orange) and the importer
-   (.importBtn, indigo). Green identity to match the book/green hue
-   from Task 84 — distinct from voice (orange) and import (indigo). */
+/* 타이핑 답변 — 황금 그라데이션 (Visual Tree active_recent 톤) */
 .writeBtn {
   display: block;
   width: 100%;
   padding: 14px;
-  background: rgba(34, 197, 94, 0.15);
-  color: rgba(187, 247, 208, 0.95);
-  border: 1px solid rgba(134, 239, 172, 0.40);
+  background: linear-gradient(135deg, #D89A20 0%, #B8800E 100%);
+  color: #fff;
+  border: none;
   border-radius: 12px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(216, 154, 32, 0.25);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
 }
 .writeBtn:hover {
-  background: rgba(34, 197, 94, 0.25);
-  border-color: rgba(134, 239, 172, 0.65);
-}
-@media (prefers-color-scheme: light) {
-  .writeBtn {
-    background: rgba(21, 128, 61, 0.10);
-    color: #14532d;
-    border-color: rgba(21, 128, 61, 0.40);
-  }
-  .writeBtn:hover {
-    background: rgba(21, 128, 61, 0.18);
-    border-color: rgba(21, 128, 61, 0.65);
-  }
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #B8800E 0%, #9A6810 100%);
+  box-shadow: 0 8px 20px rgba(216, 154, 32, 0.4);
 }
 
-/* Modal */
+/* ===== 모달 (importer) ===== */
+
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(20, 14, 6, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,19 +305,26 @@
   z-index: 1000;
 }
 .modal {
-  background: #2a2520;
+  background: #fff;
   border-radius: 16px;
   padding: 24px;
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(154, 104, 16, 0.2);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  color: #2A1F14;
 }
-.modal h3 { margin: 0 0 8px; font-size: 18px; }
+.modal h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-family: "Noto Serif KR", Georgia, serif;
+  color: #2A1F14;
+}
 .modalIntro {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(92, 64, 32, 0.7);
   margin: 0 0 20px;
   line-height: 1.5;
 }
@@ -262,34 +332,38 @@
 .modalEmpty {
   padding: 40px 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(92, 64, 32, 0.65);
   font-size: 14px;
   line-height: 1.6;
 }
 .linkBtn {
-  background: transparent;
-  border: 1px solid rgba(234, 88, 12, 0.5);
-  color: #fb923c;
+  background: rgba(255, 250, 240, 0.7);
+  border: 1px solid rgba(216, 154, 32, 0.5);
+  color: #B8800E;
   padding: 8px 16px;
   border-radius: 8px;
   margin-top: 12px;
   cursor: pointer;
   font-family: inherit;
   font-size: 13px;
+  transition: background-color 0.15s ease;
 }
-.linkBtn:hover { background: rgba(234, 88, 12, 0.10); }
+.linkBtn:hover {
+  background: rgba(216, 154, 32, 0.12);
+}
 
 .suggestionsList { display: flex; flex-direction: column; gap: 12px; }
 .suggestionCard {
   padding: 14px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 250, 240, 0.55);
+  border: 1px solid rgba(154, 104, 16, 0.18);
   border-radius: 10px;
 }
 .suggestionTitle {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 4px;
+  color: #2A1F14;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -297,127 +371,159 @@
 }
 .relevanceBadge {
   font-size: 11px;
-  background: rgba(234, 88, 12, 0.20);
-  color: #fb923c;
+  background: rgba(216, 154, 32, 0.25);
+  color: #B8800E;
   padding: 2px 8px;
   border-radius: 8px;
+  font-weight: 700;
 }
 .suggestionDate {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(92, 64, 32, 0.5);
   margin-bottom: 8px;
 }
 .suggestionPreview {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(92, 64, 32, 0.75);
   line-height: 1.5;
   margin-bottom: 12px;
 }
 .useBtn {
-  background: rgba(99, 102, 241, 0.20);
-  border: 1px solid rgba(99, 102, 241, 0.40);
-  color: rgba(196, 181, 253, 1);
+  background: linear-gradient(135deg, #D89A20 0%, #B8800E 100%);
+  border: none;
+  color: #fff;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
 }
-.useBtn:hover { background: rgba(99, 102, 241, 0.30); }
+.useBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(216, 154, 32, 0.3);
+}
 .useBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .modalClose {
   display: block;
   margin: 16px auto 0;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.7);
+  background: #fff;
+  border: 1px solid rgba(154, 104, 16, 0.3);
+  color: #5C4020;
   padding: 8px 24px;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.modalClose:hover { background: rgba(255, 255, 255, 0.05); }
+.modalClose:hover {
+  background: rgba(255, 250, 240, 0.9);
+  border-color: #5C4020;
+}
 
 .importError {
   padding: 10px 12px;
-  background: rgba(220, 38, 38, 0.12);
-  border: 1px solid rgba(220, 38, 38, 0.30);
-  color: #fca5a5;
-  border-radius: 8px;
+  background: rgba(208, 48, 48, 0.08);
+  border-left: 3px solid #D03030;
+  color: #8B2D2D;
+  border-radius: 6px;
   font-size: 13px;
   margin-bottom: 16px;
 }
 
-/* 🆕 Stage 7 — completed-state next-question card */
+/* ===== 완료 섹션 — 완료 황금-주황 톤 ===== */
 .completedSection {
   margin: 20px 0 24px;
   padding: 20px;
-  background: rgba(34, 197, 94, 0.10);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: linear-gradient(135deg, #FFF5E8 0%, #FFE8C8 100%);
+  border: 1px solid rgba(240, 136, 56, 0.4);
+  border-left: 4px solid #F08838;
   border-radius: 14px;
   text-align: center;
+  box-shadow: 0 4px 14px rgba(240, 136, 56, 0.18);
 }
 .completedLabel {
   font-size: 16px;
-  color: rgba(134, 239, 172, 1);
+  color: #5C3A14;
   margin-bottom: 16px;
-  font-weight: 500;
+  font-weight: 700;
 }
 .completedHint {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(92, 58, 20, 0.85);
   margin-bottom: 12px;
 }
 .nextBigBtn {
   display: block;
   width: 100%;
   padding: 18px;
-  background: #ea580c;
-  color: white;
+  background: linear-gradient(135deg, #F2A058 0%, #F08838 100%);
+  color: #fff;
   border: none;
   border-radius: 12px;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-bottom: 12px;
+  box-shadow: 0 4px 14px rgba(240, 136, 56, 0.3);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
 }
-.nextBigBtn:hover { background: #c2410c; }
+.nextBigBtn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #F08838 0%, #D86810 100%);
+  box-shadow: 0 8px 20px rgba(240, 136, 56, 0.45);
+}
 .bookHomeBtn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(154, 104, 16, 0.3);
+  color: #5C4020;
   padding: 12px 20px;
   border-radius: 10px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.bookHomeBtn:hover { background: rgba(255, 255, 255, 0.05); }
+.bookHomeBtn:hover {
+  background: #fff;
+  border-color: #5C4020;
+}
 
-/* 🆕 Stage 7 — "다시 답변하기" button (replaces start when complete) */
+/* "다시 답변하기" — 흰 배경 + 황금 테두리 (보조 액션) */
 .redoBtn {
   display: block;
   width: 100%;
   padding: 14px;
-  background: rgba(251, 146, 60, 0.15);
-  color: #fb923c;
-  border: 1px solid rgba(251, 146, 60, 0.30);
+  background: rgba(255, 250, 240, 0.7);
+  color: #B8800E;
+  border: 1.5px solid rgba(216, 154, 32, 0.45);
   border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-bottom: 12px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              border-color 0.25s ease;
 }
-.redoBtn:hover { background: rgba(251, 146, 60, 0.25); }
+.redoBtn:hover {
+  transform: translateY(-1px);
+  background: #fff;
+  border-color: #B8800E;
+}
 
-/* 🆕 Stage 7 — multi-answer select UI */
+/* (DEPRECATED — multi-answer select UI. Task 83) — V3 톤으로 정리 */
 .multipleResponses { margin-bottom: 20px; }
 .multipleLabel {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(92, 64, 32, 0.85);
   margin-bottom: 10px;
   line-height: 1.5;
 }
@@ -425,21 +531,23 @@
   display: flex;
   gap: 12px;
   padding: 14px;
-  background: #2a2520;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #fff;
+  border: 1px solid rgba(154, 104, 16, 0.15);
   border-radius: 10px;
   cursor: pointer;
   margin-bottom: 8px;
   width: 100%;
   text-align: left;
   font-family: inherit;
-  color: #fdfdfd;
+  color: #2A1F14;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
-.fragmentSelectCard:hover { border-color: rgba(234, 88, 12, 0.4); }
+.fragmentSelectCard:hover {
+  border-color: rgba(216, 154, 32, 0.5);
+}
 .fragmentSelected {
-  border-color: #ea580c;
-  background: rgba(234, 88, 12, 0.10);
+  border-color: #D89A20;
+  background: rgba(255, 232, 154, 0.18);
 }
 .fragmentRadio {
   font-size: 18px;
@@ -450,17 +558,17 @@
 .fragmentDate {
   display: block;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(92, 64, 32, 0.55);
   margin-bottom: 4px;
 }
 .fragmentText {
   display: block;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(42, 31, 20, 0.9);
   line-height: 1.5;
 }
 
-/* 🆕 Stage 7 — TTS speak button (absolute inside .promptBox) */
+/* TTS speak 버튼 — 프롬프트 박스 우상단 */
 .speakBtn {
   position: absolute;
   top: 16px;
@@ -468,9 +576,9 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(154, 104, 16, 0.35);
+  color: #5C4020;
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
@@ -478,11 +586,14 @@
   align-items: center;
   justify-content: center;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-.speakBtn:hover { background: rgba(255, 255, 255, 0.10); }
+.speakBtn:hover {
+  background: #fff;
+  border-color: #5C4020;
+}
 
-/* 🔥 Task 79 — answer cards are now click-to-detail (FragmentModal).
-   The card is a <button>, so we reset native button styling. */
+/* (DEPRECATED — answer cards click-to-detail. Task 83) */
 button.fragmentCard {
   display: block;
   width: 100%;
@@ -494,17 +605,13 @@ button.fragmentCard {
   -webkit-appearance: none;
 }
 button.fragmentCard:hover {
-  border-color: rgba(99, 102, 241, 0.45);
-  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(216, 154, 32, 0.5);
+  background: rgba(255, 232, 154, 0.1);
 }
 
-/* Imported-card body wrapper (the part that opens the modal,
-   distinct from the "remove import" button). */
-.fragmentClickable {
-  cursor: pointer;
-}
+.fragmentClickable { cursor: pointer; }
 .fragmentClickable:hover .fragmentTitle {
-  color: rgba(196, 181, 253, 1);
+  color: #B8800E;
 }
 
 .fragmentPhotos {
@@ -517,13 +624,11 @@ button.fragmentCard:hover {
   height: 60px;
   border-radius: 6px;
   object-fit: cover;
-  background: #2a2520;
+  background: rgba(154, 104, 16, 0.08);
   flex-shrink: 0;
 }
 
-/* 🔥 Task 83 — wrapper around an inline FragmentModal of an imported
-   fragment, so the "remove from book" button can sit just below the
-   inline body without jamming up against the next imported card. */
+/* Inline FragmentModal wrapper for imported items (Task 83) */
 .importedInlineWrap {
   margin-bottom: 12px;
 }
@@ -531,30 +636,14 @@ button.fragmentCard:hover {
   margin: -8px 0 0 20px;
 }
 
-/* DEPRECATED Task 83 — answer cards (.fragmentCard / .fragmentTitle /
-   .fragmentPreview / .fragmentPhotos / .fragmentThumb / .fragmentClickable)
-   plus the multi-answer radio-select UI (.multipleResponses /
-   .multipleLabel / .fragmentSelectCard / .fragmentSelected /
-   .fragmentRadio / .fragmentBody / .fragmentDate / .fragmentText) are
-   no longer referenced — the page renders fragments via inline
-   FragmentModal now. Definitions are left in place so any future
-   revival doesn't have to re-author the styles. */
+/* DEPRECATED Task 83 — answer-card / multi-answer styles left in place
+   for any future revival. (Now updated to V3 light tone.) */
 
 /* ═══════════════════════════════════════════════════════════════
-   Sprint 2Q (2026-05-12) — Desktop unification (max-width 960).
-
-   Sprint 2P 빈틈 보완: /book/[id]/question/[qId] 가 desktop 영구
-   표준 var(--max-edit) 960 에서 빠져 있었음. Mobile 600 centered
-   그대로 두고 768px+ 에 영구 표준 적용.
-
-   FragmentModal inline 답변은 별도 CSS (/my-stories/page.module.css
-   의 .inlineContainer) — Sprint 2P 에서 이미 960 통일됨.
-   ═══════════════════════════════════════════════════════════════ */
-
+   Sprint 2Q (2026-05-12) — Desktop unification (max-width 960). */
 @media (min-width: 768px) {
   .container {
     max-width: var(--max-edit);
     padding: var(--space-md) var(--space-xl);
   }
 }
-

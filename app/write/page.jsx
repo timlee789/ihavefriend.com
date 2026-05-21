@@ -161,6 +161,11 @@ function Inner() {
   //   instead of dropping them at /my-stories.
   const fromBookId   = search.get('fromBookId')     || null;
   const fromQId      = search.get('fromQuestionId') || null;
+  // Milestone 4 Step B — V3 origin tracking. 질문 상세 page (Step A) 와 동일.
+  //   from=v3 시 returnPath 가 ?from=v3&chId=... 를 그대로 유지해서
+  //   질문 상세가 V3 모드 (Back to topics) 로 다시 그려지게 함.
+  const fromV3       = search.get('from') === 'v3';
+  const v3ChId       = search.get('chId') || null;
   const isEdit       = !!fragmentId;
   const isBookMode   = !!(bookId && bookQId) && !isEdit;  // edit takes precedence
 
@@ -335,17 +340,22 @@ function Inner() {
   //   book question page is returned there instead of being dumped
   //   at /my-stories. Falls back to /my-stories (edit mode default)
   //   or /book/X/question/Y (book-create mode) or / (generic create).
+  //
+  // Milestone 4 Step B — V3 origin tracking. fromV3 이면 모든 책 question 복귀
+  //   경로에 ?from=v3&chId=... 추가 → 질문 상세 page (Step A) 가 V3 모드로
+  //   다시 그려져 "이야기 주제로 돌아가기" 큰 버튼이 보임.
   function returnPath() {
+    const v3Suffix = fromV3 ? `?from=v3&chId=${encodeURIComponent(v3ChId || '')}` : '';
     // Book-context return takes precedence in any mode.
     if (fromBookId && fromQId) {
-      return `/book/${encodeURIComponent(fromBookId)}/question/${encodeURIComponent(fromQId)}`;
+      return `/book/${encodeURIComponent(fromBookId)}/question/${encodeURIComponent(fromQId)}${v3Suffix}`;
     }
     if (fromBookId) {
       return `/book/${encodeURIComponent(fromBookId)}`;
     }
     if (isEdit) return '/my-stories';
     if (isBookMode) {
-      return `/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}`;
+      return `/book/${encodeURIComponent(bookId)}/question/${encodeURIComponent(bookQId)}${v3Suffix}`;
     }
     return '/';
   }

@@ -1,0 +1,963 @@
+/*
+ * components/chapter-entry-v3/ChapterEntryV3.module.css
+ *
+ * Step 2e: Visual Tree 잎 메타포 연결 — translateY hover + shadow lift 허용.
+ * (이전의 "transform 절대 금지" 규칙은 Tim 의 명시적 결정으로 해제됨.)
+ * 모든 색은 CSS variable 로 (--accent 등) → status 따라 동적 변경.
+ */
+
+.container {
+  /* 기본 톤 변수 — 각 .tone_* 클래스가 override (3-stop 그라데이션 — Visual Tree 와 동일) */
+  --bg-grad: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
+  --accent: #9A6810;
+  --accent-dark: #5C4020;
+  --card-border: #F2B83A;
+  --card-border-hover: #9A6810;
+  --label-bg: #fff;
+  --label-fg: #9A6810;
+  --cta-bg: #5C4020;
+  --cta-bg-hover: #3A2A14;
+  --cta-bg-orange: #F08838;
+  --cta-bg-orange-hover: #D86810;
+
+  min-height: 100dvh;
+  background: var(--bg-grad);
+  padding: 16px 16px 60px;
+  color: #2A1F14;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+}
+
+/* 4가지 톤 — 화면 전체 색 변경 (3-stop) */
+.tone_not_started {
+  --bg-grad: linear-gradient(180deg, #FAFFF5 0%, #E8F2DD 60%, #D5E5C5 100%);
+  --accent: #5C8A3D;
+  --accent-dark: #3A6E22;
+  --card-border: #D0E0BC;
+  --card-border-hover: #5C8A3D;
+  --label-fg: #3A6E22;
+  --cta-bg: #3A6E22;
+  --cta-bg-hover: #2A5418;
+}
+
+.tone_in_progress,
+.tone_active_recent {
+  --bg-grad: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
+  --accent: #9A6810;
+  --accent-dark: #5C4020;
+  --card-border: #F2B83A;
+  --card-border-hover: #9A6810;
+  --label-fg: #9A6810;
+  --cta-bg: #5C4020;
+  --cta-bg-hover: #3A2A14;
+}
+
+.tone_completed {
+  --bg-grad: linear-gradient(180deg, #FFFAF2 0%, #F5E8D5 60%, #EBD5BC 100%);
+  --accent: #F08838;
+  --accent-dark: #9A4810;
+  --card-border: #F08838;
+  --card-border-hover: #9A4810;
+  --label-fg: #9A4810;
+  --cta-bg: #9A4810;
+  --cta-bg-hover: #6E3008;
+}
+
+/* ===== 헤더 ===== */
+
+.header {
+  max-width: 720px;
+  margin: 0 auto 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.backBtn {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--card-border);
+  color: var(--accent-dark);
+  padding: 10px 18px;
+  border-radius: 22px;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 40px;
+  min-width: 120px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.backBtn:hover {
+  background: #fff;
+  border-color: var(--accent-dark);
+}
+
+.chapterHead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fruitMini {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chapterHead:hover .fruitMini {
+  transform: scale(1.05);
+}
+
+.chapterHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chapterTitle {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: "Noto Serif KR", Georgia, serif;
+  margin: 0 0 6px;
+  color: #2A1F14;
+}
+
+.subtitle {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: #2A1F14;
+}
+
+.subtitleSmall {
+  font-size: 14px;
+  margin: 0;
+  color: rgba(42, 31, 20, 0.7);
+}
+
+.progressChip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--card-border);
+  border-radius: 22px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+.chipMain { font-weight: 700; }
+.chipSep  { color: rgba(0,0,0,0.3); }
+.chipSub  { font-weight: 500; opacity: 0.85; }
+
+/* ===== 카드 그리드 ===== */
+
+.cardGrid {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ===== 카드 ===== */
+/*
+ * Step 2e: 잎 메타포 — 미세 연두 tint + hover lift.
+ * .card 는 base (unselected) 스타일.
+ * .cardInProgress 는 황금/노랑 톤 (Step 2f-v2 — Visual Tree ★ active_recent 잎 색과 일치,
+ *   Tim 피드백: "지금 주목할 것" 라는 의미 연결. Visual Tree ★ 잎 (#FBD969 → #F2B83A → #D89A20)과
+ *   시각적으로 연결됨.
+ * .cardCompleted 는 황금-주황 톤 (Visual Tree completed 잎 색, 조금 더 주황).
+ */
+
+.card {
+  position: relative;
+  background: linear-gradient(135deg, #FDFFFA 0%, #F4F9EE 100%);
+  border: 1.5px solid rgba(138, 200, 104, 0.22);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  min-height: 130px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease,
+              background 0.25s ease;
+}
+
+.cardUnselected:hover {
+  transform: translateY(-3px);
+  border-color: rgba(138, 200, 104, 0.55);
+  box-shadow: 0 8px 20px rgba(154, 104, 16, 0.15);
+}
+
+.cardInProgress {
+  background: linear-gradient(135deg, #FFF0B8 0%, #FBD969 100%);
+  border-color: rgba(216, 154, 32, 0.55);
+  border-width: 2px;
+  padding: 17.5px 17.5px 15.5px;
+  box-shadow: 0 4px 12px rgba(216, 154, 32, 0.20);
+}
+
+.cardInProgress:hover {
+  transform: translateY(-3px);
+  border-color: rgba(154, 104, 16, 0.85);
+  box-shadow: 0 8px 20px rgba(216, 154, 32, 0.32);
+}
+
+.cardCompleted {
+  background: linear-gradient(135deg, #FFF5E8 0%, #FFE8C8 100%);
+  border-color: rgba(240, 136, 56, 0.4);
+  border-width: 2px;
+  padding: 17.5px 17.5px 15.5px;
+  box-shadow: 0 4px 12px rgba(240, 136, 56, 0.18);
+}
+
+.cardCompleted:hover {
+  transform: translateY(-3px);
+  border-color: rgba(240, 136, 56, 0.7);
+  box-shadow: 0 8px 20px rgba(240, 136, 56, 0.28);
+}
+
+/* 상단 라벨 알약 */
+.cardLabel {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: var(--label-bg);
+  border: 1.5px solid var(--card-border);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.cardLabelProgress { color: var(--label-fg); }
+.cardLabelComplete { color: var(--accent-dark); }
+
+/* 우상단 ✕ 취소 버튼 */
+.cancelBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* fill/background 만 트랜지션 */
+  transition: background-color 0.15s ease;
+}
+.cancelBtnHover {
+  /* SVG 내부의 fill 이 이미 변하므로 외부는 그대로 */
+}
+
+/* 우상단 + 아이콘 (미선택 카드) */
+.plusIcon {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 26px;
+  font-weight: 400;
+  color: rgba(0,0,0,0.25);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* 질문 텍스트 — Visual Tree 잎 제목과 동일 폰트 */
+.cardText {
+  font-family: "Noto Serif KR", Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #2A1F14;
+  margin: 4px 32px 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 완료 카드의 텍스트 — 살짝 진한 갈색 (황금 배경에 대비) */
+.cardCompleted .cardText {
+  color: #5C3A14;
+}
+
+.cardHint {
+  font-size: 12px;
+  color: rgba(92, 64, 32, 0.55);
+  margin-top: auto;
+}
+
+/* 답하기 버튼 */
+.answerBtn {
+  margin-top: auto;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  min-height: 36px;
+}
+
+.answerBtnOrange {
+  background: var(--cta-bg-orange);
+}
+.answerBtnOrange:hover {
+  background: var(--cta-bg-orange-hover);
+}
+
+.answerBtnBrown {
+  background: var(--cta-bg);
+}
+.answerBtnBrown:hover {
+  background: var(--cta-bg-hover);
+}
+
+/* ===== "새 질문 9개 보기" 박스 (그리드 마지막 자리) ===== */
+/* Step 2e: 짙은 갈색 그라데이션 — 흙/줄기 색 연상. 황금 텍스트 (★ 잎 색). */
+
+.newQuestionBox {
+  background: linear-gradient(135deg, #5C4020 0%, #3D2810 100%);
+  border: none;
+  border-radius: 14px;
+  padding: 20px 16px;
+  min-height: 130px;
+  color: #FFE89A;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s ease,
+              background 0.25s ease;
+}
+.newQuestionBox:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #4A3018 0%, #2A1808 100%);
+  box-shadow: 0 8px 20px rgba(92, 64, 32, 0.35);
+}
+
+.newQuestionIcon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.newQuestionTitle {
+  font-size: 14px;
+  color: rgba(255, 232, 154, 0.9);
+  margin-bottom: 10px;
+}
+
+.newQuestionCta {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFE89A;
+  padding: 6px 14px;
+  background: rgba(255, 232, 154, 0.15);
+  border: 1.5px solid #FFE89A;
+  border-radius: 20px;
+}
+
+/* ===== "새 질문 9개 보기" 박스의 in-place 로딩 상태 ===== */
+
+.newQuestionBoxLoading {
+  cursor: wait;
+  background: #5C4020;
+  color: #FFE89A;
+}
+
+.newQuestionBoxLoading .newQuestionTitle,
+.newQuestionBoxLoading .newQuestionSubtitle,
+.newQuestionBoxLoading .loadingHint {
+  color: #FFE89A;
+}
+
+.spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.spinner svg {
+  animation: spinnerRotate 1.2s linear infinite;
+  color: #F2B83A;
+}
+
+@keyframes spinnerRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.newQuestionSubtitle {
+  font-size: 14px;
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+.pulseDot {
+  display: inline-block;
+  animation: pulseDotFade 1.4s ease-in-out infinite;
+}
+.pulseDot:nth-child(1) { animation-delay: 0s; }
+.pulseDot:nth-child(2) { animation-delay: 0.2s; }
+.pulseDot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulseDotFade {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+.loadingHint {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.7;
+  margin-top: 12px;
+}
+
+/* 생성 중 기존 카드 그리드 흐려짐 + 클릭 차단 */
+.cardGridDimmed {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* 생성 에러 메시지 + 재시도 버튼 */
+.generateError {
+  background: rgba(255, 220, 220, 0.5);
+  color: #8B2D2D;
+  border: 1px solid rgba(208, 48, 48, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 16px auto;
+  max-width: 600px;
+  font-size: 14px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.generateRetry {
+  background: #8B2D2D;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.generateRetry:hover {
+  background: #6B1D1D;
+}
+
+/* ===== "↓ N개 질문 더 보기" 링크 ===== */
+
+.showMoreLink {
+  display: block;
+  max-width: 720px;
+  margin: 24px auto 0;
+  background: transparent;
+  border: none;
+  color: var(--accent-dark);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 12px;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-family: inherit;
+}
+.showMoreLink:hover {
+  color: var(--accent);
+}
+
+/* ===== "+ 내가 직접 질문 만들기" 와이드 박스 ===== */
+/* Step 2e: 점선 박스 + hover lift */
+
+.createCustomBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 600px;
+  width: 100%;
+  margin: 20px auto 0;
+  padding: 18px 20px;
+  background: rgba(255, 250, 240, 0.55);
+  border: 2px dashed rgba(154, 104, 16, 0.4);
+  border-radius: 14px;
+  color: var(--accent-dark);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease;
+  min-height: 64px;
+}
+.createCustomBox:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 250, 240, 0.9);
+  border-color: rgba(154, 104, 16, 0.7);
+  box-shadow: 0 6px 16px rgba(154, 104, 16, 0.18);
+}
+
+.createCustomIcon {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.createCustomLabel { line-height: 1; }
+
+.completedNotice {
+  max-width: 600px;
+  margin: 12px auto 0;
+  padding: 12px 16px;
+  background: rgba(154, 72, 16, 0.08);
+  border: 1px solid rgba(154, 72, 16, 0.25);
+  border-radius: 10px;
+  color: var(--accent-dark);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ===== 모달 ===== */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 14, 6, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modalCard {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+  text-align: center;
+  animation: modalIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.modalCloseBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+.modalCloseBtn:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.warningIcon {
+  margin: 0 auto 16px;
+  width: 80px;
+  height: 80px;
+}
+
+.modalHeader {
+  margin-bottom: 20px;
+}
+
+.modalHeaderIcon {
+  font-size: 32px;
+  color: #5C4020;
+  margin-bottom: 8px;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2A1F14;
+  margin: 0 0 8px;
+  font-family: "Noto Serif KR", Georgia, serif;
+}
+
+.modalSubtitle {
+  font-size: 14px;
+  color: rgba(42, 31, 20, 0.7);
+  margin: 0;
+}
+
+.modalQuoteBox {
+  background: #FFF8E0;
+  border: 1px solid #F2D480;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 16px 0 24px;
+  text-align: left;
+}
+
+.modalQuote {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2A1F14;
+  margin: 0 0 12px;
+  font-style: italic;
+}
+
+.modalDeleteNotice {
+  font-size: 14px;
+  color: rgba(42, 31, 20, 0.85);
+  margin: 0 0 6px;
+}
+
+.modalIrreversible {
+  font-size: 14px;
+  font-weight: 700;
+  color: #D03030;
+  margin: 0;
+}
+
+.modalTextareaWrap {
+  position: relative;
+  margin: 8px 0 20px;
+}
+
+.modalTextarea {
+  width: 100%;
+  max-width: 440px;
+  min-height: 140px;
+  padding: 14px 16px;
+  border: 1.5px solid #D0D0D0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.modalTextarea:focus {
+  outline: none;
+  border-color: #9A6810;
+}
+
+.modalCounter {
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+  text-align: right;
+  margin-top: 6px;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modalBtnSecondary,
+.modalBtnPrimary,
+.modalBtnDanger {
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 140px;
+  min-height: 44px;
+  font-family: inherit;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.modalBtnSecondary {
+  background: #fff;
+  border: 1.5px solid #C0C0C0;
+  color: #2A1F14;
+}
+.modalBtnSecondary:hover {
+  background: #F5F5F5;
+  border-color: #888;
+}
+
+.modalBtnPrimary {
+  background: #5C4020;
+  border: 1.5px solid #5C4020;
+  color: #fff;
+}
+.modalBtnPrimary:hover:not(:disabled) {
+  background: #3A2A14;
+}
+.modalBtnPrimary:disabled {
+  background: #C0A080;
+  border-color: #C0A080;
+  cursor: not-allowed;
+}
+
+.modalBtnDanger {
+  background: #D03030;
+  border: 1.5px solid #D03030;
+  color: #fff;
+}
+.modalBtnDanger:hover {
+  background: #A02020;
+}
+
+/* ===== Step 2 — 저장하기 버튼 + saved 챕터 안내 + QuestionCard 자물쇠 ===== */
+
+.saveButtonContainer {
+  display: flex;
+  justify-content: center;
+  margin: 28px auto 8px;
+  padding: 0 16px;
+  max-width: 720px;
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #B4B2A9 0%, #9A988F 100%);
+  color: #fff;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: not-allowed;
+  min-width: 240px;
+  font-family: inherit;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
+}
+
+.saveButtonActive {
+  background: linear-gradient(135deg, #5C4020 0%, #3D2310 100%);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(92, 64, 32, 0.3);
+}
+
+.saveButtonActive:hover {
+  background: linear-gradient(135deg, #3D2310 0%, #2A1808 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(92, 64, 32, 0.45);
+}
+
+.saveButtonActive:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(92, 64, 32, 0.3);
+}
+
+/* "저장됨" 챕터 안내 — 황금 그라데이션 (saved 의 따뜻한 인상) */
+.savedChapterNotice {
+  max-width: 600px;
+  margin: 24px auto 0;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #FFF8E0 0%, #FFE89A 100%);
+  border: none;
+  border-left: 4px solid #D89A20;
+  border-radius: 14px;
+  color: #5C4020;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(216, 154, 32, 0.15);
+}
+
+.savedBadge {
+  display: inline-block;
+  background: #5C4020;
+  color: #FFE89A;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* answered 자동 keep 카드의 우상단 자물쇠 아이콘 (✕ 자리) */
+.lockedIcon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Step 2h — saved 모드 ✎ 편집 버튼 (✕ / 🔒 자리). hover 시 진해짐 + 옅은 갈색 배경. */
+.editBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  z-index: 2;
+}
+.editBtn:hover {
+  background: rgba(154, 104, 16, 0.12);
+  opacity: 1;
+}
+
+/* Step 2h — Rename modal 추가 요소: 라벨, readonly 박스, 에러 메시지 */
+.modalLabel {
+  display: block;
+  text-align: left;
+  margin: 12px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(42, 31, 20, 0.75);
+}
+.modalReadonly {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(42, 31, 20, 0.7);
+  font-family: "Noto Serif KR", Georgia, serif;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.modalError {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  background: rgba(208, 48, 48, 0.08);
+  border-left: 3px solid #D03030;
+  border-radius: 6px;
+  color: #8B2D2D;
+  font-size: 13px;
+  text-align: left;
+}
+
+/* ===== 모바일 ===== */
+@media (max-width: 600px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .card {
+    padding: 14px 16px;
+    min-height: 110px;
+  }
+  .cardInProgress,
+  .cardCompleted {
+    padding: 13.5px 15.5px;
+  }
+  .newQuestionBox {
+    padding: 16px 14px;
+    min-height: 110px;
+  }
+  .createCustomBox {
+    padding: 16px 18px;
+    min-height: 56px;
+  }
+  .modalButtons {
+    flex-direction: column;
+  }
+  .modalBtnSecondary,
+  .modalBtnPrimary,
+  .modalBtnDanger {
+    width: 100%;
+  }
+  .saveButton {
+    width: 100%;
+    min-width: 0;
+    font-size: 18px;
+    padding: 18px 24px;
+  }
+  /* 모바일에선 hover lift 효과 비활성화 (tap 으로 충분, 60Hz 미만 단말 깜박임 방지) */
+  .card:hover,
+  .cardUnselected:hover,
+  .cardInProgress:hover,
+  .cardCompleted:hover,
+  .newQuestionBox:hover,
+  .createCustomBox:hover,
+  .saveButtonActive:hover {
+    transform: none;
+  }
+}
+
+/* 사용자가 motion 감소를 선호하면 hover lift 비활성화 (접근성) */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardInProgress,
+  .cardCompleted,
+  .newQuestionBox,
+  .createCustomBox,
+  .saveButton,
+  .fruitMini {
+    transition: none;
+  }
+  .card:hover,
+  .cardUnselected:hover,
+  .cardInProgress:hover,
+  .cardCompleted:hover,
+  .newQuestionBox:hover,
+  .createCustomBox:hover,
+  .saveButtonActive:hover,
+  .chapterHead:hover .fruitMini {
+    transform: none;
+  }
+}

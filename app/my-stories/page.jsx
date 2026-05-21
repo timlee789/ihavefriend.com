@@ -16,6 +16,7 @@ import {
   fmtDateShort,
   preview,
   Spinner,
+  pdfPostAndOpen,
 } from '@/components/fragments/fragmentHelpers';
 import s from './page.module.css';
 
@@ -221,6 +222,9 @@ export default function MyStoriesPage() {
   const [loading, setLoading]       = useState(true);
   const [showEbook, setShowEbook]   = useState(false);
   const [toast, setToast]           = useState('');
+  // Beta Step 2b (2026-05-21) — 이야기책 PDF 진입점 (목록에서도 가능).
+  const [pdfBusy, setPdfBusy]       = useState(null);  // 'preview' | 'generate' | null
+  const [pdfError, setPdfError]     = useState('');
   const toastTimer = useRef(null);
   const vm = VIS_MSGS[lang] || VIS_MSGS.KO;
 
@@ -367,6 +371,45 @@ export default function MyStoriesPage() {
             </div>
           )}
 
+          {/* Beta Step 2b (2026-05-21) — 이야기책 PDF 진입점.
+              Tim 의 검증 피드백: customize 페이지뿐 아니라 /my-stories 목록에서도
+              찾을 수 있어야 함. fragment 중 하나라도 collection 에 속하면 노출
+              (그러면 PDF 만들 콘텐츠 있음). 0개면 hide. */}
+          {fragments.some(f => Array.isArray(f.collections) && f.collections.length > 0) && (
+            <>
+              <div className={s.storyBookActions}>
+                <button
+                  className={s.storyBookPreviewBtn}
+                  disabled={!!pdfBusy}
+                  onClick={() => pdfPostAndOpen({
+                    url: '/api/collections-book/preview',
+                    asDownload: false,
+                    setBusy: (b) => setPdfBusy(b ? 'preview' : null),
+                    setErr: setPdfError,
+                    errMsg: vm.storyBookFailed,
+                  })}
+                >
+                  {pdfBusy === 'preview' ? vm.storyBookPreviewing : vm.makeStoryBookBtn}
+                </button>
+                <button
+                  className={s.storyBookGenerateBtn}
+                  disabled={!!pdfBusy}
+                  onClick={() => pdfPostAndOpen({
+                    url: '/api/collections-book/generate',
+                    asDownload: true,
+                    downloadName: (lang === 'EN' ? 'My Stories' : lang === 'ES' ? 'Mis historias' : '나의 이야기책') + '.pdf',
+                    setBusy: (b) => setPdfBusy(b ? 'generate' : null),
+                    setErr: setPdfError,
+                    errMsg: vm.storyBookFailed,
+                  })}
+                >
+                  {pdfBusy === 'generate' ? vm.storyBookGenerating : vm.downloadStoryPdf}
+                </button>
+              </div>
+              {pdfError && <div className={s.storyBookError}>⚠️ {pdfError}</div>}
+            </>
+          )}
+
           {fragments.length === 0 && (
             <div className={s.emptyState}>
               <div className={s.emptyIcon}>📝</div>
@@ -433,8 +476,18 @@ function FragmentCard({ fragment: f, onClick, lang = 'KO' }) {
           {Array.isArray(f.photos) && f.photos.length > 0 && (
             <span className={s.photoIndicator}>📷 사진</span>
           )}
-          {f.book_id && (
-            <span className={s.bookBadge}>📚 책에 포함됨</span>
+          {/* Beta Step 2b (2026-05-21) — 소속 챕터(collection) 배지.
+              이전: f.book_id (자서전 user_books 연결) 만 보여서 collection
+              에 넣은 이야기는 배지 X. 이제 fragmentManager 가 동봉하는
+              f.collections 를 표시. 여러 챕터 소속 시 각 배지 1개씩.
+              자서전 book_id 배지는 제거 — 이야기 목록 맥락에서 챕터가 주
+              관심이라 혼란 줄임. */}
+          {Array.isArray(f.collections) && f.collections.length > 0 && (
+            f.collections.map(col => (
+              <span key={col.id} className={s.chapterBadge} title={col.name}>
+                📖 {col.name}
+              </span>
+            ))
           )}
         </div>
       </div>

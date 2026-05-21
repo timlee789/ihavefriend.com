@@ -340,7 +340,7 @@ function ArchitectOverviewInner() {
             setState('ready');
             return;
           }
-          router.replace(`/book/${d.book.id}`);
+          router.replace(`/book/${d.book.id}/tree`);  // Milestone 5 Step 1 — V3 나무 직행
           return;
         }
         setState('ready');
@@ -398,7 +398,7 @@ function ArchitectOverviewInner() {
             }
             // help 모드 (자서전): 그 책으로 정확히 복귀 (history back 보다 안정적)
             if (isHelpMode && currentBookId) {
-              router.push(`/book/${currentBookId}`);
+              router.push(`/book/${currentBookId}/tree`);  // Milestone 5 Step 1 — V3 나무 직행
               return;
             }
             router.push('/');
@@ -492,7 +492,7 @@ function ArchitectOverviewInner() {
           }
           // 도움말 모드 (자서전): 책으로 복귀 (이미 시작한 사용자라 1단계 다시 X)
           if (isHelpMode && currentBookId) {
-            router.push(`/book/${currentBookId}`);
+            router.push(`/book/${currentBookId}/tree`);  // Milestone 5 Step 1 — V3 나무 직행
             return;
           }
           router.push('/architect/sample/1');

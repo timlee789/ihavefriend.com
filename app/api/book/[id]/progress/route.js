@@ -80,6 +80,7 @@ export async function GET(request, { params }) {
           title: ch.title,
           description: ch.description,
           is_custom: ch.is_custom || false,
+          saved: ch.saved || false,   // Step 2 — chapter.saved 플래그 노출 (라우팅 분기 + UI 분기용)
           completed: chCompleted,
           total: chTotal,
           status: chStatus,

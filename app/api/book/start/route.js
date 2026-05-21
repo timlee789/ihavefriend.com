@@ -138,14 +138,19 @@ export async function POST(request) {
       template.name?.ko || template.name?.en || template.name?.es || 'My Book';
     const finalTitle = (customTitle && customTitle.trim()) || titleFromTemplate;
 
+    // 🔥 V3 Step 1e — language 명시 저장. template_id 끝의 lang suffix
+    //   (memoir-ko / memoir-en / memoir-es) 에서 derive, 매칭 안 되면 'ko'.
+    const langMatch = (templateId || '').match(/-(ko|en|es)$/);
+    const bookLang = langMatch ? langMatch[1] : 'ko';
+
     // 4. Insert user_books row.
     //    🔥 Task 73 — denormalize template.category onto user_books
     //    so the partial unique index can dedup at category level.
     const bookRow = await db.query(
       `INSERT INTO user_books
-         (user_id, template_id, template_category, title, structure,
+         (user_id, template_id, template_category, title, structure, language,
           total_questions, current_chapter_id, current_question_id, last_question_id)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $8)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $9)
        RETURNING id`,
       [
         user.id,
@@ -153,6 +158,7 @@ export async function POST(request) {
         template.category,
         finalTitle,
         JSON.stringify(structure),
+        bookLang,
         totalQuestions,
         firstChapter?.id || null,
         firstQuestion?.id || null,
@@ -318,20 +324,23 @@ async function startFromSample({ user, sampleId, customTitle }) {
       '내 자서전';
 
     // 4. INSERT user_books — template_id NULL, source_sample_id 채움.
+    //    🔥 V3 Step 1e — language 는 sample.language 그대로 (line 251 SELECT 에 포함).
+    //    현재 모든 시드가 ko 라서 신규 영문/스페인어 책은 별도 시드 + UPDATE 필요.
     let bookRow;
     try {
       bookRow = await db.query(
         `INSERT INTO user_books
            (user_id, template_id, template_category, source_sample_id,
-            title, structure, total_questions,
+            title, structure, language, total_questions,
             current_chapter_id, current_question_id, last_question_id)
-         VALUES ($1, NULL, 'memoir', $2, $3, $4::jsonb, $5, $6, $7, $7)
+         VALUES ($1, NULL, 'memoir', $2, $3, $4::jsonb, $5, $6, $7, $8, $8)
          RETURNING id`,
         [
           user.id,
           sampleId,
           finalTitle,
           JSON.stringify(structure),
+          sample.language || 'ko',
           totalQuestions,
           firstChapter?.id || null,
           firstQuestion?.id || null,

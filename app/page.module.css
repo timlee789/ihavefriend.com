@@ -9,7 +9,11 @@
 
 .homeContainer {
   min-height: 100dvh;
-  background: linear-gradient(180deg, #fff7ed 0%, #fdf8f4 100%);
+  /* Beta Step 4 (2026-05-21) — 시안 F: V3 베이지 통일 (Visual Tree / 챕터 페이지와 같은 톤). */
+  background: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 100%);
+  /* Beta Step 4 fix — globals.css body 의 color:var(--text)(밝은회색) 상속 차단.
+     베이지 배경 위에 진한 갈색 글자가 보이도록 명시. */
+  color: #2A1F14;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -19,12 +23,15 @@
   margin: 0 auto;
 }
 
-/* PC: unified background outside the 430px card */
-@media (min-width: 432px) {
-  :global(body) {
-    background: #fdf8f4;
-  }
+/* Beta Step 4 fix (2026-05-21) — globals.css 의 body 가 dark (#0f0f1a) +
+   color:var(--text) 밝은회색 이라, 홈 컨테이너 밖(body)가 검정 + 안의
+   타이틀(진한 갈색)이 안 보였음. 홈은 자체 배경+글자색을 명시해 dark
+   body 를 덮음. min-height 100dvh 로 카드가 화면 전체를 채움 (body 검정 가림). */
+:global(body) {
+  background: #fdf8f4;
 }
+
+/* (이전 432px 분기 제거 — 위에서 body 를 이미 밝게 통일) */
 
 /* Header */
 .homeHeader {
@@ -640,13 +647,18 @@
    bottom of viewport. margin-top:auto inside the flex column pushes
    it to the bottom; opacity 0.65 lets the primary CTAs above
    dominate. */
+/* Beta Step 4 fix (2026-05-21) — Tim: footer 배경을 살짝 다르게 해 구분.
+   옷은 크림빛 배경 + 위쪽 구분선 + 좌우 여백을 펴쳐 container 폭 끝까지
+   퍼지는 띄 느낌. 동기부여 문구 영역과 시각적 분리. */
 .homeFooter {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 20px 0 8px;
-  margin-top: auto;
+  padding: 16px 0 10px;
+  margin: 14px -16px 0;
+  background: rgba(232, 213, 188, 0.38);
+  border-top: 0.5px solid #E8D5BC;
 }
 .footerRow {
   display: flex;
@@ -659,11 +671,15 @@
 /* 🔥 Task 87 — Terms link, sized like .footerLogoutBtn so the row
    reads as a single utility cluster. white-space:nowrap stops the
    3-language label from wrapping awkwardly inside its pill. */
+/* Beta Step 4 fix (2026-05-21) — footer 글씨 항상 갈색 (light only).
+   이전에는 기본 흰색 + light 미디어쿼리 분기였는데, Tim Mac 이 dark
+   모드라 light 분기가 안 먹어 베이지 배경에서 흰 글씨가 안 보였음.
+   prefers-color-scheme 의존 제거 — 항상 갈색 (V3 light only). */
 .footerTermsBtn {
   background: transparent;
   border: none;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(60, 35, 16, 0.92);
   padding: 6px 10px;
   cursor: pointer;
   border-radius: 6px;
@@ -672,15 +688,8 @@
   white-space: nowrap;
 }
 .footerTermsBtn:hover {
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(255, 255, 255, 0.08);
-}
-@media (prefers-color-scheme: light) {
-  .footerTermsBtn { color: rgba(26, 20, 16, 0.55); }
-  .footerTermsBtn:hover {
-    color: rgba(26, 20, 16, 0.85);
-    background: rgba(0, 0, 0, 0.05);
-  }
+  color: #2A1F14;
+  background: rgba(0, 0, 0, 0.05);
 }
 .footerTemplatesBtn {
   background: transparent;
@@ -698,20 +707,25 @@
   border-color: rgba(99, 102, 241, 0.70);
   background: rgba(99, 102, 241, 0.08);
 }
+/* Beta Step 4 fix (2026-05-21) — 언어 변경 버튼 (KO) 베이지 배경에서
+   잘 보이도록. 이전 opacity 0.65 + 주황 #fb923c 라 흐릿했음.
+   갈색 테두리 + 진한 갈색 글씨 + opacity 제거. */
 .footerLangPill {
-  background: transparent;
-  border: 1px solid rgba(251, 146, 60, 0.40);
-  color: #fb923c;
+  background: #fff;
+  border: 1px solid rgba(154, 104, 16, 0.45);
+  color: #5C4020;
   font-size: 12px;
-  font-weight: 600;
-  padding: 5px 12px;
+  font-weight: 700;
+  padding: 5px 14px;
   border-radius: 20px;
   cursor: pointer;
   font-family: inherit;
-  opacity: 0.65;
-  transition: opacity 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
-.footerLangPill:hover { opacity: 1; }
+.footerLangPill:hover {
+  background: #FFF7E8;
+  border-color: rgba(154, 104, 16, 0.7);
+}
 .footerLogoutBtn {
   background: transparent;
   border: none;
@@ -875,110 +889,12 @@
   flex-shrink: 0;
 }
 
-/* Dark mode (system preference) */
-@media (prefers-color-scheme: dark) {
-  .loadingScreen {
-    background: #0f0c0a;
-  }
-
-  .homeContainer {
-    background: linear-gradient(180deg, #1a1410 0%, #0f0c0a 100%);
-  }
-
-  .logo { color: #fb923c; }
-  /* 🔥 Task 84 — flip the brand to white on dark for max contrast.
-     🔥 Task 86 — tagline tracks the logo at ~85 % opacity.
-     🔥 Sprint 2a — new top-header classes. */
-  .logoLarge { color: #fff; }
-  .brandTagline { color: rgba(255, 255, 255, 0.85); }
-  .logoSmall { color: #fb923c; }
-  .taglineLarge { color: #fff; }
-  /* 🔥 Sprint 2g — Hero visual dark mode. */
-  /* Tim 직접 변경 (2026-05-11) — dark mode 에서도 hero card 는 흰색 +
-     검정 글씨로 유지 (light/dark 모두 동일 visual identity). 카드가
-     dark 배경 위에서 promise spotlight 처럼 도드라짐. */
-  .heroCard {
-    background: #ffffff;
-    border-color: rgba(251, 146, 60, 0.20);
-    box-shadow:
-      0 2px 12px rgba(0, 0, 0, 0.30),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-  .heroTagline { color: #000000; }
-  .heroArrow   { color: #fb923c; }
-  .heroIcon    { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15)); }
-  .topAuthBtn {
-    border-color: rgba(251, 146, 60, 0.40);
-    color: #fb923c;
-  }
-  .topAuthBtn:hover {
-    background: rgba(251, 146, 60, 0.10);
-    border-color: rgba(251, 146, 60, 0.60);
-  }
-  .greetingLine { color: rgba(255, 255, 255, 0.75); }
-
-  .logoutBtn { color: #aaa; }
-  .logoutBtn:hover { color: #fdf8f4; background: rgba(255, 255, 255, 0.06); }
-
-  .langPill {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(251, 146, 60, 0.4);
-    color: #fb923c;
-  }
-
-  .introCard {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(251, 146, 60, 0.3);
-    box-shadow: none;
-  }
-  .introTagline { color: rgba(255, 255, 255, 0.85); }
-  .introBottomLine { color: rgba(255, 255, 255, 0.5); }
-
-  .introDivider {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(251, 146, 60, 0.3) 50%,
-      transparent 100%
-    );
-  }
-  .companionTagline { color: rgba(255, 255, 255, 0.75); }
-  .companionSubline { color: rgba(255, 255, 255, 0.5); }
-  .companionAvatarSlot {
-    background: rgba(28, 18, 48, 0.6);
-  }
-  .companionAvatarPlaceholder {
-    background: rgba(255, 247, 237, 0.04);
-    border-color: rgba(251, 146, 60, 0.3);
-  }
-  .placeholderQuestion {
-    color: rgba(251, 146, 60, 0.5);
-  }
-
-  .sharingStoriesCard {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(251, 146, 60, 0.3);
-  }
-  .sharingStoriesTitle { color: rgba(255, 255, 255, 0.92); }
-  .sharingStoriesDesc { color: rgba(255, 255, 255, 0.55); }
-  .sharingStoriesArrow { color: #fb923c; }
-
-  .recentStoriesCard {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(251, 146, 60, 0.3);
-  }
-  .viewAllLabel { color: #fb923c; }
-  .recentDivider { background: rgba(255, 255, 255, 0.08); }
-  .recentStoriesLabel { color: rgba(255, 255, 255, 0.5); }
-  .recentStoryItem { border-bottom-color: rgba(255, 255, 255, 0.06); }
-  .recentStoryTitle { color: rgba(255, 255, 255, 0.92); }
-}
-
-@media (prefers-color-scheme: dark) and (min-width: 432px) {
-  :global(body) {
-    background: #0f0c0a;
-  }
-}
+/* Beta Step 4 fix (2026-05-21) — `prefers-color-scheme: dark` 블록 전체 제거.
+   원인: Tim 의 OS 가 dark mode 면 .homeContainer 가 dark 그라데이션으로
+   override 되어 시안 F 의 V3 베이지 배경이 검정으로 표시됐음 (캡처의 "검정 배경").
+   V3 전체 방향성 (Visual Tree / 챕터 / 질문 페이지 모두 light only) 과 일치하도록
+   home 도 light 통일. 다른 페이지 (book pages, my-stories, 질문 상세 등) 도
+   이미 Step 1c / Step B 등에서 prefers-color-scheme 제거됨. */
 
 /* 🔥 Sprint 2a (2026-05-10) — vertical 3-button layout. The original
    2×3 grid (.gridRow with 2 columns) used aspect-ratio:1/1 to keep
@@ -1211,4 +1127,257 @@
     padding: 20px var(--space-2xl);
     gap: 16px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Beta Step 4 (2026-05-21) — 시안 F 홈 재디자인.
+   기존 .taglineHero / .heroCard / .heroVisual / .heroIcon / .heroArrow /
+   .heroTagline / .greetingLine / .gridContainer / .gridBtn* 는 사용처가
+   사라졌지만 back-compat 위해 그대로 보존 (다른 페이지가 임포트할 수도).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 브랜드 — 타이틀 (로고는 상단 헤더로 이동 — Beta Step 4 fix) */
+.brandHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 4px 0 4px;
+}
+.brandLogo {
+  font-family: "Noto Serif KR", Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #B8800E;
+}
+.heroTitle {
+  font-family: "Noto Serif KR", Georgia, serif;
+  font-size: 27px;
+  font-weight: 700;
+  color: #2A1F14;
+  line-height: 1.45;
+  margin: 0;
+  white-space: pre-line;
+}
+@media (max-width: 380px) {
+  .heroTitle { font-size: 23px; }
+}
+
+/* 두 책 — 시작 버튼 */
+.booksRow {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 24px;
+  margin: 18px 0 6px;
+}
+.bookCard {
+  width: 168px;
+  height: 224px;
+  border: none;
+  border-radius: 6px 14px 14px 6px;
+  padding: 22px 14px 18px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-family: inherit;
+  color: #fff;
+  box-shadow:
+    0 10px 24px rgba(60, 30, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
+}
+.bookMemoir {
+  background: linear-gradient(135deg, #6FA82A 0%, #639922 55%, #57881E 100%);
+  border-left: 7px solid #3B6D11;
+  transform: rotate(-3deg);
+}
+.bookStory {
+  background: linear-gradient(135deg, #CC8420 0%, #BA7517 55%, #A6680F 100%);
+  border-left: 7px solid #854F0B;
+  transform: rotate(3deg);
+}
+.bookIcon {
+  font-size: 40px;
+  line-height: 1;
+  /* 이모지 채도 살리려 grayscale 안 함; 가벼운 drop-shadow 로 가독성. */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+.bookLabel {
+  font-family: "Noto Serif KR", Georgia, serif;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.bookSub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.02em;
+}
+
+/* sparkle 데코 */
+.heroSparkle {
+  position: absolute;
+  font-size: 22px;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(216, 154, 32, 0.4));
+}
+.sparkle1 { top: -12px;  left: 14%; }
+.sparkle2 { bottom: 8px; right: 14%; }
+
+/* 흐름 — 말하면 → 글이 되고 → 책이 됩니다 */
+.flowRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Beta Step 4 fix (2026-05-21) — 모바일에서 한 줄 유지 (Tim 요청).
+     이전 flex-wrap:wrap 이라 좁은 폰에서 "책이 됩니다" 가 2줄로 넘어갔음. */
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.flowItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #2A1F14;
+  white-space: nowrap;
+}
+.flowEmoji { font-size: 20px; line-height: 1; }
+.flowArrow {
+  font-size: 18px;
+  color: #D89A20;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+@media (max-width: 380px) {
+  .flowRow   { gap: 5px; }
+  .flowItem  { font-size: 14px; gap: 3px; }
+  .flowEmoji { font-size: 16px; }
+  .flowArrow { font-size: 14px; }
+}
+
+/* 부가기능 — 구분선 위/아래 */
+.featRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 16px 0;
+  margin: 10px 0;
+  border-top: 0.5px solid #E8D5BC;
+  border-bottom: 0.5px solid #E8D5BC;
+}
+.featItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #5C4020;
+}
+.featEmoji { font-size: 17px; line-height: 1; }
+.featDot { color: rgba(154, 104, 16, 0.45); font-weight: 700; }
+
+/* 동기부여 문구 4개 */
+.motivList {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.motivItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #3D2310;
+  line-height: 1.4;
+  text-align: center;
+}
+.motivEmoji {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+@media (max-width: 380px) {
+  .motivItem  { font-size: 14.5px; gap: 8px; }
+  .motivEmoji { font-size: 18px; }
+}
+
+/* Floating + sparkle 애니메이션 */
+@keyframes homeFloatA {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50%      { transform: rotate(-3deg) translateY(-9px); }
+}
+@keyframes homeFloatB {
+  0%, 100% { transform: rotate(3deg)  translateY(0); }
+  50%      { transform: rotate(3deg)  translateY(-9px); }
+}
+@keyframes homeShimmer {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}
+.bookMemoir { animation: homeFloatA 4s   ease-in-out infinite; }
+.bookStory  { animation: homeFloatB 4.6s ease-in-out infinite; }
+.bookMemoir:hover,
+.bookStory:hover {
+  animation-play-state: paused;
+  filter: brightness(1.07);
+  box-shadow:
+    0 14px 28px rgba(60, 30, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.heroSparkle { animation: homeShimmer 2.4s ease-in-out infinite; }
+.sparkle2    { animation-delay: 1.2s; }
+
+/* 시니어 접근성 — 움직임 줄이기 설정 시 애니메이션 전체 정지 */
+@media (prefers-reduced-motion: reduce) {
+  .bookMemoir,
+  .bookStory,
+  .heroSparkle {
+    animation: none;
+  }
+}
+
+/* 모바일 (~380px) — 두 책 살짝 축소해 화면 안에 깔끔히 */
+@media (max-width: 380px) {
+  .booksRow { gap: 16px; }
+  .bookCard {
+    width: 142px;
+    height: 192px;
+    padding: 18px 12px 14px;
+    gap: 10px;
+  }
+  .bookIcon  { font-size: 34px; }
+  .bookLabel { font-size: 21px; }
+  .bookSub   { font-size: 11px; }
+  .brandLogo { font-size: 19px; }
+}
+
+/* 데스크탑 — 책 살짝 키워서 시각 무게 */
+@media (min-width: 768px) {
+  .booksRow { gap: 32px; margin: 24px 0 10px; }
+  .bookCard {
+    width: 184px;
+    height: 244px;
+  }
+  .bookIcon  { font-size: 44px; }
+  .bookLabel { font-size: 27px; }
+  .heroTitle { font-size: 30px; }
 }

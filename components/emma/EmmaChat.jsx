@@ -772,11 +772,21 @@ function SessionEndBanner({ lang, isDay, bookContext }) {
   // 🆕 Task 60 (Stage 3) — book mode CTA points back to the question
   //   detail page so the user can see their answer card update +
   //   move to the next question, instead of dropping into /my-stories.
-  const ctaHref = bookContext
-    ? `/book/${bookContext.bookId}/question/${bookContext.bookQuestionId}`
-    : '/my-stories';
+  // Milestone 4 Step B — V3 origin tracking. bookContext.fromV3 면 question
+  //   상세 페이지에 ?from=v3&chId=... 유지해서 V3 흐름 ("이야기 주제로 돌아가기")
+  //   으로 그려지게 함.
+  const ctaHref = (() => {
+    if (!bookContext) return '/my-stories';
+    const base = `/book/${bookContext.bookId}/question/${bookContext.bookQuestionId}`;
+    if (bookContext.fromV3) {
+      return `${base}?from=v3&chId=${encodeURIComponent(bookContext.chId || '')}`;
+    }
+    return base;
+  })();
   const ctaLabel = bookContext
-    ? (lang === 'EN' ? 'Back to my book →' : lang === 'ES' ? 'Volver a mi libro →' : '책으로 돌아가기 →')
+    ? (bookContext.fromV3
+        ? (lang === 'EN' ? 'Back to topics →' : lang === 'ES' ? 'Volver a temas →' : '이야기 주제로 →')
+        : (lang === 'EN' ? 'Back to my book →' : lang === 'ES' ? 'Volver a mi libro →' : '책으로 돌아가기 →'))
     : m.cta;
 
   useEffect(() => {
@@ -833,6 +843,12 @@ function SessionEndBanner({ lang, isDay, bookContext }) {
                : phase === 'timeout' ? m.timeout
                :                       m.waiting;
 
+  // 🔥 Step B2 (2026-05-20) — CTA 가드. phase!=='ready' (Fragment 정리 미완료) 시
+  //   링크 비활성. 사용자가 정리 완료 전에 클릭 → 페이지 이탈 → in-flight INSERT
+  //   abort → 이야기 소실 방지. /api/fragments 폴링 으로 fragment 가 실제 DB 에
+  //   landing 한 것을 확인한 시점부터만 활성. (EmmaChat 의 음성/Fragment 생성
+  //   로직은 안 건드림 — 표시 + 클릭 가드 만.)
+  const ctaReady = phase === 'ready';
   return (
     <div className={`${styles.sessionEndBanner} ${isDay ? styles.sessionEndBannerDay : styles.sessionEndBannerNight}`}>
       <p className={`${styles.sessionEndHint} ${isDay ? styles.sessionEndHintDay : styles.sessionEndHintNight}`}>
@@ -841,12 +857,28 @@ function SessionEndBanner({ lang, isDay, bookContext }) {
       {phase === 'waiting' && (
         <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>{m.waiting}</div>
       )}
-      <a
-        href={ctaHref}
-        className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
-      >
-        {ctaLabel}
-      </a>
+      {ctaReady ? (
+        <a
+          href={ctaHref}
+          className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
+        >
+          {ctaLabel}
+        </a>
+      ) : (
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          aria-busy="true"
+          title={lang === 'EN' ? 'Saving your story… please wait a moment' : lang === 'ES' ? 'Guardando tu historia… espera un momento' : '이야기를 저장하고 있어요… 잠시만요'}
+          className={`${styles.sessionEndCta} ${isDay ? styles.sessionEndCtaDay : styles.sessionEndCtaNight}`}
+          style={{ opacity: 0.55, cursor: 'wait', border: 'none', fontFamily: 'inherit' }}
+        >
+          {phase === 'timeout'
+            ? ctaLabel /* timeout 시에도 안전상 비활성 — fragment 가 늦게 도착할 가능성 */
+            : (lang === 'EN' ? 'Saving…' : lang === 'ES' ? 'Guardando…' : '저장 중…')}
+        </button>
+      )}
     </div>
   );
 }
@@ -866,6 +898,11 @@ export default function EmmaChat({ initialMode }) {
   const bookId         = searchParams.get('bookId');
   const bookQuestionId = searchParams.get('bookQuestionId');
   const isBookMode     = !!(bookId && bookQuestionId);
+  // Milestone 4 Step B — V3 origin tracking. 질문 상세 page (Step A) 가 /chat URL
+  //   에 from=v3&chId 실어서 보냄. 답변 저장 후 V3 챕터 복귀하도록 SessionEndBanner
+  //   의 ctaHref 에 반영. (EmmaChat 의 음성/Fragment 로직은 안 건드림 — 외과수술적.)
+  const fromV3       = searchParams.get('from') === 'v3';
+  const v3ChId       = searchParams.get('chId');
   // 🆕 Task 49 — Home page sends ?mode=companion or ?mode=story so the
   // mode-selection welcome screen is auto-skipped and the user lands
   // straight in their chosen conversation. Unknown / missing values fall
@@ -882,7 +919,10 @@ export default function EmmaChat({ initialMode }) {
   //    pin to 'night' on mount. The day/night toggle button still works
   //    if a power user wants to flip manually for one session, but the
   //    page no longer assumes daylight by default.
-  const [mode, setMode] = useState(initialMode ?? 'night');
+  // Milestone 4 Step B (2026-05-20): isBookMode (책 답변 흐름) 진입 시 day 로 시작.
+  //    V3 의 밝은 톤과 일관 — Visual Tree / ChapterEntryV3 / 질문 상세 모두 light.
+  //    토글 동작 그대로 — power user 가 원하면 night 전환 가능.
+  const [mode, setMode] = useState(initialMode ?? (isBookMode ? 'day' : 'night'));
 
   // ── auth + language ───────────────────────────────────────────────────────
   const [user,  setUser]  = useState(null);
@@ -3206,7 +3246,7 @@ export default function EmmaChat({ initialMode }) {
             //   fall back to the continued parent's book (if any).
             bookContext={
               isBookMode
-                ? { bookId, bookQuestionId }
+                ? { bookId, bookQuestionId, fromV3, chId: v3ChId }
                 : parentBookContext
             }
           />

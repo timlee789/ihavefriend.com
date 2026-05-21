@@ -13,17 +13,31 @@
  * you left off" affordance on the overview page works.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { getUserLang, titleOf } from '@/lib/i18nHelper';
 import { BOOK_MSGS } from '@/lib/bookI18n';
 import FragmentModal from '@/components/fragments/FragmentModal';
 import Breadcrumb from '@/components/book/Breadcrumb';
 import s from './page.module.css';
 
+// Milestone 4 Step A — useSearchParams 는 Next.js App Router 에서 Suspense 경계 요구.
+// 'use client' 페이지여도 빌드 안정성을 위해 래핑.
 export default function QuestionDetailPage() {
+  return (
+    <Suspense fallback={<div className={s.loading} />}>
+      <QuestionDetailPageInner />
+    </Suspense>
+  );
+}
+
+function QuestionDetailPageInner() {
   const router = useRouter();
   const { bookId, qId } = useParams();
+  // Milestone 4 Step A — V3 origin tracking. from=v3 면 V3 챕터로 복귀.
+  const searchParams = useSearchParams();
+  const fromV3 = searchParams.get('from') === 'v3';
+  const v3ChId = searchParams.get('chId');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState('ko');
@@ -162,28 +176,60 @@ export default function QuestionDetailPage() {
   const directList   = response.fragments || [];
   const importedList = response.imported_fragments || [];
 
+  // Milestone 4 Step A — from=v3 면 V3 챕터로, 아니면 V2 챕터로.
+  //   v3ChId 가 query 에 있으면 우선, 없으면 data.chapter.id fallback.
+  const chapterReturnPath = (chapterId) =>
+    fromV3
+      ? `/book/${bookId}/v3/chapter/${v3ChId || chapterId}`
+      : `/book/${bookId}/chapter/${chapterId}`;
+
+  // Milestone 5 Step 1c — 챕터 제목 truncate (8글자 + …). "Chapter N" 내부 번호 대신
+  //   사용자가 인지하는 챕터 제목을 보여줌. V3 흐름에서 사용자는 챕터 번호 모름.
+  const shortChapter = (txt) => {
+    const t = (txt || '').trim();
+    return t.length > 8 ? `${t.slice(0, 8)}…` : t;
+  };
+
+  // /chat, /write 로 from=v3 전파 — Step B 가 이걸 받아 복귀 처리.
+  const originSuffix = fromV3
+    ? `&from=v3&chId=${encodeURIComponent(v3ChId || '')}`
+    : '';
+
   return (
     <div className={s.container}>
       <header className={s.header}>
         <button
           className={s.backBtn}
-          onClick={() => router.push(`/book/${bookId}/chapter/${chapter.id}`)}
+          onClick={() => router.push(chapterReturnPath(chapter.id))}
         >
-          {m.backToChapter} {chapter.order}
+          {fromV3 ? m.backToTopics : `${m.backToChapter} ${chapter.order}`}
         </button>
       </header>
 
-      {/* 🔥 Task 85 — 3-step Breadcrumb: 책제목 › 챕터 N › 질문 N. */}
-      <Breadcrumb items={[
+      {/* 🔥 Task 85 — 3-step Breadcrumb. Milestone 4 Step A: from=v3 면 V3 경로/문구.
+          Step 1c: V3 분기 챕터 라벨 truncate (긴 제목 8글자 + …). */}
+      <Breadcrumb items={fromV3 ? [
+        { label: bookTitle, href: `/book/${bookId}` },
+        { label: shortChapter(chapterText), href: chapterReturnPath(chapter.id) },
+        { label: m.topicPrefix },
+      ] : [
         { label: bookTitle, href: `/book/${bookId}` },
         { label: `${m.chapterPrefix} ${chapter.order}`, href: `/book/${bookId}/chapter/${chapter.id}` },
         { label: `${m.questionPrefix} ${question.order}` },
       ]} />
 
-      <div className={s.breadcrumb}>{m.chapterPrefix} {chapter.order}: {chapterText}</div>
-      <div className={s.questionNum}>{m.questionPrefix} {question.order}</div>
+      {/* Step 1c — V3 면 챕터 제목만 (번호 없이, 8글자 truncate). V2 는 "Chapter N: 제목". */}
+      <div className={s.breadcrumb}>
+        {fromV3
+          ? shortChapter(chapterText)
+          : `${m.chapterPrefix} ${chapter.order}: ${chapterText}`}
+      </div>
+      {/* Step A2 — V2 만 질문 번호 표시. V3 는 주제 콘셉이라 번호 없음. */}
+      {!fromV3 && (
+        <div className={s.questionNum}>{m.questionPrefix} {question.order}</div>
+      )}
 
-      <div className={s.promptBox}>
+      <div className={`${s.promptBox} ${fromV3 ? s.promptBoxCompact : ''}`}>
         {/* 🆕 Stage 7 — read the prompt aloud for senior eyes. */}
         <button
           type="button"
@@ -194,11 +240,14 @@ export default function QuestionDetailPage() {
         >
           🔊
         </button>
+        {/* Step A2 — V3 "이번 주제" 작은 라벨. V2 는 hide. */}
+        {fromV3 && <div className={s.topicLabel}>{m.topicLabel}</div>}
         <div className={s.prompt}>{promptText}</div>
-        {hintText && (
+        {/* Step A2 — 힌트/예상시간 은 V2 에서만 표시. V3 는 콤팩트. */}
+        {!fromV3 && hintText && (
           <div className={s.hint}>{m.hintPrefix} {hintText}</div>
         )}
-        {question.estimated_minutes && (
+        {!fromV3 && question.estimated_minutes && (
           <div className={s.meta}>{m.minutesLabel} {question.estimated_minutes} {m.minutesUnit}</div>
         )}
       </div>
@@ -224,7 +273,8 @@ export default function QuestionDetailPage() {
               // 🔥 Task 96 — book-aware return path for the typed
               //   editor: clicking "글 수정 / 이어쓰기" now sends
               //   the user back HERE, not /my-stories.
-              bookContext={{ bookId, questionId: qId }}
+              // Milestone 4 Step A — V3 origin 전파 (Step B 가 FragmentModal 측 처리)
+              bookContext={{ bookId, questionId: qId, fromV3, chId: v3ChId }}
             />
           ))}
         </div>
@@ -245,7 +295,7 @@ export default function QuestionDetailPage() {
                 onUpdated={() => loadDetail()}
                 onPhotosChanged={() => loadDetail()}
                 onDeleted={() => loadDetail()}
-                bookContext={{ bookId, questionId: qId }}
+                bookContext={{ bookId, questionId: qId, fromV3, chId: v3ChId }}
               />
               <button
                 className={s.removeImportBtn}
@@ -267,24 +317,36 @@ export default function QuestionDetailPage() {
       {response.status === 'complete' && (
         <div className={s.completedSection}>
           <div className={s.completedLabel}>{m.saved}</div>
-          {navigation.next_question_id ? (
+          {fromV3 ? (
+            // Milestone 4 Step A — V3 흐름: 챕터 카드 그리드로 복귀 (방금 답한 카드 완료 상태).
             <button
               className={s.nextBigBtn}
-              onClick={() =>
-                router.push(`/book/${bookId}/question/${navigation.next_question_id}`)
-              }
+              onClick={() => router.push(chapterReturnPath(chapter.id))}
             >
-              {m.nextQuestionBig}
+              {m.backToTopicsBig}
             </button>
           ) : (
-            <div className={s.completedHint}>{m.lastQuestionDone}</div>
+            <>
+              {navigation.next_question_id ? (
+                <button
+                  className={s.nextBigBtn}
+                  onClick={() =>
+                    router.push(`/book/${bookId}/question/${navigation.next_question_id}`)
+                  }
+                >
+                  {m.nextQuestionBig}
+                </button>
+              ) : (
+                <div className={s.completedHint}>{m.lastQuestionDone}</div>
+              )}
+              <button
+                className={s.bookHomeBtn}
+                onClick={() => router.push(`/book/${bookId}`)}
+              >
+                {m.backToBookHome}
+              </button>
+            </>
           )}
-          <button
-            className={s.bookHomeBtn}
-            onClick={() => router.push(`/book/${bookId}`)}
-          >
-            {m.backToBookHome}
-          </button>
         </div>
       )}
 
@@ -294,7 +356,7 @@ export default function QuestionDetailPage() {
             className={s.redoBtn}
             onClick={() => {
               if (confirm(m.confirmRedo)) {
-                router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`);
+                router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}${originSuffix}`);
               }
             }}
           >
@@ -304,7 +366,7 @@ export default function QuestionDetailPage() {
           <button
             className={s.startBtn}
             onClick={() =>
-              router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}`)
+              router.push(`/chat?mode=book&bookId=${bookId}&bookQuestionId=${qId}${originSuffix}`)
             }
           >
             {m.startAnswerBig}
@@ -319,7 +381,7 @@ export default function QuestionDetailPage() {
         <button
           className={s.writeBtn}
           onClick={() =>
-            router.push(`/write?bookId=${encodeURIComponent(bookId)}&bookQuestionId=${encodeURIComponent(qId)}`)
+            router.push(`/write?bookId=${encodeURIComponent(bookId)}&bookQuestionId=${encodeURIComponent(qId)}${originSuffix}`)
           }
         >
           {m.startWriteAnswer}
@@ -330,11 +392,13 @@ export default function QuestionDetailPage() {
           {m.importExisting}
         </button>
 
+        {/* Milestone 4 Step A — V3 는 순차 흐름이 아니므로 skip/seeNext hide.
+            V2 흐름 (from 없음) 일 때만 표시. */}
         <div className={s.secondaryActions}>
-          {question.is_optional && response.status !== 'complete' && (
+          {!fromV3 && question.is_optional && response.status !== 'complete' && (
             <button className={s.skipBtn} onClick={skip}>{m.skip}</button>
           )}
-          {navigation.next_question_id && response.status !== 'complete' && (
+          {!fromV3 && navigation.next_question_id && response.status !== 'complete' && (
             <button
               className={s.skipBtn}
               onClick={() => router.push(`/book/${bookId}/question/${navigation.next_question_id}`)}

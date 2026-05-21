@@ -1,0 +1,186 @@
+/*
+ * components/visual-tree/ChapterEditModals.module.css
+ *
+ * 3개 모달 (Rename / Delete / Add) 의 공통 스타일.
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 18, 8, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: backdropFade 0.2s ease-out;
+}
+
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: #FFFAF0;
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1208;
+  margin: 0 0 16px;
+}
+
+.modalTitleDanger {
+  color: #993C1D;
+}
+
+.helperText {
+  font-size: 14px;
+  color: #5C4020;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.currentBox {
+  background: #fff;
+  border: 1px solid rgba(154, 104, 16, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.currentLabel {
+  font-size: 12px;
+  color: rgba(92, 64, 32, 0.7);
+  margin-bottom: 4px;
+}
+
+.currentValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A1208;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5C4020;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid rgba(154, 104, 16, 0.3);
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #1A1208;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #9A6810;
+}
+
+.message {
+  font-size: 15px;
+  color: #1A1208;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.note {
+  font-size: 13px;
+  color: #5C4020;
+  background: rgba(255, 220, 220, 0.4);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+}
+
+.error {
+  font-size: 13px;
+  color: #8B2D2D;
+  background: rgba(255, 220, 220, 0.5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btnCancel,
+.btnPrimary,
+.btnDanger {
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.btnCancel {
+  background: #fff;
+  color: #5C4020;
+  border: 1.5px solid rgba(154, 104, 16, 0.3);
+}
+.btnCancel:hover:not(:disabled) {
+  background: #F2E8D5;
+}
+
+.btnPrimary {
+  background: #5C4020;
+  color: #fff;
+  border: none;
+}
+.btnPrimary:hover:not(:disabled) {
+  background: #3D2310;
+}
+
+.btnDanger {
+  background: #993C1D;
+  color: #fff;
+  border: none;
+}
+.btnDanger:hover:not(:disabled) {
+  background: #7A2E14;
+}
+
+.btnPrimary:disabled,
+.btnDanger:disabled,
+.btnCancel:disabled {
+  background: #B4B2A9;
+  cursor: not-allowed;
+}
+
+.btnCancel:disabled {
+  background: #fff;
+  color: rgba(92, 64, 32, 0.4);
+  border-color: rgba(154, 104, 16, 0.15);
+}

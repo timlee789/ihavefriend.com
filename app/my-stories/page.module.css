@@ -1416,6 +1416,55 @@
   background: rgba(251, 146, 60, 0.20);
 }
 
+/* Beta Step 2 (2026-05-21) — 이야기책 PDF buttons (collections → PDF).
+   /my-stories/customize 하단에 collection 1개+이야기 1개 이상일 때 노출. */
+.storyBookActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+.storyBookPreviewBtn,
+.storyBookGenerateBtn {
+  flex: 1 1 auto;
+  min-width: 150px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1.5px solid;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.storyBookPreviewBtn {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.40);
+  color: rgba(196, 181, 253, 0.95);
+}
+.storyBookPreviewBtn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(99, 102, 241, 0.60);
+}
+.storyBookGenerateBtn {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+.storyBookGenerateBtn:hover:not(:disabled) { background: #c2410c; border-color: #c2410c; }
+.storyBookPreviewBtn:disabled,
+.storyBookGenerateBtn:disabled { opacity: 0.55; cursor: wait; }
+.storyBookError {
+  padding: 10px 14px;
+  margin: 10px 0;
+  background: rgba(220, 38, 38, 0.10);
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  color: #fca5a5;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
 /* Delete-confirm prompt inside collection delete modal */
 .deletePromptInline {
   font-size: 16px;
@@ -2057,7 +2106,9 @@
 .successTitle { color: #86efac; }
 .successDesc  { color: rgba(255, 255, 255, 0.7); }
 
-/* 🆕 Stage 7 — book pill for fragments saved as a book question answer */
+/* 🆕 Stage 7 — book pill for fragments saved as a book question answer.
+   DEPRECATED Beta Step 2b — 카드에서 미사용 (collections 기반 chapterBadge 로 대체).
+   클래스 정의는 back-compat 위해 보존. */
 .bookBadge {
   display: inline-block;
   font-size: 12px;
@@ -2067,6 +2118,27 @@
   border-radius: 999px;
   letter-spacing: 0.02em;
   border: 1px solid rgba(99, 102, 241, 0.30);
+}
+
+/* Beta Step 2b (2026-05-21) — 소속 챕터(collection) 배지. 한 fragment 가
+   여러 챕터에 속할 수 있어 카드에 여러 chip 가능. 챕터 이름 ellipsis 처리
+   (max-width 180px) — Tim "긴 이름도 잘 나오게" 요청. */
+.chapterBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  color: rgba(196, 181, 253, 0.95);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 🔥 Task 75 — photo attachment styles */
@@ -2137,13 +2209,20 @@
    no sticky header. The modal still uses .modalHeader / .modalBody /
    .modalContent so all existing styling (markdown, photos, edit, delete)
    applies unchanged. */
+/* Milestone 5 Step 1c (2026-05-20) — V3 light 톤으로 전환.
+   FragmentModal inline 은 /book/[id]/question/[qId] (V3 light) + /my-stories/
+   [fragmentId] detail (legacy dark) 양쪽에서 사용. V3 우선으로 light 통일.
+   이전: 짙은 갈색 배경 (#2a2520) + 흰 텍스트 → V3 beige 페이지에서 흰 텍스트
+   가 보이지 않아 "내용 안 보임" 버그 발생 (Tim 검증).
+   overflow: hidden 제거 — 자식이 비정상적으로 길어져도 페이지 스크롤 가능. */
 .inlineContainer {
   width: 100%;
   margin: 16px 0;
-  background: #2a2520;
-  border: 1px solid rgba(99, 102, 241, 0.30);
+  background: #fff;
+  border: 1.5px solid rgba(216, 154, 32, 0.3);
   border-radius: 14px;
-  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(154, 104, 16, 0.08);
+  color: #2A1F14;
 }
 
 .inlineBody {
@@ -2153,7 +2232,8 @@
 /* In inline mode the sticky-header treatment + close pill aren't right —
    the body sits in normal page flow, not a slide-up sheet. We override
    the sticky positioning and drop the bottom border so the header reads
-   as a section heading instead of a floating bar. */
+   as a section heading instead of a floating bar.
+   Step 1c: V3 light 톤 (이전엔 흰 텍스트로 V3 페이지에서 안 보였음). */
 .inlineContainer .modalHeader {
   position: static;
   background: transparent;
@@ -2162,12 +2242,35 @@
 }
 
 .inlineContainer .modalTitle {
-  color: rgba(255, 255, 255, 0.95);
+  color: #2A1F14;
   font-size: 17px;
+  font-family: "Noto Serif KR", Georgia, serif;
+  font-weight: 600;
 }
 
 .inlineContainer .modalSubtitle {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(92, 64, 32, 0.65);
+}
+
+.inlineContainer .modalContent {
+  color: #2A1F14;
+}
+
+.inlineContainer .modalContent strong,
+.inlineContainer .modalContent p strong {
+  color: #B8800E;
+}
+
+.inlineContainer .continueHint {
+  color: rgba(92, 64, 32, 0.65);
+}
+
+.inlineContainer .modalTagLabel {
+  color: rgba(92, 64, 32, 0.6);
+}
+
+.inlineContainer .modalBackBtn {
+  color: #5C4020;
 }
 
 .inlineContainer .modalBody {

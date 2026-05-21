@@ -27,19 +27,59 @@ export async function POST(request, { params }) {
   catch { return Response.json({ error: 'invalid json' }, { status: 400 }); }
 
   const { title, description, afterChapterId, firstQuestion } = body || {};
-  if (!title || typeof title !== 'string' || !title.trim()) {
+
+  // body 단순 1차 검증 (책의 language 조회 후 정규화) — 빈 입력 빠르게 거절
+  const titleHasContent =
+    (typeof title === 'string' && title.trim()) ||
+    (typeof title === 'object' && title !== null && !Array.isArray(title) &&
+     Object.values(title).some(v => typeof v === 'string' && v.trim()));
+  if (!titleHasContent) {
     return Response.json({ error: 'title required' }, { status: 400 });
   }
 
   const db = createDb();
   try {
+    // 🔥 V3 Step 1e — user_books.language 직접 조회 (단순화).
+    //   이전 Step 1d 의 LEFT JOIN derive 는 sample 시드가 모두 ko 라
+    //   영문 책에서도 ko 반환하던 문제. 이제 컬럼 추가 후 직접 저장된 값 사용.
     const bookRes = await db.query(
-      `SELECT structure FROM user_books WHERE id = $1 AND user_id = $2`,
+      `SELECT structure, language FROM user_books WHERE id = $1 AND user_id = $2`,
       [bookId, user.id]
     );
     if (bookRes.rows.length === 0) {
       return Response.json({ error: 'not found' }, { status: 404 });
     }
+    const bookLang = bookRes.rows[0].language || 'ko';
+
+    // title 정규화 — 책의 lang 키 하나만 저장 (단일 언어 정책)
+    let titleStr = null;
+    if (typeof title === 'string' && title.trim()) {
+      titleStr = title.trim();
+    } else if (typeof title === 'object' && title !== null && !Array.isArray(title)) {
+      if (typeof title[bookLang] === 'string' && title[bookLang].trim()) {
+        titleStr = title[bookLang].trim();
+      } else {
+        for (const v of Object.values(title)) {
+          if (typeof v === 'string' && v.trim()) { titleStr = v.trim(); break; }
+        }
+      }
+    }
+    const titleObj = { [bookLang]: titleStr };
+
+    // description 동일 패턴
+    let descriptionStr = null;
+    if (typeof description === 'string' && description.trim()) {
+      descriptionStr = description.trim();
+    } else if (typeof description === 'object' && description !== null && !Array.isArray(description)) {
+      if (typeof description[bookLang] === 'string' && description[bookLang].trim()) {
+        descriptionStr = description[bookLang].trim();
+      } else {
+        for (const v of Object.values(description)) {
+          if (typeof v === 'string' && v.trim()) { descriptionStr = v.trim(); break; }
+        }
+      }
+    }
+    const descriptionObj = descriptionStr ? { [bookLang]: descriptionStr } : null;
 
     const structure = bookRes.rows[0].structure || { chapters: [] };
     if (!Array.isArray(structure.chapters)) structure.chapters = [];
@@ -47,8 +87,8 @@ export async function POST(request, { params }) {
     const newChapter = {
       id: genId('ch-custom'),
       order: 0, // recomputed below
-      title:        { ko: title.trim() },
-      description:  description && description.trim() ? { ko: description.trim() } : null,
+      title:        titleObj,        // { [bookLang]: ... } 단일 키
+      description:  descriptionObj,  // null 또는 { [bookLang]: ... } 단일 키
       intro_prompt: null,
       is_active:    true,
       is_custom:    true,
@@ -59,7 +99,7 @@ export async function POST(request, { params }) {
       newChapter.questions.push({
         id:                genId('q-custom'),
         order:             1,
-        prompt:            { ko: firstQuestion.trim() },
+        prompt:            { [bookLang]: firstQuestion.trim() }, // 단일 언어 정책
         hint:              null,
         estimated_minutes: 5,
         is_optional:       false,

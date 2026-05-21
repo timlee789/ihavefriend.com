@@ -1,0 +1,190 @@
+/*
+ * components/visual-tree/VisualTree.module.css
+ *
+ * 5가지 애니메이션 (STRATEGY 문서 spec).
+ *
+ * 1. 페이지 로드 — .tree-body scaleY 0→1 (1.2초), .fruit-fadein-N 0.1초 간격
+ * 2. Hover — fruit-group:hover scale(1.08) translateY(-4px) (cubic-bezier)
+ * 3. Click — fruit-group:active scale(0.95) (0.1초)
+ * 4. ★ 산들바람 — .active-fruit rotate(±1.2°) 4초
+ * 5. ★ 후광 맥동 — .active-halo-pulse scale + opacity 3초
+ */
+
+.tree {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  margin: 0 auto;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 나무 본체 등장 — scaleY 0→1 */
+:global(.tree-body) {
+  animation: treeGrow 1.2s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  transform-box: fill-box;
+}
+
+@keyframes treeGrow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* 잎 hover / click — 스프링 곡선으로 통통 튀는 느낌, 효과를 크게.
+   baseline drop-shadow 그룹 레벨에 두고 hover 시 강화 — Fruit.jsx 의 circle 자체에는 filter X. */
+:global(.fruit-group) {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 0.3s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+  cursor: pointer;
+}
+
+:global(.fruit-group:hover) {
+  transform: scale(1.18) translateY(-10px);
+  filter: drop-shadow(0 16px 28px rgba(0,0,0,0.35));
+  z-index: 10;
+}
+
+:global(.fruit-group:active) {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+:global(.fruit-group:focus) {
+  outline: none;
+}
+
+:global(.fruit-group:focus-visible) > :first-child + circle,
+:global(.fruit-group:focus-visible) > circle {
+  /* 키보드 포커스 — 외곽선 강조 */
+  filter: drop-shadow(0 0 0 3px rgba(242, 184, 58, 0.8));
+}
+
+/* ★ 산들바람 — active_recent 만 부드럽게 흔들림 */
+:global(.active-fruit) {
+  animation: sway 4s ease-in-out infinite;
+  transform-box: fill-box;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50%      { transform: rotate(1.2deg); }
+}
+
+/* hover 중에는 sway 일시 정지 (transform 충돌 방지) */
+:global(.active-fruit:hover) {
+  animation-play-state: paused;
+}
+
+/* ★ 후광 맥동 */
+:global(.active-halo-pulse) {
+  animation: haloPulse 3s ease-in-out infinite;
+  transform-box: fill-box;
+}
+
+@keyframes haloPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+/* 잎 순차 등장 fade-in — 0.1초 간격 (최대 12개) */
+:global(.fruit-fadein-1)  { animation: fruitFadeIn 0.5s ease-out 0.10s both; }
+:global(.fruit-fadein-2)  { animation: fruitFadeIn 0.5s ease-out 0.20s both; }
+:global(.fruit-fadein-3)  { animation: fruitFadeIn 0.5s ease-out 0.30s both; }
+:global(.fruit-fadein-4)  { animation: fruitFadeIn 0.5s ease-out 0.40s both; }
+:global(.fruit-fadein-5)  { animation: fruitFadeIn 0.5s ease-out 0.50s both; }
+:global(.fruit-fadein-6)  { animation: fruitFadeIn 0.5s ease-out 0.60s both; }
+:global(.fruit-fadein-7)  { animation: fruitFadeIn 0.5s ease-out 0.70s both; }
+:global(.fruit-fadein-8)  { animation: fruitFadeIn 0.5s ease-out 0.80s both; }
+:global(.fruit-fadein-9)  { animation: fruitFadeIn 0.5s ease-out 0.90s both; }
+:global(.fruit-fadein-10) { animation: fruitFadeIn 0.5s ease-out 1.00s both; }
+:global(.fruit-fadein-11) { animation: fruitFadeIn 0.5s ease-out 1.10s both; }
+:global(.fruit-fadein-12) { animation: fruitFadeIn 0.5s ease-out 1.20s both; }
+
+/* fadein 후 active_recent 는 sway 가 이어받음 — animation 우선순위는 마지막 정의가 이김 */
+:global(.fruit-fadein-1.active-fruit),
+:global(.fruit-fadein-2.active-fruit),
+:global(.fruit-fadein-3.active-fruit),
+:global(.fruit-fadein-4.active-fruit),
+:global(.fruit-fadein-5.active-fruit),
+:global(.fruit-fadein-6.active-fruit),
+:global(.fruit-fadein-7.active-fruit),
+:global(.fruit-fadein-8.active-fruit),
+:global(.fruit-fadein-9.active-fruit),
+:global(.fruit-fadein-10.active-fruit),
+:global(.fruit-fadein-11.active-fruit),
+:global(.fruit-fadein-12.active-fruit) {
+  animation: fruitFadeIn 0.5s ease-out 1.4s both, sway 4s ease-in-out 1.9s infinite;
+}
+
+@keyframes fruitFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== 편집 모드 — 잎 sway + "+" 잎 ===== */
+
+/* 편집 모드 시 모든 잎이 살짝 흔들림. 잎마다 다른 delay 로 자연스러운 분산. */
+:global(.fruit-edit) {
+  animation: editSway 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes editSway {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25%      { transform: rotate(-1.5deg) translateY(-1px); }
+  75%      { transform: rotate(1.5deg) translateY(-1px); }
+}
+
+:global(.fruit-edit):nth-child(2n) { animation-delay: 0.2s; }
+:global(.fruit-edit):nth-child(3n) { animation-delay: 0.4s; }
+:global(.fruit-edit):nth-child(4n) { animation-delay: 0.6s; }
+
+/* hover 시 sway 일시 정지 + 그림자 강조 (기존 fruit-group hover 효과는 그대로 유지) */
+:global(.fruit-edit):hover {
+  animation-play-state: paused;
+}
+
+/* "+" 새 챕터 잎 — 흙 옆 부드러운 호흡 애니메이션 */
+:global(.add-leaf) {
+  animation: addBreathe 2.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 340px 1140px;
+  transition: filter 0.2s ease;
+}
+
+@keyframes addBreathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.06); opacity: 0.92; }
+}
+
+:global(.add-leaf):hover {
+  animation-play-state: paused;
+  filter: drop-shadow(0 6px 14px rgba(154, 104, 16, 0.35));
+}
+
+/* TODO: Day 6 — 모바일 반응형 (viewBox 380×1400 + 잎 좌표 재계산) */
+@media (max-width: 480px) {
+  /* placeholder — 일단 데스크톱 그대로 렌더, scale 만 적용됨 */
+}

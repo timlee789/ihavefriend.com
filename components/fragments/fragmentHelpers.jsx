@@ -54,3 +54,45 @@ export function Spinner() {
     </div>
   );
 }
+
+/**
+ * Beta Step 2/2b (2026-05-21) — 이야기책 PDF 호출 헬퍼.
+ *   /my-stories/customize 와 /my-stories 둘 다에서 사용.
+ *   preview: 새 탭, generate: 다운로드. busy/error 콜백 처리.
+ *
+ *   url:         '/api/collections-book/preview' 또는 '/generate'
+ *   asDownload:  true 면 다운로드, false 면 새 탭
+ *   downloadName: 파일명 (asDownload=true 때)
+ *   setBusy(bool): 진행중 상태 콜백
+ *   setErr(str):  에러 메시지 콜백
+ *   errMsg:       기본 에러 메시지 (서버 응답에 message 없을 때)
+ */
+export async function pdfPostAndOpen({ url, asDownload, downloadName, setBusy, setErr, errMsg }) {
+  setBusy(true);
+  setErr('');
+  try {
+    const res = await authFetch(url, { method: 'POST' });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setErr(j.message || j.error || errMsg);
+      return;
+    }
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    if (asDownload) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = downloadName || 'storybook.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.open(blobUrl, '_blank');
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
+  } catch (e) {
+    setErr(e?.message || errMsg);
+  } finally {
+    setBusy(false);
+  }
+}

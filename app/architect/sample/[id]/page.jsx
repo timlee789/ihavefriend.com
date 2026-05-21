@@ -63,7 +63,7 @@ export default function ArchitectSampleViewPage() {
         if (cb.ok) {
           const cbData = await cb.json();
           if (cbData?.hasBook && cbData.book?.id) {
-            router.replace(`/book/${cbData.book.id}`);
+            router.replace(`/book/${cbData.book.id}/tree`);  // Milestone 5 Step 1 — V3 나무 직행
             return;
           }
         }
@@ -152,7 +152,7 @@ export default function ArchitectSampleViewPage() {
       // 200 created/resumed-by-sample, 201 (currently we return 200 either way),
       // 409 race against existing memoir — both shapes carry bookId.
       if ((res.ok || res.status === 409) && data?.bookId) {
-        router.replace(`/book/${data.bookId}`);
+        router.replace(`/book/${data.bookId}/tree`);  // Milestone 5 Step 1 — V3 나무 직행 (신규 생성/409 race 양쪽)
         return;
       }
       setError(data?.error || `시작할 수 없어요 (${res.status})`);

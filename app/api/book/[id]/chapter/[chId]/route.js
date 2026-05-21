@@ -122,6 +122,7 @@ export async function GET(request, { params }) {
         description: chapter.description,
         intro_prompt: chapter.intro_prompt,
         is_custom: chapter.is_custom || false,
+        saved: chapter.saved || false,  // Step 2b — saved 플래그 노출 (UI 분기용)
         questions,
       },
     });
@@ -150,32 +151,56 @@ export async function PATCH(request, { params }) {
 
   const db = createDb();
   try {
+    // 🔥 V3 Step 1e — user_books.language 직접 조회 (Step 1d 의 LEFT JOIN 단순화).
     const bookRes = await db.query(
-      `SELECT structure FROM user_books WHERE id = $1 AND user_id = $2`,
+      `SELECT structure, language FROM user_books WHERE id = $1 AND user_id = $2`,
       [bookId, user.id]
     );
     if (bookRes.rows.length === 0) {
       return Response.json({ error: 'not found' }, { status: 404 });
     }
+    const bookLang = bookRes.rows[0].language || 'ko';
 
     const structure = bookRes.rows[0].structure || { chapters: [] };
     const ch = (structure.chapters || []).find(c => c.id === chId);
     if (!ch) return Response.json({ error: 'chapter not found' }, { status: 404 });
 
-    if (typeof body.title === 'string' && body.title.trim()) {
-      const t = body.title.trim();
-      ch.title = (ch.title && typeof ch.title === 'object') ? { ...ch.title, ko: t } : { ko: t };
+    // title: string 또는 i18n 객체 받고, 책의 lang 키 하나만 가진 객체로 **교체** (머지 X).
+    // 단일 언어 정책 — 수정하면 다른 lang 키 제거됨.
+    if (body.title !== undefined && body.title !== null) {
+      let titleStr = null;
+      if (typeof body.title === 'string' && body.title.trim()) {
+        titleStr = body.title.trim();
+      } else if (typeof body.title === 'object' && !Array.isArray(body.title)) {
+        if (typeof body.title[bookLang] === 'string' && body.title[bookLang].trim()) {
+          titleStr = body.title[bookLang].trim();
+        } else {
+          for (const v of Object.values(body.title)) {
+            if (typeof v === 'string' && v.trim()) { titleStr = v.trim(); break; }
+          }
+        }
+      }
+      if (titleStr) {
+        ch.title = { [bookLang]: titleStr };
+      }
     }
+
     if ('description' in (body || {})) {
       const d = body.description;
-      if (d && typeof d === 'string' && d.trim()) {
-        const txt = d.trim();
-        ch.description = (ch.description && typeof ch.description === 'object')
-          ? { ...ch.description, ko: txt }
-          : { ko: txt };
-      } else {
-        ch.description = null;
+      let descStr = null;
+      if (typeof d === 'string' && d.trim()) {
+        descStr = d.trim();
+      } else if (typeof d === 'object' && d !== null && !Array.isArray(d)) {
+        if (typeof d[bookLang] === 'string' && d[bookLang].trim()) {
+          descStr = d[bookLang].trim();
+        } else {
+          for (const v of Object.values(d)) {
+            if (typeof v === 'string' && v.trim()) { descStr = v.trim(); break; }
+          }
+        }
       }
+      // description 은 명시적으로 null 보내거나 빈 string 보내면 삭제
+      ch.description = descStr ? { [bookLang]: descStr } : null;
     }
 
     await db.query(

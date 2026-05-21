@@ -28,13 +28,15 @@ export async function POST(request, { params }) {
 
   const db = createDb();
   try {
+    // 🔥 Step 2b — language 도 같이 조회. prompt/hint 를 단일 lang 키로 저장.
     const bookRes = await db.query(
-      `SELECT structure FROM user_books WHERE id = $1 AND user_id = $2`,
+      `SELECT structure, language FROM user_books WHERE id = $1 AND user_id = $2`,
       [bookId, user.id]
     );
     if (bookRes.rows.length === 0) {
       return Response.json({ error: 'not found' }, { status: 404 });
     }
+    const bookLang = bookRes.rows[0].language || 'ko';
 
     const structure = bookRes.rows[0].structure || { chapters: [] };
     const ch = (structure.chapters || []).find(c => c.id === chId);
@@ -44,8 +46,8 @@ export async function POST(request, { params }) {
     const newQuestion = {
       id:                genId('q-custom'),
       order:             0,
-      prompt:            { ko: prompt.trim() },
-      hint:              hint && typeof hint === 'string' && hint.trim() ? { ko: hint.trim() } : null,
+      prompt:            { [bookLang]: prompt.trim() },
+      hint:              hint && typeof hint === 'string' && hint.trim() ? { [bookLang]: hint.trim() } : null,
       estimated_minutes: 5,
       is_optional:       false,
       is_active:         true,

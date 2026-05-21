@@ -78,8 +78,12 @@
 
 html, body {
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
+  /* Beta Step 4 fix (2026-05-21) — SayAndKeep 초기 companion 시절의 dark
+     잔재. V3 는 전부 light 톤 (베이지)이라 body 기본을 light 로 전환.
+     모든 페이지가 자체 .page/.container 배경을 명시하므로 안전.
+     홈 페이지의 검정 배경 버그 해결. (이전: background: var(--bg) #0f0f1a) */
+  background: #fdf8f4;
+  color: #1a1410;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 16px;
   line-height: 1.6;

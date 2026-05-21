@@ -1,25 +1,27 @@
-/* /write — Text Fragment Writer (Task 93)
-   Senior-friendly typography (18-20 px body), generous spacing, dark
-   theme that matches the book/chapter/question pages. KO/EN/ES share
-   the same layout — only labels swap. */
+/* /write — Text Fragment Writer.
+   Milestone 4 Step B (2026-05-20): dark → V3 light 톤 전면 전환.
+   Visual Tree / ChapterEntryV3 / 질문 상세 (Step A) 와 동일 색 시스템:
+     - 베이지 배경 #FFFAF0 → #F2E8D5 → #E8D5BC
+     - 텍스트 #2A1F14, 황금 #D89A20/#B8800E, 갈색 #5C4020/#3D2310
+     - 버튼 hover translateY(-2px) + cubic-bezier transition
+   prefers-color-scheme 분기 제거 → 단일 light. */
 
 .container {
   max-width: 720px;
   margin: 0 auto;
   padding: 16px;
   min-height: 100dvh;
-  background: #1a1410;
-  color: #fdfdfd;
+  background: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
+  color: #2A1F14;
   font-family: inherit;
 }
 
 .loading {
   min-height: 100dvh;
-  background: #1a1410;
+  background: linear-gradient(180deg, #FFFAF0 0%, #F2E8D5 60%, #E8D5BC 100%);
 }
 
-/* Header — back button + page title in a single row, mirrors the book
-   pages so the senior recognizes the surface. */
+/* Header — 뒤로가기 + 페이지 제목 */
 .header {
   display: flex;
   align-items: center;
@@ -28,11 +30,11 @@
 }
 
 .backBtn {
-  background: rgba(34, 197, 94, 0.10);
-  border: 1px solid rgba(134, 239, 172, 0.40);
-  color: rgba(220, 252, 231, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(154, 104, 16, 0.4);
+  color: #5C4020;
   padding: 10px 18px;
-  border-radius: 12px;
+  border-radius: 22px;
   font-size: 16px;
   font-weight: 600;
   min-height: 44px;
@@ -42,49 +44,43 @@
   flex-shrink: 0;
 }
 .backBtn:hover {
-  background: rgba(34, 197, 94, 0.18);
-  border-color: rgba(134, 239, 172, 0.65);
+  background: #fff;
+  border-color: #5C4020;
 }
 
 .pageTitle {
   font-size: 22px;
   font-weight: 700;
   margin: 0;
-  color: #fb923c;
+  color: #B8800E;
+  font-family: "Noto Serif KR", Georgia, serif;
   flex: 1;
   min-width: 0;
 }
 
-/* 🆕 Task 94 — Continuation context box. Shows the parent fragment's
-   title so the senior knows what they're adding to. Green left rail
-   matches the green continueByWritingBtn that brought them here. */
+/* 🆕 Task 94 — 이어쓰기 컨텍스트 박스. 부모 fragment 의 제목 표시.
+   Step B: 초록 좌측 rail → 황금 좌측 rail (V3 톤). */
 .continueContextBox {
   margin: 0 0 16px;
   padding: 14px 16px;
-  background: rgba(34, 197, 94, 0.10);
-  border-left: 3px solid #15803d;
+  background: linear-gradient(135deg, #FFF8E0 0%, #FFE89A 100%);
+  border-left: 4px solid #D89A20;
   border-radius: 0 10px 10px 0;
+  box-shadow: 0 2px 8px rgba(216, 154, 32, 0.15);
 }
 .continueContextTitle {
   font-size: 16px;
-  font-weight: 600;
-  color: rgba(220, 252, 231, 0.95);
+  font-weight: 700;
+  color: #5C4020;
   line-height: 1.4;
   word-break: keep-all;
+  font-family: "Noto Serif KR", Georgia, serif;
 }
 .continueContextHint {
   margin-top: 6px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(92, 64, 32, 0.7);
   line-height: 1.5;
-}
-@media (prefers-color-scheme: light) {
-  .continueContextBox {
-    background: rgba(21, 128, 61, 0.08);
-    border-left-color: #15803d;
-  }
-  .continueContextTitle { color: #14532d; }
-  .continueContextHint  { color: rgba(26, 20, 16, 0.65); }
 }
 
 /* Form */
@@ -97,7 +93,7 @@
 .label {
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(92, 64, 32, 0.85);
   margin: 12px 0 4px;
   letter-spacing: 0.01em;
 }
@@ -109,25 +105,29 @@
   font-size: 18px;
   line-height: 1.5;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: #2a2520;
-  color: #fdfdfd;
+  border: 1.5px solid rgba(154, 104, 16, 0.25);
+  background: #fff;
+  color: #2A1F14;
   font-family: inherit;
   box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 .input:focus,
 .textarea:focus {
   outline: none;
-  border-color: rgba(251, 146, 60, 0.55);
-  background: #2f2925;
+  border-color: #D89A20;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(216, 154, 32, 0.15);
 }
 .input:disabled,
 .textarea:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+  background: rgba(255, 250, 240, 0.5);
 }
 
 .textarea {
+  font-family: "Noto Serif KR", Georgia, serif;
   font-size: 19px;
   line-height: 1.65;
   min-height: 320px;
@@ -137,57 +137,48 @@
 
 .charCount {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(92, 64, 32, 0.5);
   text-align: right;
   margin-top: 2px;
 }
-.autosaveNote { color: rgba(251, 146, 60, 0.65); }
+.autosaveNote { color: #B8800E; font-weight: 600; }
 
 /* Banners */
 .errBanner {
   margin: 16px 0 4px;
   padding: 12px 14px;
-  background: rgba(220, 38, 38, 0.12);
-  border: 1px solid rgba(220, 38, 38, 0.35);
-  color: #fca5a5;
-  border-radius: 10px;
+  background: rgba(208, 48, 48, 0.08);
+  border-left: 3px solid #D03030;
+  color: #8B2D2D;
+  border-radius: 6px;
   font-size: 15px;
 }
 .warnBanner {
   margin: 12px 0 4px;
   padding: 12px 14px;
   background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #fcd34d;
-  border-radius: 10px;
+  border-left: 3px solid #D89A20;
+  color: #8C5A0A;
+  border-radius: 6px;
   font-size: 15px;
 }
 
-/* 🆕 Task 95 — brief "Saved ✓" pulse after a successful PATCH in edit
-   mode. Doesn't lock the form (Tim wants the senior to keep editing
-   afterward), so the indicator self-clears in ~1.8 s via setTimeout. */
+/* 🆕 Task 95 — Saved ✓ pulse. V3 톤: 황금 그라데이션. */
 .savedFlash {
   margin: 12px 0 4px;
   padding: 10px 14px;
-  background: rgba(34, 197, 94, 0.14);
-  border: 1px solid rgba(134, 239, 172, 0.40);
-  color: rgba(187, 247, 208, 0.95);
+  background: linear-gradient(135deg, #FFF8E0 0%, #FFE89A 100%);
+  border-left: 4px solid #D89A20;
+  color: #5C4020;
   border-radius: 10px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   animation: savedFlashFade 0.25s ease;
 }
 @keyframes savedFlashFade {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-@media (prefers-color-scheme: light) {
-  .savedFlash {
-    background: rgba(21, 128, 61, 0.10);
-    border-color: rgba(21, 128, 61, 0.45);
-    color: #14532d;
-  }
 }
 
 /* Actions */
@@ -198,12 +189,13 @@
   margin-top: 18px;
 }
 
+/* 저장/끝내기 — V3 갈색 그라데이션 (primary CTA) */
 .saveBtn,
 .finishBtn {
   flex: 1 1 auto;
   min-height: 52px;
   padding: 14px 22px;
-  background: #ea580c;
+  background: linear-gradient(135deg, #5C4020 0%, #3D2310 100%);
   color: #fff;
   border: none;
   border-radius: 14px;
@@ -211,54 +203,67 @@
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 4px 14px rgba(92, 64, 32, 0.3);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
 }
-.saveBtn:hover,
-.finishBtn:hover { background: #c2410c; }
-.saveBtn:active,
-.finishBtn:active { transform: scale(0.98); }
+.saveBtn:hover:not(:disabled),
+.finishBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #3D2310 0%, #2A1808 100%);
+  box-shadow: 0 8px 20px rgba(92, 64, 32, 0.45);
+}
+.saveBtn:active:not(:disabled),
+.finishBtn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(92, 64, 32, 0.3);
+}
 .saveBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  background: #9a3412;
+  background: linear-gradient(135deg, #B4B2A9 0%, #9A988F 100%);
+  box-shadow: none;
 }
 
+/* 취소 / 사진 추가 — 흰 반투명 (secondary) */
 .cancelBtn,
 .photosNowBtn {
   min-height: 52px;
   padding: 14px 22px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.7);
+  color: #5C4020;
+  border: 1px solid rgba(154, 104, 16, 0.3);
   border-radius: 14px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .cancelBtn:hover,
 .photosNowBtn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.40);
+  background: #fff;
+  border-color: #5C4020;
 }
 .cancelBtn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Photos section */
+/* 사진 섹션 */
 .photosSection {
   margin-top: 28px;
   padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(154, 104, 16, 0.2);
 }
 .photosLabel {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(92, 64, 32, 0.85);
   margin-bottom: 8px;
   letter-spacing: 0.02em;
 }
 .photosHint {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(92, 64, 32, 0.6);
   font-style: italic;
 }
 
@@ -272,50 +277,7 @@
   .cancelBtn, .photosNowBtn { font-size: 15px; min-height: 48px; }
 }
 
-/* Light-mode override (some users browse from a non-dark device — the
-   page should still be legible). All current callers (chat surface,
-   question page) are dark, but /write is reachable from /my-stories
-   and /book/select pages too, so we hedge. */
-@media (prefers-color-scheme: light) {
-  .container { background: #fdf8f4; color: #1a1410; }
-  .loading { background: #fdf8f4; }
-  .pageTitle { color: #c2410c; }
-  .label { color: rgba(26, 20, 16, 0.78); }
-  .input, .textarea {
-    background: #fff;
-    border-color: rgba(0, 0, 0, 0.15);
-    color: #1a1410;
-  }
-  .input:focus, .textarea:focus {
-    border-color: #c2410c;
-    background: #fff;
-  }
-  .charCount { color: rgba(26, 20, 16, 0.50); }
-  .autosaveNote { color: #c2410c; }
-  .photosSection { border-top-color: rgba(0, 0, 0, 0.08); }
-  .photosLabel { color: rgba(26, 20, 16, 0.78); }
-  .photosHint  { color: rgba(26, 20, 16, 0.55); }
-  .cancelBtn, .photosNowBtn {
-    color: rgba(26, 20, 16, 0.78);
-    border-color: rgba(0, 0, 0, 0.20);
-  }
-  .cancelBtn:hover, .photosNowBtn:hover {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.35);
-  }
-  .backBtn {
-    background: rgba(21, 128, 61, 0.08);
-    border-color: rgba(21, 128, 61, 0.40);
-    color: #14532d;
-  }
-  .backBtn:hover {
-    background: rgba(21, 128, 61, 0.14);
-    border-color: rgba(21, 128, 61, 0.65);
-  }
-}
-
-/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. Mobile 720
-   그대로, 768px+ 부터 영구 표준 var(--max-edit) 960. */
+/* 🔥 Sprint 2R (2026-05-12) — Desktop unification 960. */
 @media (min-width: 768px) {
   .container {
     max-width: var(--max-edit);

@@ -187,13 +187,14 @@ export async function PATCH(request, { params }) {
   const db = createDb();
   try {
     const bookRes = await db.query(
-      `SELECT structure FROM user_books WHERE id = $1 AND user_id = $2`,
+      `SELECT structure, language FROM user_books WHERE id = $1 AND user_id = $2`,
       [bookId, user.id]
     );
     if (bookRes.rows.length === 0) {
       return Response.json({ error: 'not found' }, { status: 404 });
     }
     const structure = bookRes.rows[0].structure || { chapters: [] };
+    const bookLang = bookRes.rows[0].language || 'ko';
 
     let foundQ = null;
     for (const ch of structure.chapters || []) {
@@ -204,17 +205,13 @@ export async function PATCH(request, { params }) {
 
     if (typeof body.prompt === 'string' && body.prompt.trim()) {
       const t = body.prompt.trim();
-      foundQ.prompt = (foundQ.prompt && typeof foundQ.prompt === 'object')
-        ? { ...foundQ.prompt, ko: t }
-        : { ko: t };
+      // 단일 언어 정책 (Step 1e + Step 2h) — 책의 language 키만 사용. 다른 lang 키는 제거.
+      foundQ.prompt = { [bookLang]: t };
     }
     if ('hint' in (body || {})) {
       const h = body.hint;
       if (h && typeof h === 'string' && h.trim()) {
-        const txt = h.trim();
-        foundQ.hint = (foundQ.hint && typeof foundQ.hint === 'object')
-          ? { ...foundQ.hint, ko: txt }
-          : { ko: txt };
+        foundQ.hint = { [bookLang]: h.trim() };
       } else {
         foundQ.hint = null;
       }

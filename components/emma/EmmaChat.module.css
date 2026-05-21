@@ -9,7 +9,10 @@
   overflow: hidden;
   transition: background 0.35s ease;
 }
-.day   { background: #fdf8f4; }
+/* Milestone 4 Step B (2026-05-20) — day 팔레트를 V3 톤으로 조정.
+   V3 (book 답변 모드) 진입 시 Visual Tree / ChapterEntryV3 / 질문 상세 와
+   동일한 베이지 그라데이션. 자유 대화는 night 그대로. */
+.day   { background: linear-gradient(180deg, #FFFAF0 0%, #F5EBD8 100%); }
 .night { background: #0d0b18; }
 
 /* ── top nav ── */
@@ -21,7 +24,7 @@
   flex-shrink: 0;
   z-index: 10;
 }
-.topnavDay   { background: #fff5ee; border-bottom: 0.5px solid rgba(234,88,12,0.12); }
+.topnavDay   { background: rgba(255, 248, 232, 0.92); border-bottom: 0.5px solid rgba(216, 154, 32, 0.18); }
 .topnavNight { background: #13101f; border-bottom: 0.5px solid rgba(124,58,237,0.15); }
 
 /* Bigger, clearly visible back button (Task 49 follow-up).
@@ -52,13 +55,13 @@
 }
 .backBtn:active { transform: scale(0.96); }
 .day .backBtn {
-  background: rgba(234, 88, 12, 0.10);
-  border-color: rgba(234, 88, 12, 0.30);
-  color: #ea580c;
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(154, 104, 16, 0.4);
+  color: #5C4020;
 }
 .day .backBtn:hover {
-  background: rgba(234, 88, 12, 0.18);
-  border-color: rgba(234, 88, 12, 0.55);
+  background: #fff;
+  border-color: #5C4020;
 }
 .night .backBtn {
   background: rgba(168, 85, 247, 0.18);
@@ -76,7 +79,7 @@
   overflow: hidden;
   flex-shrink: 0;
 }
-.navAvatarDay   { border: 1.5px solid rgba(234,88,12,0.22); }
+.navAvatarDay   { border: 1.5px solid rgba(216, 154, 32, 0.35); }
 .navAvatarNight { border: 1.5px solid rgba(168,85,247,0.3); }
 
 .navMeta { display: flex; flex-direction: column; gap: 2px; }
@@ -86,7 +89,7 @@
   font-size: 17px;       /* 14 → 17 */
   font-weight: 600;      /* 500 → 600 */
 }
-.day .navName   { color: #2d1510; }
+.day .navName   { color: #2A1F14; }
 .night .navName { color: rgba(255,255,255,0.88); }
 .navStatus        { font-size: 13px; font-weight: 500; color: #22c55e; } /* 11 → 13 */
 .navStatusOffline { font-size: 13px; font-weight: 500; color: #a8a29e; } /* 11 → 13 */
@@ -105,7 +108,7 @@
   flex-shrink: 0;
 }
 .navIcon:hover { opacity: 0.72; }
-.navIconDay   { background: rgba(234,88,12,0.08); }
+.navIconDay   { background: rgba(216, 154, 32, 0.12); }
 .navIconNight { background: rgba(168,85,247,0.1); }
 
 /* language pill button in nav */
@@ -124,7 +127,7 @@
 .navLangBtn:hover:not(:disabled)  { opacity: 0.72; }
 .navLangBtn:active:not(:disabled) { transform: scale(0.93); }
 .navLangBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-.navLangBtnDay   { background: rgba(234,88,12,0.07); border-color: rgba(234,88,12,0.25); color: #b05020; }
+.navLangBtnDay   { background: rgba(216, 154, 32, 0.10); border-color: rgba(216, 154, 32, 0.35); color: #B8800E; }
 .navLangBtnNight { background: rgba(168,85,247,0.10); border-color: rgba(168,85,247,0.3); color: rgba(196,148,255,0.9); }
 
 /* ── chat scroll area ── */
@@ -149,7 +152,7 @@
   overflow: hidden;
   flex-shrink: 0;
 }
-.miniAvatarDay   { border: 1px solid rgba(234,88,12,0.15); }
+.miniAvatarDay   { border: 1px solid rgba(216, 154, 32, 0.25); }
 .miniAvatarNight { border: 1px solid rgba(168,85,247,0.25); }
 
 .bubble {
@@ -160,18 +163,18 @@
 /* Sprint 2S (2026-05-13) — 메시지 본문 13 → 16px (시니어 친화 ↑). */
 .bubbleText { font-size: 16px; line-height: 1.6; margin: 0; }
 
-.bubbleEmmaDay   { background: #fff; border: 0.5px solid rgba(234,88,12,0.15); border-radius: 18px 18px 18px 4px; }
-.bubbleEmmaDay .bubbleText { color: #2d1510; }
+.bubbleEmmaDay   { background: #fff; border: 0.5px solid rgba(216, 154, 32, 0.22); border-radius: 18px 18px 18px 4px; }
+.bubbleEmmaDay .bubbleText { color: #2A1F14; }
 .bubbleEmmaNight { background: #1c1630; border: 0.5px solid rgba(168,85,247,0.18); border-radius: 18px 18px 18px 4px; }
 .bubbleEmmaNight .bubbleText { color: rgba(255,255,255,0.82); }
 
-.bubbleUserDay   { background: #ea580c; border-radius: 18px 18px 4px 18px; }
-.bubbleUserDay .bubbleText { color: white; }
+.bubbleUserDay   { background: linear-gradient(135deg, #5C4020 0%, #3D2310 100%); border-radius: 18px 18px 4px 18px; }
+.bubbleUserDay .bubbleText { color: #fff; }
 .bubbleUserNight { background: #5b21b6; border-radius: 18px 18px 4px 18px; }
 .bubbleUserNight .bubbleText { color: rgba(255,255,255,0.92); }
 
 .timestamp { font-size: 10px; margin-top: 4px; }
-.tsDay   { color: #c0a090; }
+.tsDay   { color: rgba(92, 64, 32, 0.55); }
 .tsNight { color: rgba(255,255,255,0.22); }
 
 /* emotion tag */
@@ -203,7 +206,7 @@
   display: inline-block;
   animation: bop 1.2s infinite;
 }
-.day .typingDot   { background: rgba(234,88,12,0.35); }
+.day .typingDot   { background: rgba(216, 154, 32, 0.5); }
 .night .typingDot { background: rgba(168,85,247,0.4); }
 
 @keyframes bop {
@@ -220,7 +223,7 @@
   gap: 6px;
   align-items: stretch;
 }
-.sttStripDay   { background: #fff5ee; border-top: 0.5px solid rgba(234,88,12,0.08); }
+.sttStripDay   { background: rgba(255, 248, 232, 0.85); border-top: 0.5px solid rgba(216, 154, 32, 0.18); }
 .sttStripNight { background: #13101f; border-top: 0.5px solid rgba(124,58,237,0.10); }
 
 .sttCaption {
@@ -237,8 +240,8 @@
   word-break: break-word;
 }
 .sttCaptionDay {
-  background: rgba(234,88,12,0.06);
-  color: #5a3b22;
+  background: rgba(216, 154, 32, 0.08);
+  color: #5C4020;
 }
 .sttCaptionNight {
   background: rgba(255,255,255,0.04);
@@ -283,10 +286,10 @@
   font-family: inherit;
 }
 .captionToggleDay {
-  color: #b76a3a;
+  color: #B8800E;
 }
 .captionToggleDay:hover {
-  background: rgba(234,88,12,0.08);
+  background: rgba(216, 154, 32, 0.1);
 }
 .captionToggleNight {
   color: rgba(255,255,255,0.55);
@@ -358,10 +361,11 @@
   justify-content: space-between;
   gap: 12px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(79, 70, 229, 0.18)), #2a2a2a;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.30);
+  /* Milestone 4 Step B (2026-05-20) — V3 톤. isBookMode 에서만 표시되므로 항상 light. */
+  background: linear-gradient(135deg, #FFF8E0 0%, #FFE89A 100%);
+  border-bottom: 1px solid rgba(216, 154, 32, 0.35);
   font-family: inherit;
-  color: #eeeefb;
+  color: #5C4020;
   font-size: 13px;
 }
 .bookContextChapter {
@@ -370,13 +374,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: 600;
 }
 .bookContextProgress {
   flex-shrink: 0;
   font-size: 12px;
-  color: rgba(238, 238, 251, 0.7);
+  color: rgba(92, 64, 32, 0.7);
   letter-spacing: 0.02em;
+  font-weight: 600;
 }
 
 /* ── voice bar ── */
@@ -387,7 +392,7 @@
   flex-direction: column;
   gap: 10px;
 }
-.voiceBarDay   { background: #fff5ee; border-top: 0.5px solid rgba(234,88,12,0.12); }
+.voiceBarDay   { background: rgba(255, 248, 232, 0.85); border-top: 0.5px solid rgba(216, 154, 32, 0.22); }
 .voiceBarNight { background: #13101f; border-top: 0.5px solid rgba(124,58,237,0.15); }
 
 /* waveform */
@@ -405,7 +410,7 @@
   transition: height 0.15s;
 }
 .waveBarIdle        { background: rgba(128,128,128,0.15); }
-.waveBarActiveDay   { background: #ea580c; animation: grow 0.9s infinite ease-in-out; }
+.waveBarActiveDay   { background: #D89A20; animation: grow 0.9s infinite ease-in-out; }
 .waveBarActiveNight { background: #a855f7; animation: grow 0.9s infinite ease-in-out; }
 
 @keyframes grow {
@@ -431,7 +436,7 @@
   transition: opacity 0.15s;
 }
 .sideBtn:hover { opacity: 0.72; }
-.sideBtnDay   { background: rgba(234,88,12,0.07); border-color: rgba(234,88,12,0.2); }
+.sideBtnDay   { background: rgba(216, 154, 32, 0.1); border-color: rgba(216, 154, 32, 0.3); }
 .sideBtnNight { background: rgba(168,85,247,0.1);  border-color: rgba(168,85,247,0.2); }
 
 .micCenter {
@@ -448,14 +453,14 @@
 }
 .micBtn:hover  { opacity: 0.88; }
 .micBtn:active { transform: scale(0.95); }
-.micBtnDay   { background: #ea580c; }
+.micBtnDay   { background: linear-gradient(135deg, #D89A20 0%, #B8800E 100%); box-shadow: 0 4px 14px rgba(216, 154, 32, 0.3); }
 .micBtnNight { background: linear-gradient(135deg, #7c3aed, #a855f7); }
-.micOn { box-shadow: 0 0 0 4px rgba(234,88,12,0.18); }
+.micOn { box-shadow: 0 0 0 4px rgba(216, 154, 32, 0.25); }
 .night .micOn { box-shadow: 0 0 0 4px rgba(168,85,247,0.2); }
 
 /* Sprint 2S — mic label 11 → 13px. */
 .micLabel { font-size: 13px; }
-.micLabelDay   { color: #b08070; }
+.micLabelDay   { color: #5C4020; font-weight: 600; }
 .micLabelNight { color: rgba(255,255,255,0.28); }
 
 /* ── empty state (no messages yet) ─────────────────────────────────────────── */
@@ -825,8 +830,10 @@
   animation: fadeIn 0.3s ease;
 }
 .sessionEndBannerDay {
-  background: rgba(234,88,12,0.06);
-  border: 1px solid rgba(234,88,12,0.16);
+  background: linear-gradient(135deg, #FFF5E8 0%, #FFE8C8 100%);
+  border: 1px solid rgba(240, 136, 56, 0.4);
+  border-left: 4px solid #F08838;
+  box-shadow: 0 4px 14px rgba(240, 136, 56, 0.18);
 }
 .sessionEndBannerNight {
   background: rgba(168,85,247,0.08);
@@ -839,7 +846,7 @@
   margin: 0;
   white-space: pre-line;
 }
-.sessionEndHintDay   { color: #7a4428; }
+.sessionEndHintDay   { color: #5C3A14; font-weight: 600; }
 .sessionEndHintNight { color: rgba(220,195,255,0.75); }
 
 .sessionEndCta {
@@ -853,7 +860,20 @@
 }
 .sessionEndCta:hover  { opacity: 0.85; }
 .sessionEndCta:active { transform: scale(0.97); }
-.sessionEndCtaDay   { background: #ea580c; color: #fff; }
+.sessionEndCtaDay   {
+  background: linear-gradient(135deg, #F2A058 0%, #F08838 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(240, 136, 56, 0.3);
+  padding: 12px 24px;
+  font-size: 15px;
+  border-radius: 24px;
+}
+.sessionEndCtaDay:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(240, 136, 56, 0.45);
+  background: linear-gradient(135deg, #F08838 0%, #D86810 100%);
+}
 .sessionEndCtaNight { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
 
 /* ── Feedback modal ────────────────────────────────────────────────────────── */
@@ -934,7 +954,7 @@
   overflow: hidden;
   border: 0.5px solid;
 }
-.newsListDay   { border-color: rgba(234,88,12,0.15); }
+.newsListDay   { border-color: rgba(216, 154, 32, 0.22); }
 .newsListNight { border-color: rgba(168,85,247,0.2); }
 
 .newsItem {
@@ -948,7 +968,7 @@
 }
 .newsItem:last-child { border-bottom: none; }
 .newsItem:hover { opacity: 0.75; }
-.newsItemDay   { background: rgba(255,255,255,0.85); border-color: rgba(234,88,12,0.08); }
+.newsItemDay   { background: rgba(255, 250, 240, 0.85); border-color: rgba(216, 154, 32, 0.12); }
 .newsItemNight { background: rgba(28,22,48,0.9);      border-color: rgba(168,85,247,0.12); }
 
 .newsNum {
@@ -963,7 +983,7 @@
   flex-shrink: 0;
   margin-top: 1px;
 }
-.newsNumDay   { background: rgba(234,88,12,0.12); color: #b05020; }
+.newsNumDay   { background: rgba(216, 154, 32, 0.18); color: #B8800E; }
 .newsNumNight { background: rgba(168,85,247,0.2);  color: rgba(196,148,255,0.9); }
 
 .newsTitle {
@@ -971,7 +991,7 @@
   line-height: 1.45;
   flex: 1;
 }
-.newsItemDay   .newsTitle { color: #2d1510; }
+.newsItemDay   .newsTitle { color: #2A1F14; }
 .newsItemNight .newsTitle { color: rgba(255,255,255,0.82); }
 
 /* phone number input */
@@ -1256,8 +1276,9 @@
   font-style: italic;
 }
 .listeningBubbleDay {
-  background: rgba(234, 88, 12, 0.85);
+  background: linear-gradient(135deg, #5C4020 0%, #3D2310 100%);
   color: #fff;
+  opacity: 0.92;
 }
 .listeningBubbleNight {
   background: rgba(91, 33, 182, 0.85);

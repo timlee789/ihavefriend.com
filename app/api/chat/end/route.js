@@ -481,7 +481,26 @@ Rules:
           //   are caught locally so they never block the response itself.
           fragmentJobId = `cloud-${sessionId}`;
 
-          const userLang  = (user.lang || 'ko').toLowerCase();
+          // 🔥 Step B2 (2026-05-20) — Fragment 언어 결정.
+          //   책 모드 (bookId 있음): 책의 language 를 따름 (영문 책 → 영어 Fragment).
+          //   비책 모드: user.lang 그대로 (자유 대화). 향후 대화 감지 언어로 개선 가능.
+          //   이전 버그: 항상 user.lang 강제 → 영어로 말해도 ko 계정이면 한국어 번역 저장.
+          let userLang = (user.lang || 'ko').toLowerCase();
+          if (bookId) {
+            try {
+              const bookLangRow = await db.query(
+                `SELECT language FROM user_books WHERE id = $1 AND user_id = $2`,
+                [bookId, user.id]
+              );
+              const bookLang = bookLangRow.rows[0]?.language;
+              if (bookLang) {
+                userLang = bookLang.toLowerCase();
+                console.log(`[chat/end] 📖 Book mode — using book language '${userLang}' for fragment (overrides user.lang='${(user.lang || 'ko').toLowerCase()}')`);
+              }
+            } catch (e) {
+              console.warn('[chat/end] book language lookup failed, fallback user.lang:', e.message);
+            }
+          }
           const bgHistory = history;
           const userId    = user.id;
 

@@ -353,6 +353,13 @@ export default function FragmentModal({
                       bookContext?.questionId || fragment.book_question_id || null;
                     if (returnBookId)     params.set('fromBookId',     returnBookId);
                     if (returnQuestionId) params.set('fromQuestionId', returnQuestionId);
+                    // Milestone 4 Step B — V3 origin tracking. 책 페이지의 question
+                    //   상세에서 모달 열린 경우 (Step A 에서 bookContext 에 fromV3/chId
+                    //   전달 시작) /write 가 같은 V3 흐름으로 복귀하도록.
+                    if (bookContext?.fromV3) {
+                      params.set('from', 'v3');
+                      if (bookContext.chId) params.set('chId', bookContext.chId);
+                    }
                     router.push(`/write?${params.toString()}`);
                   }}
                 >

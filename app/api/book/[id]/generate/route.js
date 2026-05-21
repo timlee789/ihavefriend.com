@@ -17,9 +17,13 @@
 import { requireAuth } from '@/lib/auth';
 import { createDb } from '@/lib/db';
 
-export const maxDuration = 60;
+// Milestone 5 Step 4 — AI intro 제거로 generate 가 빨라짐 (8s → ~1s). maxDuration
+//   60 → 30 으로 줄임 (사진 prefetch 안전 마진 유지).
+export const maxDuration = 30;
 
-const GENERATE_MIN_PERCENT = 50;
+// Milestone 5 Step 4 (2026-05-21) — 게이트 사실상 제거 (Tim 결정).
+//   PDF 무료, 답변 1개 이상이면 언제든 책 생성. 인쇄($139)에 가치.
+const GENERATE_MIN_ANSWERED = 1;
 
 export async function POST(request, { params }) {
   const { user, error } = await requireAuth(request);
@@ -30,7 +34,7 @@ export async function POST(request, { params }) {
 
   try {
     const bookRes = await db.query(
-      `SELECT id, title, total_questions, completed_questions, book_generated
+      `SELECT id, title, language, total_questions, completed_questions, book_generated
          FROM user_books
         WHERE id = $1 AND user_id = $2`,
       [bookId, user.id]
@@ -39,14 +43,15 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'not found' }, { status: 404 });
     }
     const book  = bookRes.rows[0];
-    const total = book.total_questions || 0;
+    // Milestone 5 Step 3 — 책 language 따르기. 영문책은 영어 AI intro / 날짜 / 판권지.
+    const bookLang = (book.language || 'ko').toLowerCase();
     const done  = book.completed_questions || 0;
-    const percent = total > 0 ? (done / total) * 100 : 0;
-    if (percent < GENERATE_MIN_PERCENT) {
+    // Milestone 5 Step 4 — 답변 1개 이상이면 책 생성 가능.
+    if (done < GENERATE_MIN_ANSWERED) {
       return Response.json({
-        error: 'insufficient_progress',
-        message: `책 만들기는 ${GENERATE_MIN_PERCENT}% 이상 완성 후 가능해요`,
-        current_percent: Math.round(percent),
+        error: 'no_answers',
+        message: '이야기를 하나라도 들려주시면 책을 만들 수 있어요',
+        current_answered: done,
       }, { status: 400 });
     }
 
@@ -57,8 +62,9 @@ export async function POST(request, { params }) {
       bookId,
       userId: user.id,
       isPreview: false,
+      lang: bookLang,
     });
-    const pdf = await generatePdfBuffer({ ...assembled, lang: 'ko' });
+    const pdf = await generatePdfBuffer({ ...assembled, lang: bookLang });
 
     // Mark the book as generated. We don't store the PDF body itself
     //   yet — the user downloads from this response. Future: write a

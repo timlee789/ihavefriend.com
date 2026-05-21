@@ -101,19 +101,20 @@ export default function BookOverviewPage() {
         <div className={s.headerRow1}>
           <button className={s.backBtn} onClick={() => router.push('/')}>{m.backToHome}</button>
           <div className={s.headerRight}>
+            {/* Milestone 5 Step 1 — V3 챕터 나무 (Tree View) 로 전환. */}
+            <button
+              className={s.viewToggleBtn}
+              onClick={() => router.push(`/book/${bookId}/tree`)}
+              aria-label={m.viewAsTree}
+            >{m.viewAsTree}</button>
             <button
               className={s.helpBtn}
               onClick={() => router.push('/architect?from=book')}
               title={m.helpBtnTitle}
               aria-label={m.helpBtnTitle}
             >{m.helpBtn}</button>
-            <button
-              className={s.customizeBtn}
-              onClick={() => router.push(`/book/${bookId}/customize`)}
-              title={m.customizeTitle}
-            >
-              {m.customizeBtn}
-            </button>
+            {/* Milestone 5 Step 1b — customizeBtn 헤더에서 제거 → 페이지 하단으로 이동.
+                이유: 헤더 4개 버튼이 모바일에서 짤림. "내용 가져오는" 동작이라 하단 자연. */}
           </div>
         </div>
         <h1 className={s.title}>📚 {bookTitle}</h1>
@@ -150,11 +151,11 @@ export default function BookOverviewPage() {
         <div className={s.milestoneCard}>{m.milestone100}</div>
       )}
 
-      {/* 🆕 Stage 6 — PDF actions. Preview unlocks at 30%, full
-          generate at 50%. The generate path is heavier (Gemini chapter
-          intros) so we lead the senior with a "1~2분 정도 걸려요"
-          confirm before kicking off. */}
-      {book.completion_percent >= 30 && (
+      {/* 🔥 Milestone 5 Step 4 (2026-05-21) — 게이트 제거.
+          답변 1개 이상이면 미리보기/생성 둘 다 노출. AI intro 제거로 generate
+          가 1~2초로 빨라져 percent 분기 (간단/정식) 도 불필요 — 둘 다 같은
+          PDF 다 (미리보기는 새 탭, 생성은 다운로드 + book_generated 플래그). */}
+      {book.completed_questions >= 1 && (
         <div className={s.bookActions}>
           <button
             className={s.previewBtn}
@@ -168,30 +169,27 @@ export default function BookOverviewPage() {
               errFallback,
             })}
           >
-            {pdfBusy === 'preview' ? m.previewing :
-              book.completion_percent < 50 ? m.previewSimpleBtn : m.previewBtn}
+            {pdfBusy === 'preview' ? m.previewing : m.previewBtn}
           </button>
 
-          {book.completion_percent >= 50 && (
-            <button
-              className={s.generateBtn}
-              disabled={!!pdfBusy}
-              onClick={async () => {
-                if (!confirm(m.confirmGenerate)) return;
-                await pdfPostAndOpen({
-                  url: `/api/book/${bookId}/generate`,
-                  token: localStorage.getItem('token'),
-                  asDownload: true,
-                  downloadName: `${book.title || 'book'}.pdf`,
-                  setBusy: (b) => setPdfBusy(b ? 'generate' : null),
-                  setErr: setPdfError,
-                  errFallback,
-                });
-              }}
-            >
-              {pdfBusy === 'generate' ? m.generating : m.generateBtn}
-            </button>
-          )}
+          <button
+            className={s.generateBtn}
+            disabled={!!pdfBusy}
+            onClick={async () => {
+              if (!confirm(m.confirmGenerate)) return;
+              await pdfPostAndOpen({
+                url: `/api/book/${bookId}/generate`,
+                token: localStorage.getItem('token'),
+                asDownload: true,
+                downloadName: `${book.title || 'book'}.pdf`,
+                setBusy: (b) => setPdfBusy(b ? 'generate' : null),
+                setErr: setPdfError,
+                errFallback,
+              });
+            }}
+          >
+            {pdfBusy === 'generate' ? m.generating : m.generateBtn}
+          </button>
         </div>
       )}
       {pdfError && <div className={s.bookActionsError}>⚠️ {pdfError}</div>}
@@ -208,7 +206,9 @@ export default function BookOverviewPage() {
           <button
             key={ch.id}
             className={`${s.chapterRow} ${ch.is_current ? s.chapterCurrent : ''}`}
-            onClick={() => router.push(`/book/${bookId}/chapter/${ch.id}`)}
+            // Milestone 5 Step 1c — V3 챕터 통일 (옵션 A). night mode V2 챕터 페이지 안 씀.
+            //   ChapterEntryV3 의 handleAnswer 가 ?from=v3 자동 부여 → 질문 페이지 V3 모드.
+            onClick={() => router.push(`/book/${bookId}/v3/chapter/${ch.id}`)}
           >
             <div className={s.chapterStatus}>
               {ch.status === 'complete'    ? '✅' :
@@ -224,6 +224,18 @@ export default function BookOverviewPage() {
             <div className={s.chapterArrow}>→</div>
           </button>
         ))}
+      </div>
+
+      {/* Milestone 5 Step 1b — Table of contents (customize) 페이지 하단으로 이동.
+          헤더에서 짤리던 버튼. "내용을 가져오는" 동작이라 하단이 자연스러움. */}
+      <div className={s.tocFooter}>
+        <button
+          className={s.tocFooterBtn}
+          onClick={() => router.push(`/book/${bookId}/customize`)}
+          title={m.customizeTitle}
+        >
+          {m.customizeBtn}
+        </button>
       </div>
     </div>
   );

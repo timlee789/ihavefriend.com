@@ -16,13 +16,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { VIS_MSGS } from '@/components/fragments/fragmentI18n';
-import { getToken, authFetch, Spinner } from '@/components/fragments/fragmentHelpers';
+import { getToken, authFetch, Spinner, pdfPostAndOpen } from '@/components/fragments/fragmentHelpers';
 // Reuse the parent /my-stories CSS module — same class names
 // (`.collectionBlock`, `.fragmentRowInline`, all modal classes, etc.)
 // already defined there from Sprint 1. The new 2-row header classes
 // (`.headerRow1`, `.title`, `.intro`, `.customizeBtn`) get added to
 // that same parent file in this sprint.
 import s from '../page.module.css';
+
+// Beta Step 2b (2026-05-21) — pdfPostAndOpen 은 fragmentHelpers 로 이동 (재사용).
+//   /my-stories 목록에서도 동일 헬퍼 사용.
 
 function useLang() {
   const [lang, setLang] = useState('KO');
@@ -138,6 +141,9 @@ function CollectionsView({ collections, onCreated, onChanged, lang, fragments })
   const [expanded, setExpanded] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCol, setEditingCol] = useState(null);
+  // Beta Step 2 — PDF 버튼 상태. busy = 'preview' | 'generate' | null
+  const [pdfBusy, setPdfBusy] = useState(null);
+  const [pdfError, setPdfError] = useState('');
   const [confirmDel, setConfirmDel] = useState(null);
   const [addingFragmentTo, setAddingFragmentTo] = useState(null);
 
@@ -272,6 +278,44 @@ function CollectionsView({ collections, onCreated, onChanged, lang, fragments })
             );
           })}
         </div>
+      )}
+
+      {/* Beta Step 2 (2026-05-21) — 이야기책 PDF.
+          collection 1개 이상 + 그 안에 fragment 1개 이상일 때 노출.
+          empty collection 만 있으면 endpoint 가 no_chapters 응답 → 버튼 hide 가 자연. */}
+      {collections.some(c => (c.fragment_count || 0) > 0) && (
+        <>
+          <div className={s.storyBookActions}>
+            <button
+              className={s.storyBookPreviewBtn}
+              disabled={!!pdfBusy}
+              onClick={() => pdfPostAndOpen({
+                url: '/api/collections-book/preview',
+                asDownload: false,
+                setBusy: (b) => setPdfBusy(b ? 'preview' : null),
+                setErr: setPdfError,
+                errMsg: vm.storyBookFailed,
+              })}
+            >
+              {pdfBusy === 'preview' ? vm.storyBookPreviewing : vm.makeStoryBookBtn}
+            </button>
+            <button
+              className={s.storyBookGenerateBtn}
+              disabled={!!pdfBusy}
+              onClick={() => pdfPostAndOpen({
+                url: '/api/collections-book/generate',
+                asDownload: true,
+                downloadName: (lang === 'EN' ? 'My Stories' : lang === 'ES' ? 'Mis historias' : '나의 이야기책') + '.pdf',
+                setBusy: (b) => setPdfBusy(b ? 'generate' : null),
+                setErr: setPdfError,
+                errMsg: vm.storyBookFailed,
+              })}
+            >
+              {pdfBusy === 'generate' ? vm.storyBookGenerating : vm.downloadStoryPdf}
+            </button>
+          </div>
+          {pdfError && <div className={s.storyBookError}>⚠️ {pdfError}</div>}
+        </>
       )}
 
       <button
